@@ -7,7 +7,19 @@ Duologsync is a utility written by Duo Security to enable fetching logs from dif
 ---
 
 ##### Installation
-`pip install duologsync`
+
+- Make sure you are running python 3+ “python --version”
+- Clone the github repository
+- go to `duo_log_sync` folder and run "python/python3 setup.py install". This will install the duologsync utility
+- If you get error about setuptools, install it using “pip3 install setuptools”
+- Refer the config.yml file in the `Example Configuration` section below. You will need create `config.yml` file and fill out credentials for adminapi in duoclient section as well as other parameters if necessary
+- Run the application using "duologsync <complete/path/to/config.yml>"
+
+---
+
+##### Logging
+
+- Logging directory can be specified in `config.yml`. By default, logs will be stored under /tmp/ folder with name `duologsync.log`
 
 ---
 
@@ -50,6 +62,8 @@ transport:
   protocol: "TCP"
   host: "localhost"
   port: 8888
+  certFileDir: "/tmp"
+  certFileName: "selfsigned.cert"
 
 recoverFromCheckpoint:
   enabled: False
@@ -73,7 +87,7 @@ recoverFromCheckpoint:
     daysinpast: 180
   checkpointDir: "/tmp"`
 
-- Choose whether to receive data on TCP/TCPSSL/UDP
+- Choose whether to receive data on TCP/TCPSSL/UDP. In case of TCPSSL, you will also need to provide directory and name of cert file. FOr normal TCP, it can be left blank.
 
 `transport:
   protocol: "TCP"

@@ -16,6 +16,8 @@ transport:
   protocol: "TCP"
   host: "localhost"
   port: 8888
+  certFileDir: "/tmp"
+  certFileName: "selfsigned.cert"
 
 recoverFromCheckpoint:
   enabled: False

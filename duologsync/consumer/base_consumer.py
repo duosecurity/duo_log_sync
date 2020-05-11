@@ -1,8 +1,8 @@
 import asyncio
-import json
 import ssl
 import logging
 import sys
+import os
 
 from duologsync.duo_log_sync_base import LogSyncBase
 
@@ -20,8 +20,9 @@ class BaseConsumer(LogSyncBase):
         if protocol == 'TCPSSL':
             try:
                 logging.info("Opening connection to server over encrypted tcp...")
+                certFile = os.path.join(self.config['transport']['certFileDir'], self.config['transport']['certFileName'])
                 sc = ssl.create_default_context(ssl.Purpose.SERVER_AUTH,
-                                                cafile='selfsigned.cert')
+                                                cafile=certFile)
 
                 _, writer = await asyncio.open_connection(host, port,
                                                                loop=self.loop, ssl=sc)
