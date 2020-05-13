@@ -93,8 +93,8 @@ class LogSyncBase:
         authlog_checkpoint.close()
 
         # Reading checkpoint for telephony logs
-        telephony_checkpoint = open(self.config['logs']['checkpointDir'],
-                                           "telephony_checkpoint_data.txt")
+        telephony_checkpoint = open(os.path.join(self.config['logs']['checkpointDir'],
+                                           "telephony_checkpoint_data.txt"))
         self.last_offset_read['telephony_last_fetched'] = json.loads(telephony_checkpoint.read())
         telephony_checkpoint.close()
 
