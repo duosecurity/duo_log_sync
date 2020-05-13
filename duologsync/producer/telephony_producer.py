@@ -14,8 +14,8 @@ class TelephonyProducer(LogSyncBase):
         information is also recorded to allowing checkpointing and recovery
         from crash.
         """
-        i = 0
-        mintime = datetime.utcnow() - timedelta(days=180) # Change 180 with user provided days
+        mintime = datetime.utcnow() - timedelta(days=self.config.get('logs').
+                                                get('polling').get('daysinpast'))
         mintime = int(mintime.timestamp())
         polling_duration = self.config.get('logs').get('polling').get(
             'duration') * 60
@@ -29,4 +29,4 @@ class TelephonyProducer(LogSyncBase):
             logging.info("Adding {} telephony logs to queue...".format(len(telephony_logs)))
             await self.telephonylog_queue.put(telephony_logs)
             logging.info("Added {} telephony logs to queue...".format(len(telephony_logs)))
-            self.last_offset_read['telephony_last_fetched'] = telephony_logs[-1]['timestamp']
+            self.last_offset_read['telephony_last_fetched'] = telephony_logs[-1]['timestamp'] + 1

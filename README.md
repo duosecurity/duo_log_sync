@@ -24,6 +24,7 @@ Duologsync is a utility written by Duo Security to enable fetching logs from dif
 ---
 
 ##### Features
+
 - Current version supports fetching logs from auth, telephony and admin endpoints over TCP/TCP Encrypted over SSL
 - Ability to recover data by reading from last known offset through checkpointing files
 - Enabling only certain endpoints through config file
@@ -31,13 +32,15 @@ Duologsync is a utility written by Duo Security to enable fetching logs from dif
 ---
 
 ##### Work in progress
+
 - Support for UDP
 - More logging and exception handling
 
 ---
 
 ##### Compatibility
-Duologsync is compatible with python versions `3.6`, `3.7` and `3.8`.
+
+- Duologsync is compatible with python versions `3.6`, `3.7` and `3.8`.
 
 ---
 
@@ -87,14 +90,14 @@ recoverFromCheckpoint:
     daysinpast: 180
   checkpointDir: "/tmp"`
 
-- Choose whether to receive data on TCP/TCPSSL/UDP. In case of TCPSSL, you will also need to provide directory and name of cert file. FOr normal TCP, it can be left blank.
+- Choose whether to receive data on TCP/TCPSSL/UDP. In case of TCPSSL, you will also need to provide directory and name of cert file. For normal TCP, it can be left blank.
 
 `transport:
   protocol: "TCP"
   host: "localhost"
   port: 8888`
 
-- Incase of application crash or network interruption, this value can be set to True to read from last known checkpoint
+- Incase of application crash or network interruption, this value can be set to True to read from last known checkpoint. If application is started for the first time, keep this value as False
 
 `recoverFromCheckpoint:
   enabled: False`

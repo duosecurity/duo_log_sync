@@ -16,12 +16,15 @@ class AdminactionProducer(LogSyncBase):
     """
     async def adminaction_producer(self):
         mintime = datetime.utcnow() - timedelta(
-            days=180)  # Change 180 with user provided days
+            days=self.config.get('logs').
+                get('polling').get('daysinpast'))
         mintime = int(mintime.timestamp())
         polling_duration = self.config.get('logs').get('polling').get(
             'duration') * 60
         while True:
             await asyncio.sleep(polling_duration)
+            mintime = self.last_offset_read.get('adminaction_last_fetched',
+                                                mintime)
             adminaction_logs = await self.loop.run_in_executor(self._executor,
                                                   functools.partial(self.admin_api.get_administrator_log, mintime=mintime))
             if not adminaction_logs:
@@ -29,4 +32,4 @@ class AdminactionProducer(LogSyncBase):
             logging.info("Adding {} adminaction logs to queue...".format(len(adminaction_logs)))
             await self.adminlog_queue.put(adminaction_logs)
             logging.info("Added {} adminaction logs to queue...".format(len(adminaction_logs)))
-            self.last_offset_read['adminaction_last_fetched'] = adminaction_logs[-1]['timestamp']
+            self.last_offset_read['adminaction_last_fetched'] = adminaction_logs[-1]['timestamp'] + 1
