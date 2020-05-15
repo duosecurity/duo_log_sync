@@ -27,10 +27,10 @@ class AuthlogProducer(LogSyncBase):
             next_offset = self.last_offset_read.get('auth_last_fetched', None)
             if not next_offset:
                 authlogs = await self.loop.run_in_executor(self._executor,
-                                                       functools.partial(self.admin_api.get_authentication_log, api_version=2, mintime=mintime, sort='ts:asc'))
+                                                       functools.partial(self.admin_api.get_authentication_log, api_version=2, mintime=mintime, sort='ts:asc', limit='1000'))
             else:
                 authlogs = await self.loop.run_in_executor(self._executor,
-                                                       functools.partial(self.admin_api.get_authentication_log, api_version=2, mintime=mintime, next_offset=next_offset, sort='ts:asc'))
+                                                       functools.partial(self.admin_api.get_authentication_log, api_version=2, mintime=mintime, next_offset=next_offset, sort='ts:asc', limit='1000'))
             if len(authlogs['authlogs']) == 0:
                 continue
 
