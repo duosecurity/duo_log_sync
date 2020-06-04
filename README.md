@@ -2,7 +2,7 @@ Duologsync (v0.1.0)
 ===================
 
 ##### About
-Duologsync is a utility written by Duo Security to enable fetching logs from different endpoints and enabling customers to feed it to different SIEMs. This is still in development phase and incremental updates will be published. 
+Duologsync is a utility written by Duo Security to enable fetching logs from different endpoints and enabling customers to feed it to different SIEMs. Incremental updates will be published as we add more features. 
 
 ---
 
