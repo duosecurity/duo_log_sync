@@ -35,7 +35,7 @@ setup(
     },
     classifiers=[
         "Development Status :: 3 - Alpha",
-        "License :: OSI Approved :: Apache Software License",
+        "License :: OSI Approved :: MIT License",
         "Intended Audience :: System Administrators",
         "Intended Audience :: Developers",
         "Intended Audience :: Education",
