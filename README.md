@@ -79,7 +79,7 @@ recoverFromCheckpoint:
   ikey: ""
   host: ""`
 
-- Choose which endpoints data should be fetched from. Polling duration is recommeended to be kept 5 minutes. Choose how far in past to start fetching data from using daysinpast parameter. Configuration to store log and checkpoint files
+- Choose which endpoints data should be fetched from. Polling duration is recommended to be kept 5 minutes. Choose how far in past to start fetching data from using daysinpast parameter. Configuration to store log and checkpoint files
 
 `logs:
   logDir: "/tmp"
