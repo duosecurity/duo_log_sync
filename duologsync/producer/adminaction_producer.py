@@ -21,6 +21,9 @@ class AdminactionProducer(LogSyncBase):
         mintime = int(mintime.timestamp())
         polling_duration = self.config.get('logs').get('polling').get(
             'duration') * 60
+        if polling_duration < 120:
+            polling_duration = 120
+
         while True:
             await asyncio.sleep(polling_duration)
             mintime = self.last_offset_read.get('adminaction_last_fetched',

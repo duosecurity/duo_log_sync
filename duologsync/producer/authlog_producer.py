@@ -21,6 +21,10 @@ class AuthlogProducer(LogSyncBase):
             'daysinpast'))
         mintime = int(mintime.timestamp()) * 1000
         polling_duration = self.config.get('logs').get('polling').get('duration') * 60
+        if polling_duration < 120:
+            logging.info("Polling duration set is too low. Defaulting to 2mins...")
+            polling_duration = 120
+
         while True:
             await asyncio.sleep(polling_duration)
             logging.info("Getting data from auth endpoint after {} seconds...".format(polling_duration))

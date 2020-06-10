@@ -40,9 +40,14 @@ class BaseConsumer(LogSyncBase):
             try:
                 logging.info(
                     "Opening connection to server over tcp...")
-                _, writer = await asyncio.open_connection(host, port,
-                                                          loop=self.loop)
+                _, writer = await asyncio.wait_for(asyncio.open_connection(host, port,
+                                                          loop=self.loop), timeout=60) # Default connection timeout set to 1min
                 self.writer = writer
+            except asyncio.TimeoutError as te:
+                logging.error("Connection to server timedout after 60 seconds "
+                              "{}".format(te))
+                logging.error("Terminating the application...")
+                sys.exit(1)
             except Exception as e:
                 logging.error("Connection to server failed with exception "
                               "{}".format(e))
