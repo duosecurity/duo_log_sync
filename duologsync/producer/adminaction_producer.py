@@ -19,10 +19,8 @@ class AdminactionProducer(LogSyncBase):
             days=self.config.get('logs').
                 get('polling').get('daysinpast'))
         mintime = int(mintime.timestamp())
-        polling_duration = self.config.get('logs').get('polling').get(
-            'duration') * 60
-        if polling_duration < 120:
-            polling_duration = 120
+        polling_duration = max(self.config.get('logs').get('polling').get(
+            'duration') * 60, 120)
 
         while True:
             await asyncio.sleep(polling_duration)
