@@ -35,13 +35,14 @@ Duologsync is a utility written by Duo Security to enable fetching logs from dif
 
 - Support for UDP
 - More logging and exception handling
+- Support for WINDOWS
 
 ---
 
 ##### Compatibility
 
 - Duologsync is compatible with python versions `3.6`, `3.7` and `3.8`.
-
+- Duologsync is officially supported only on UNIX systems.
 ---
 
 ##### Example configuration
