@@ -56,10 +56,15 @@ class LogSyncBase:
         from duologsync.consumer.telephony_consumer import TelephonyConsumer
         from duologsync.producer.adminaction_producer import AdminactionProducer
         from duologsync.consumer.adminaction_consumer import AdminactionConsumer
+        from duologsync.util import create_writer
 
         if self.config['recoverFromCheckpoint']['enabled']:
             self.update_last_offset_read()
             logging.info("Reading logs from last recorded offset...")
+
+        self.writer = self.loop.run_until_complete(
+            create_writer(self.config, self.loop)
+        )
 
         # Enable endpoints based on user selection
         tasks = []
@@ -75,7 +80,6 @@ class LogSyncBase:
                 tasks.append(asyncio.ensure_future(AdminactionProducer.adminaction_producer(self)))
                 tasks.append(asyncio.ensure_future(AdminactionConsumer.consumer(self)))
 
-        tasks.append(asyncio.ensure_future(BaseConsumer.get_connection(self)))
         self.loop.run_until_complete(asyncio.gather(*tasks))
         self.loop.close()
 
