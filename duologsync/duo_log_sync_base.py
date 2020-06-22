@@ -72,13 +72,24 @@ class LogSyncBase:
         for endpoint in enabled_endpoints:
             if endpoint == 'auth':
                 tasks.append(asyncio.ensure_future(AuthlogProducer.auth_producer(self)))
-                tasks.append(asyncio.ensure_future(AuthlogConsumer.consumer(self)))
+                consumer = AuthlogConsumer(self.config, self.last_offset_read, 
+                                           self.authlog_queue, 
+                                           self.writer)
+                tasks.append(asyncio.ensure_future(consumer.consume()))
             if endpoint == "telephony":
                 tasks.append(asyncio.ensure_future(TelephonyProducer.telephony_producer(self)))
-                tasks.append(asyncio.ensure_future(TelephonyConsumer.consumer(self)))
+                consumer = TelephonyConsumer(self.config, 
+                                             self.last_offset_read,
+                                             self.telephonylog_queue,
+                                             self.writer)
+                tasks.append(asyncio.ensure_future(consumer.consume()))
             if endpoint == "adminaction":
                 tasks.append(asyncio.ensure_future(AdminactionProducer.adminaction_producer(self)))
-                tasks.append(asyncio.ensure_future(AdminactionConsumer.consumer(self)))
+                consumer = AdminactionConsumer(self.config, 
+                                               self.last_offset_read,
+                                               self.adminlog_queue,
+                                               self.writer)
+                tasks.append(asyncio.ensure_future(consumer.consume()))
 
         self.loop.run_until_complete(asyncio.gather(*tasks))
         self.loop.close()
