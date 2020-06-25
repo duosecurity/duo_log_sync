@@ -47,6 +47,8 @@ class Producer(ABC):
         # Use the minimum polling duration if the user specifies a lower number
         polling_duration = max(polling_duration, self.MINIMUM_POLLING_DURATION)
 
+        # TODO: Implement interrupt handler / running variable so that the
+        # while loop exits on failure or on user exit
         while True:
             await asyncio.sleep(polling_duration)
             logging.info("Getting data from %s endpoint after %d seconds",

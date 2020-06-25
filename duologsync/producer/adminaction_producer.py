@@ -1,36 +1,37 @@
-import asyncio
 import functools
-import logging
-
-from datetime import datetime, timedelta
-from duologsync.duo_log_sync_base import LogSyncBase
+from duologsync.producer.producer import Producer
 
 
-class AdminactionProducer(LogSyncBase):
+class AdminactionProducer(Producer):
     """
-    This class reads data from admin endpoint at polling duration
-    specified by the user. Next offset is recorded from fetched records
-    which is used for making next request and achieve pagination. Offset
-    information is also recorded to allowing checkpointing and recovery
-    from crash.
+    Implement the functionality of the Producer class to support the polling
+    and placement into a queue of Adminaction logs.
     """
-    async def adminaction_producer(self):
-        mintime = datetime.utcnow() - timedelta(
-            days=self.config.get('logs').
-                get('polling').get('daysinpast'))
-        mintime = int(mintime.timestamp())
-        polling_duration = max(self.config.get('logs').get('polling').get(
-            'duration') * 60, 120)
 
-        while True:
-            await asyncio.sleep(polling_duration)
-            mintime = self.last_offset_read.get('adminaction_last_fetched',
-                                                mintime)
-            adminaction_logs = await self.loop.run_in_executor(self._executor,
-                                                  functools.partial(self.admin_api.get_administrator_log, mintime=mintime))
-            if not adminaction_logs:
-                continue
-            logging.info("Adding {} adminaction logs to queue...".format(len(adminaction_logs)))
-            await self.adminlog_queue.put(adminaction_logs)
-            logging.info("Added {} adminaction logs to queue...".format(len(adminaction_logs)))
-            self.last_offset_read['adminaction_last_fetched'] = adminaction_logs[-1]['timestamp'] + 1
+    def __init__(self, config, last_offset_read, log_queue, inherited_self):
+        super().__init__(config, last_offset_read, log_queue)
+
+        self.log_type = "adminaction"
+
+        # TODO: make these values available globablly
+        self._executor = inherited_self._executor
+        self.loop = inherited_self.loop
+        self.admin_api = inherited_self.admin_api
+
+    async def _call_log_api(self, mintime):
+        """
+        Make a call to the administrator log endpoint and return the result of
+        that API call
+
+        @param mintime  The oldest timestamp acceptable for a new
+                        administrator log
+
+        @return the result of a call to the administrator log API endpoint
+        """
+        return await self.loop.run_in_executor(
+            self._executor,
+            functools.partial(
+                self.admin_api.get_administrator_log,
+                mintime=mintime
+            )
+        )
