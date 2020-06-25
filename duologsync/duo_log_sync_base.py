@@ -70,26 +70,33 @@ class LogSyncBase:
         tasks = []
         enabled_endpoints = self.config['logs']['endpoints']['enabled']
         for endpoint in enabled_endpoints:
+            new_queue = asyncio.Queue(loop=self.loop)
+            producer = consumer = None
+
             if endpoint == 'auth':
-                tasks.append(asyncio.ensure_future(AuthlogProducer.auth_producer(self)))
+                producer = AuthlogProducer(self.config, self.last_offset_read,
+                                           new_queue, self)
                 consumer = AuthlogConsumer(self.config, self.last_offset_read, 
-                                           self.authlog_queue, 
-                                           self.writer)
-                tasks.append(asyncio.ensure_future(consumer.consume()))
-            if endpoint == "telephony":
-                tasks.append(asyncio.ensure_future(TelephonyProducer.telephony_producer(self)))
-                consumer = TelephonyConsumer(self.config, 
-                                             self.last_offset_read,
-                                             self.telephonylog_queue,
-                                             self.writer)
-                tasks.append(asyncio.ensure_future(consumer.consume()))
-            if endpoint == "adminaction":
-                tasks.append(asyncio.ensure_future(AdminactionProducer.adminaction_producer(self)))
+                                           new_queue, self.writer)
+            elif endpoint == "telephony":
+                producer = TelephonyProducer(self.config, self.last_offset_read,
+                                             new_queue, self)
+                consumer = TelephonyConsumer(self.config, self.last_offset_read,
+                                             new_queue, self.writer)
+            elif endpoint == "adminaction":
+                producer = AdminactionProducer(self.config, 
+                                               self.last_offset_read,
+                                               new_queue, self)
                 consumer = AdminactionConsumer(self.config, 
                                                self.last_offset_read,
-                                               self.adminlog_queue,
-                                               self.writer)
-                tasks.append(asyncio.ensure_future(consumer.consume()))
+                                               new_queue, self.writer)
+            else:
+                logging.info("%s is not a recognized endpoint", endpoint)
+                del new_queue
+                continue
+
+            tasks.append(asyncio.ensure_future(producer.produce()))
+            tasks.append(asyncio.ensure_future(consumer.consume()))
 
         self.loop.run_until_complete(asyncio.gather(*tasks))
         self.loop.close()

@@ -60,10 +60,6 @@ class Producer(ABC):
             logging.info("Getting data from %s endpoint after %d seconds",
                          self.log_type, polling_duration)
 
-            # If last_offset_read is None, then set mintime to mintime
-            mintime = self.last_offset_read.get(f"{self.log_type}_last_fetched",
-                                                mintime)
-
             api_result = await self._call_log_api(mintime)
             new_logs = self._get_logs(api_result)
 
@@ -86,9 +82,9 @@ class Producer(ABC):
         implementation of call_log_api must be given by classes that extend
         this class.
 
-        @param mintime  The oldest timestamp acceptable for a log to have. All
-                        logs returned from the API call should have a
-                        timestamp of mintime or newer
+        @param mintime  The oldest timestamp (in seconds) acceptable for a log
+                        to have. All logs returned from the API call should
+                        have a timestamp of mintime or newer
 
         @return the result of the API call
         """

@@ -17,11 +17,15 @@ class TelephonyProducer(Producer):
         Make a call to the telephony log endpoint and return the result of
         that API call
 
-        @param mintime  The oldest timestamp acceptable for a new
+        @param mintime  The oldest timestamp (in seconds) acceptable for a new
                         administrator log
 
         @return the result of a call to the telephony log API endpoint
         """
+
+        # If last_offset_read is None, then set mintime to mintime
+        mintime = self.last_offset_read.get(f"{self.log_type}_last_fetched",
+                                            mintime)
 
         return await self.loop.run_in_executor(
             self._executor,

@@ -15,15 +15,17 @@ class AuthlogProducer(Producer):
 
     async def _call_log_api(self, mintime):
         """
-        Make a call to the authentication log endpoint and return the result
-        of that API call
+        Make a call to the authentication log endpoint and return the result of
+        that API call
 
-        @param mintime  The oldest timestamp acceptable for a new
+        @param mintime  The oldest timestamp (in seconds) acceptable for a new
                         administrator log
 
         @return the result of a call to the authentication log API endpoint
         """
 
+        # For the auth log call, mintime must be in milliseconds, not seconds
+        mintime *= Producer.MILLISECONDS_PER_SECOND
         next_offset = self.last_offset_read.get('auth_last_fetched', None)
         return await self.loop.run_in_executor(
             self._executor,
