@@ -1,7 +1,6 @@
 import functools
 from duologsync.producer.producer import Producer
 
-
 class AdminactionProducer(Producer):
     """
     Implement the functionality of the Producer class to support the polling
@@ -9,14 +8,9 @@ class AdminactionProducer(Producer):
     """
 
     def __init__(self, config, last_offset_read, log_queue, inherited_self):
-        super().__init__(config, last_offset_read, log_queue)
+        super().__init__(config, last_offset_read, log_queue, inherited_self)
 
-        self.log_type = "adminaction"
-
-        # TODO: make these values available globablly
-        self._executor = inherited_self._executor
-        self.loop = inherited_self.loop
-        self.admin_api = inherited_self.admin_api
+        self.log_type = 'adminaction'
 
     async def _call_log_api(self, mintime):
         """
@@ -28,6 +22,7 @@ class AdminactionProducer(Producer):
 
         @return the result of a call to the administrator log API endpoint
         """
+
         return await self.loop.run_in_executor(
             self._executor,
             functools.partial(

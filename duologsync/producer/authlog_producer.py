@@ -1,42 +1,68 @@
-import asyncio
 import functools
-import logging
-from datetime import datetime, timedelta
 
-from duologsync.duo_log_sync_base import LogSyncBase
+from duologsync.producer.producer import Producer
 
+class AuthlogProducer(Producer):
+    """
+    Implement the functionality of the Producer class to support the polling
+    and placement into a queue of Authentication logs
+    """
 
-class AuthlogProducer(LogSyncBase):
+    def __init__(self, config, last_offset_read, log_queue, inherited_self):
+        super().__init__(config, last_offset_read, log_queue, inherited_self)
 
-    async def auth_producer(self):
+        self.log_type = 'auth'
+
+    async def _call_log_api(self, mintime):
         """
-        This class reads data from authlog endpoint at polling duration
-        specified by the user. Next offset is recorded from fetched records
-        which is used for making next request and achieve pagination. Offset
-        information is also recorded to allowing checkpointing and recovery
-        from crash.
-        """
-        mintime = datetime.utcnow() - timedelta(days=self.config.get('logs').
-                                                get('polling').get(
-            'daysinpast'))
-        mintime = int(mintime.timestamp()) * 1000
-        polling_duration = max(self.config.get('logs').get('polling').get('duration') * 60, 120)
-        logging.info("Polling duration set is too low. Defaulting to 2mins...")
-        
-        while True:
-            await asyncio.sleep(polling_duration)
-            logging.info("Getting data from auth endpoint after {} seconds...".format(polling_duration))
-            next_offset = self.last_offset_read.get('auth_last_fetched', None)
-            if not next_offset:
-                authlogs = await self.loop.run_in_executor(self._executor,
-                                                       functools.partial(self.admin_api.get_authentication_log, api_version=2, mintime=mintime, sort='ts:asc', limit='1000'))
-            else:
-                authlogs = await self.loop.run_in_executor(self._executor,
-                                                       functools.partial(self.admin_api.get_authentication_log, api_version=2, mintime=mintime, next_offset=next_offset, sort='ts:asc', limit='1000'))
-            if len(authlogs['authlogs']) == 0:
-                continue
+        Make a call to the authentication log endpoint and return the result
+        of that API call
 
-            logging.info("Adding {} auth logs to queue...".format(len(authlogs['authlogs'])))
-            await self.authlog_queue.put(authlogs['authlogs'])
-            logging.info("Added {} auth logs to queue...".format(len(authlogs['authlogs'])))
-            self.last_offset_read['auth_last_fetched'] = authlogs['metadata']['next_offset']
+        @param mintime  The oldest timestamp acceptable for a new
+                        administrator log
+
+        @return the result of a call to the authentication log API endpoint
+        """
+
+        next_offset = self.last_offset_read.get('auth_last_fetched', None)
+        return await self.loop.run_in_executor(
+            self._executor,
+            functools.partial(
+                self.admin_api.get_authentication_log,
+                api_version=2,
+                mintime=mintime,
+                next_offset=next_offset,
+                sort='ts:asc',
+                limit='1000'
+            )
+        )
+
+    @staticmethod
+    def _get_logs(api_result):
+        """
+        Retrieve authentication logs from the API result of a call to the
+        authentication log endpoint
+
+        @param api_result   The result of an API call to the authentication
+                            log endpoint
+
+        @return authentication logs from the result of an API call to the
+                authentication log endpoint
+        """
+
+        return api_result['authlogs']
+
+    @staticmethod
+    def _get_last_offset_read(api_result):
+        """
+        Return the next_offset given by the result of a call to the
+        authentication log API endpoint
+
+        @param api_result   The result of an API call to the authentication
+                            log endpoint
+
+        @return the next_offset given by the result of a call to the
+                authentication log API endpoint
+        """
+
+        return api_result['metadata']['next_offset']
