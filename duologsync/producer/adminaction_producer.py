@@ -27,10 +27,16 @@ class AdminactionProducer(Producer):
         mintime = self.last_offset_read.get(f"{self.log_type}_last_fetched",
                                             mintime)
 
-        return await self.loop.run_in_executor(
+        # get_administrator_log is a high latency call which will block the
+        # event loop. Thus it is run in an executor - a dedicated thread
+        # pool - which allows for asyncio to do other work while this call is
+        # being made
+        adminaction_api_result = await self.loop.run_in_executor(
             self._executor,
             functools.partial(
                 self.admin_api.get_administrator_log,
                 mintime=mintime
             )
         )
+
+        return adminaction_api_result

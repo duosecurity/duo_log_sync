@@ -27,7 +27,12 @@ class AuthlogProducer(Producer):
         # For the auth log call, mintime must be in milliseconds, not seconds
         mintime *= Producer.MILLISECONDS_PER_SECOND
         next_offset = self.last_offset_read.get('auth_last_fetched', None)
-        return await self.loop.run_in_executor(
+
+        # get_authentication_log is a high latency call which will block the
+        # event loop. Thus it is run in an executor - a dedicated thread
+        # pool - which allows for asyncio to do other work while this call is
+        # being made
+        authlog_api_result = await self.loop.run_in_executor(
             self._executor,
             functools.partial(
                 self.admin_api.get_authentication_log,
@@ -38,6 +43,8 @@ class AuthlogProducer(Producer):
                 limit='1000'
             )
         )
+
+        return authlog_api_result
 
     @staticmethod
     def _get_logs(api_result):
