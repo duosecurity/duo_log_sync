@@ -17,14 +17,13 @@ def main():
     # Create a tuple containing global variables that may be indexed by name
     g_vars = namedtuple(
         'g_vars',
-        ['admin_api', 'config', 'loop', 'executor', 'last_offset_read'])
+        ['admin', 'config', 'loop', 'executor', 'last_offset_read'])
 
     # Dictionary populated with values from the config file passed to DuoLogSync
     g_vars.config = ConfigGenerator().get_config(args.ConfigPath)
 
-    # TODO: rename this to admin
     # Object that allows for interaction with Duo APIs to fetch logs / data
-    g_vars.admin_api = create_admin(
+    g_vars.admin = create_admin(
         g_vars.config['duoclient']['ikey'],
         g_vars.config['duoclient']['skey'],
         g_vars.config['duoclient']['host']

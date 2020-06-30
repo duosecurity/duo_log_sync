@@ -34,7 +34,7 @@ class TelephonyProducer(Producer):
         telephony_api_result = await self.loop.run_in_executor(
             self._executor,
             functools.partial(
-                self.admin_api.get_telephony_log,
+                self.admin.get_telephony_log,
                 mintime=mintime
             )
         )
