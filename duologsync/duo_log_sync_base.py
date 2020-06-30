@@ -15,7 +15,11 @@ class LogSyncBase:
 
         self.config = ConfigGenerator().get_config(args.ConfigPath)
 
-        self.admin_api = create_admin(self.config)
+        self.admin_api = create_admin(
+            self.config['duoclient']['ikey'],
+            self.config['duoclient']['skey'],
+            self.config['duoclient']['host']
+        )
 
         self.writer = None
 

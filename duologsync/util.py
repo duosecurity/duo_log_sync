@@ -51,8 +51,8 @@ async def create_writer(config, loop):
                 timeout=60)
             return writer
         except ConnectionError:
-            logging.error("Connection to server failed at host {} and "
-                          "port {}".format('localhost', '8888'))
+            logging.error("Connection to server failed at host %s and "
+                          "port %s", 'localhost', '8888')
             sys.exit(1)
         except Exception as error:
             logging.error("Connection to server failed with exception "
@@ -118,28 +118,31 @@ def get_last_offset_read(checkpoint_dir, log_type):
 
     return last_offset_read
 
-def create_admin(config):
+def create_admin(ikey, skey, host):
     """
-    Create an Admin object (from the duo_client library) using user credentials
-    defined in config. The Admin object has many functions for using Duo APIs
-    and retrieving logs.
+    Create an Admin object (from the duo_client library) with the given values.
+    The Admin object has many functions for using Duo APIs and retrieving logs.
 
-    @param config   Dictionary storing user credentials needed to create an
-                    Admin object
+    @param ikey Duo Client ID (Integration Key)
+    @param skey Duo Client Secret for proving identity / access (Secrey Key)
+    @param host URI where data / logs will be fetched from
 
     @return a newly created Admin object
     """
 
-    # Creation of an Admin object does not check user credentials for validity
-    admin = duo_client.Admin(
-        ikey=config['duoclient']['ikey'],
-        skey=config['duoclient']['skey'],
-        host=config['duoclient']['host'],
-        user_agent=('Duo Log Sync/' + __version__),
-    )
+    try:
+        admin = duo_client.Admin(
+            ikey=ikey,
+            skey=skey,
+            host=host,
+            user_agent=f"Duo Log Sync/{__version__}"
+        )
 
-    logging.info("duo_client Admin initialized for ikey %s and host %s",
-                 config['duoclient']['ikey'],
-                 config['duoclient']['host'])
+        logging.info("duo_client Admin initialized for ikey: %s, host: %s",
+                     ikey, host)
+
+    except Exception as error:
+        logging.error("Failed to create duo_client Admin: %s", error)
+        sys.exit(1)
 
     return admin
