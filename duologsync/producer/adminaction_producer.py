@@ -32,7 +32,7 @@ class AdminactionProducer(Producer):
         # pool - which allows for asyncio to do other work while this call is
         # being made
         adminaction_api_result = await self.event_loop.run_in_executor(
-            self._executor,
+            self.executor,
             functools.partial(
                 self.admin.get_administrator_log,
                 mintime=mintime
