@@ -22,7 +22,7 @@ class Producer(ABC):
 
         # TODO: make these values available globally
         self._executor = inherited_self.executor
-        self.loop = inherited_self.loop
+        self.event_loop = inherited_self.event_loop
         self.admin = inherited_self.admin
 
         self.log_type = None

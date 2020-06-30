@@ -19,15 +19,15 @@ class LogSyncBase:
         from duologsync.producer.adminaction_producer import AdminactionProducer
         from duologsync.consumer.adminaction_consumer import AdminactionConsumer
 
-        writer = g_vars.loop.run_until_complete(
-            create_writer(g_vars.config, g_vars.loop)
+        writer = g_vars.event_loop.run_until_complete(
+            create_writer(g_vars.config, g_vars.event_loop)
         )
 
         # Enable endpoints based on user selection
         tasks = []
         enabled_endpoints = g_vars.config['logs']['endpoints']['enabled']
         for endpoint in enabled_endpoints:
-            new_queue = asyncio.Queue(loop=g_vars.loop)
+            new_queue = asyncio.Queue(loop=g_vars.event_loop)
             producer = consumer = None
 
             # Populate last_offset_read for each enabled endpoint
@@ -64,5 +64,5 @@ class LogSyncBase:
             tasks.append(asyncio.ensure_future(producer.produce()))
             tasks.append(asyncio.ensure_future(consumer.consume()))
 
-        g_vars.loop.run_until_complete(asyncio.gather(*tasks))
-        g_vars.loop.close()
+        g_vars.event_loop.run_until_complete(asyncio.gather(*tasks))
+        g_vars.event_loop.close()
