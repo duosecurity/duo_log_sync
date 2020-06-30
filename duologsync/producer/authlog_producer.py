@@ -35,7 +35,7 @@ class AuthlogProducer(Producer):
         authlog_api_result = await self.loop.run_in_executor(
             self._executor,
             functools.partial(
-                self.admin_api.get_authentication_log,
+                self.admin.get_authentication_log,
                 api_version=2,
                 mintime=mintime,
                 next_offset=next_offset,
