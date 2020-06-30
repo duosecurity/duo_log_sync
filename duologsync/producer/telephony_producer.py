@@ -32,7 +32,7 @@ class TelephonyProducer(Producer):
         # which allows for asyncio to do other work while this call is being
         # made
         telephony_api_result = await self.event_loop.run_in_executor(
-            self._executor,
+            self.executor,
             functools.partial(
                 self.admin.get_telephony_log,
                 mintime=mintime

@@ -21,7 +21,7 @@ class Producer(ABC):
         self.log_queue = log_queue
 
         # TODO: make these values available globally
-        self._executor = inherited_self.executor
+        self.executor = inherited_self.executor
         self.event_loop = inherited_self.event_loop
         self.admin = inherited_self.admin
 
