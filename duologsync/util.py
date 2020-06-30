@@ -16,12 +16,18 @@ async def create_writer(config, loop):
             sc = ssl.create_default_context(ssl.Purpose.SERVER_AUTH,
                                             cafile=certFile)
 
-            _, writer = await asyncio.open_connection(host, port,
-                                                           loop=loop, ssl=sc)
+            _, writer = await asyncio.wait_for(
+                asyncio.open_connection(
+                    host,
+                    port,
+                    loop=loop,
+                    ssl=sc),
+                timeout=60)
             return writer
         except ConnectionError:
             logging.error("Connection to server failed at host {} and "
                           "port {}".format('localhost', '8888'))
+            sys.exit(1) 
         except Exception as e:
             logging.error("Connection to server failed with exception "
                           "{}".format(e))
