@@ -31,7 +31,7 @@ class AdminactionProducer(Producer):
         # event loop. Thus it is run in an executor - a dedicated thread
         # pool - which allows for asyncio to do other work while this call is
         # being made
-        adminaction_api_result = await self.loop.run_in_executor(
+        adminaction_api_result = await self.event_loop.run_in_executor(
             self._executor,
             functools.partial(
                 self.admin.get_administrator_log,

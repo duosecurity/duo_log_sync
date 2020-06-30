@@ -32,7 +32,7 @@ class AuthlogProducer(Producer):
         # event loop. Thus it is run in an executor - a dedicated thread
         # pool - which allows for asyncio to do other work while this call is
         # being made
-        authlog_api_result = await self.loop.run_in_executor(
+        authlog_api_result = await self.event_loop.run_in_executor(
             self._executor,
             functools.partial(
                 self.admin.get_authentication_log,
