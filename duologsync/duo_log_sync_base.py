@@ -1,12 +1,9 @@
 import asyncio
-import duo_client
 import logging
-import sys
 
 from concurrent.futures import ThreadPoolExecutor
 from duologsync.config_generator import ConfigGenerator
-from duologsync.__version__ import __version__
-from duologsync.util import create_writer, get_last_offset_read
+from duologsync.util import create_writer, get_last_offset_read, create_admin
 
 class LogSyncBase:
 
@@ -18,26 +15,10 @@ class LogSyncBase:
 
         self.config = ConfigGenerator().get_config(args.ConfigPath)
 
-        self.admin_api = self.init_duoclient(self.config)
+        self.admin_api = create_admin(self.config)
 
         self.writer = None
 
-    def init_duoclient(self, config):
-        try:
-            client = duo_client.Admin(
-                ikey=config['duoclient']['ikey'],
-                skey=config['duoclient']['skey'],
-                host=config['duoclient']['host'],
-                user_agent=('Duo Log Sync/' + __version__),
-            )
-            logging.info("Adminapi initialized for ikey {} and host {}...".
-                         format(config['duoclient']['ikey'],
-                                config['duoclient']['host']))
-        except Exception as e:
-            logging.error("Unable to create duo client. Pls check credentials...")
-            sys.exit(1)
-
-        return client
 
     def start(self):
         """

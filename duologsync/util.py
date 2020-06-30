@@ -10,14 +10,21 @@ create_writer()
 
 update_last_offset_read()
     Recover the last offset for a log type in case of a crash or error.
+
+create_admin()
+    Create an Admin object (from the duo_client library) with user credentials
+    passed to the function
 """
 
 import asyncio
+import duo_client
 import json
 import logging
 import os
 import ssl
 import sys
+
+from duologsync.__version__ import __version__
 
 async def create_writer(config, loop):
     host = config['transport']['host']
@@ -46,7 +53,7 @@ async def create_writer(config, loop):
         except ConnectionError:
             logging.error("Connection to server failed at host {} and "
                           "port {}".format('localhost', '8888'))
-            sys.exit(1) 
+            sys.exit(1)
         except Exception as error:
             logging.error("Connection to server failed with exception "
                           "%s", error)
@@ -85,7 +92,7 @@ def get_last_offset_read(checkpoint_dir, log_type):
                             are stored
     @param log_type         Name of the log for which recovery is occurring
 
-    @returns the last offset read for a log type based on checkpointing data
+    @return the last offset read for a log type based on checkpointing data
     """
 
     # TODO: This method should be used not just to recover timestamps, but to
@@ -110,3 +117,29 @@ def get_last_offset_read(checkpoint_dir, log_type):
                         "logs from %s timestamp", log_type, last_offset_read)
 
     return last_offset_read
+
+def create_admin(config):
+    """
+    Create an Admin object (from the duo_client library) using user credentials
+    defined in config. The Admin object has many functions for using Duo APIs
+    and retrieving logs.
+
+    @param config   Dictionary storing user credentials needed to create an
+                    Admin object
+
+    @return a newly created Admin object
+    """
+
+    # Creation of an Admin object does not check user credentials for validity
+    admin = duo_client.Admin(
+        ikey=config['duoclient']['ikey'],
+        skey=config['duoclient']['skey'],
+        host=config['duoclient']['host'],
+        user_agent=('Duo Log Sync/' + __version__),
+    )
+
+    logging.info("duo_client Admin initialized for ikey %s and host %s",
+                 config['duoclient']['ikey'],
+                 config['duoclient']['host'])
+
+    return admin
