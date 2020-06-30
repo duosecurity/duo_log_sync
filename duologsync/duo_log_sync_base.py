@@ -1,12 +1,12 @@
-import sys
 import asyncio
-import logging
 import duo_client
+import logging
+import sys
 
 from concurrent.futures import ThreadPoolExecutor
 from duologsync.config_generator import ConfigGenerator
 from duologsync.__version__ import __version__
-from duologsync.util import create_writer, update_last_offset_read
+from duologsync.util import create_writer, get_last_offset_read
 
 class LogSyncBase:
 
@@ -65,9 +65,10 @@ class LogSyncBase:
 
             # Populate last_offset_read for each enabled endpoint
             if self.config['recoverFromCheckpoint']['enabled']:
-                update_last_offset_read(
+                self.last_offset_read[
+                    f"{endpoint}_checkpoint_data.txt"
+                ] = get_last_offset_read(
                     self.config['logs']['checkpointDir'],
-                    self.last_offset_read,
                     endpoint
                 )
 

@@ -12,12 +12,12 @@ update_last_offset_read()
     Recover the last offset for a log type in case of a crash or error.
 """
 
+import asyncio
+import json
+import logging
 import os
 import ssl
 import sys
-import json
-import asyncio
-import logging
 
 async def create_writer(config, loop):
     host = config['transport']['host']
@@ -77,34 +77,35 @@ async def create_writer(config, loop):
             logging.error("Terminating the application...")
             sys.exit(1)
 
-def update_last_offset_read(checkpoint_dir, last_offset_read, log_type):
+def get_last_offset_read(checkpoint_dir, log_type):
     """
     Recover the last offset for a log type in case of a crash or error.
 
     @param checkpoint_dir   Directory where checkpoint / recovery files
                             are stored
-    @param last_offset_read Structure containing last offsets for logs
     @param log_type         Name of the log for which recovery is occurring
+
+    @returns the last offset read for a log type based on checkpointing data
     """
+
+    # TODO: This method should be used not just to recover timestamps, but to
+    # set timestamps from where to start polling for a log if recovery doesn't
+    # work or if recovery is not set. Take this functionality out of Producer
+    last_offset_read = None
 
     # Reading checkpoint for log_type
     try:
-        # Open the checkpoint file (if the file exists)
-        checkpoint = open(
-            os.path.join(
+        # Open the checkpoint file. The with statement automatically closes it
+        with open(os.path.join(
                 checkpoint_dir,
-                f"{log_type}_checkpoint_data.txt"
-            )
-        )
+                f"{log_type}_checkpoint_data.txt")) as checkpoint:
 
-        # Set last_offset_read equal to the contents of the checkpoint file
-        last_offset_read[f"{log_type}_last_fetched"] = json.loads(
-            checkpoint.read()
-        )
-
-        # Clean-up
-        checkpoint.close()
+            # Set last_offset_read equal to the contents of the checkpoint file
+            last_offset_read = json.loads(checkpoint.read())
 
     # Most likely, the checkpoint file doesn't exist
-    except OSError as error:
-        logging.error("Failed due to %s", error)
+    except OSError:
+        logging.warning("Could not read checkpoint file for %s logs, consuming "
+                        "logs from %s timestamp", log_type, last_offset_read)
+
+    return last_offset_read
