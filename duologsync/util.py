@@ -105,6 +105,7 @@ def get_last_offset_read(checkpoint_dir, log_type):
 
     # Most likely, the checkpoint file doesn't exist
     except OSError:
+        # TODO: Edit this error message with changes made to the above TODO
         logging.warning("Could not read checkpoint file for %s logs, consuming "
                         "logs from %s timestamp", log_type, last_offset_read)
 
