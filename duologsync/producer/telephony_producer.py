@@ -23,8 +23,7 @@ class TelephonyProducer(Producer):
         """
 
         # If last_offset_read is None, then set mintime to mintime
-        mintime = self.last_offset_read.get(f"{self.log_type}_last_fetched",
-                                            mintime)
+        mintime = self.last_offset_read.get(self.log_type, mintime)
 
         # get_telephony_log is a high latency call which will block the event
         # loop. Thus it is run in an executor - a dedicated thread pool -

@@ -43,9 +43,7 @@ def main():
 
         # Populate last_offset_read for each enabled endpoint
         if g_vars.config['recoverFromCheckpoint']['enabled']:
-            g_vars.last_offset_read[
-                f"{endpoint}_checkpoint_data.txt"
-            ] = get_last_offset_read(
+            g_vars.last_offset_read[endpoint] = get_last_offset_read(
                 g_vars.config['logs']['checkpointDir'],
                 endpoint
             )
