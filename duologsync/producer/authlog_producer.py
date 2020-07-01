@@ -8,9 +8,8 @@ class AuthlogProducer(Producer):
     and placement into a queue of Authentication logs
     """
 
-    def __init__(self, config, last_offset_read, log_queue, inherited_self):
-        super().__init__(config, last_offset_read, log_queue, inherited_self)
-
+    def __init__(self, log_queue, g_vars):
+        super().__init__(log_queue, g_vars)
         self.log_type = 'auth'
 
     async def _call_log_api(self, mintime):
