@@ -15,16 +15,13 @@ class Producer(ABC):
     SECONDS_PER_MINUTE = 60
     MINIMUM_POLLING_DURATION = 2 * SECONDS_PER_MINUTE
 
-    def __init__(self, config, last_offset_read, log_queue, inherited_self):
-        self.config = config
-        self.last_offset_read = last_offset_read
+    def __init__(self, log_queue, g_vars):
         self.log_queue = log_queue
-
-        # TODO: make these values available globally
-        self.executor = inherited_self.executor
-        self.event_loop = inherited_self.event_loop
-        self.admin = inherited_self.admin
-
+        self.admin = g_vars.admin
+        self.config = g_vars.config
+        self.event_loop = g_vars.event_loop
+        self.executor = g_vars.executor
+        self.last_offset_read = g_vars.last_offset_read
         self.log_type = None
 
     async def produce(self):
