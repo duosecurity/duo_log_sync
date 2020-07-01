@@ -4,9 +4,9 @@ import json
 import logging
 
 class BaseConsumer():
-    def __init__(self, config, last_offset_read, log_queue, writer):
-        self.checkpoint_dir = config["logs"]["checkpointDir"]
-        self.last_offset_read = last_offset_read
+    def __init__(self, log_queue, writer, g_vars):
+        self.checkpoint_dir = g_vars.config["logs"]["checkpointDir"]
+        self.last_offset_read = g_vars.last_offset_read
         self.log_queue = log_queue
         self.writer = writer
         self.log_type = None

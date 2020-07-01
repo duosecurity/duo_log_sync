@@ -53,20 +53,16 @@ def main():
         if endpoint == 'auth':
             producer = AuthlogProducer(g_vars.config, g_vars.last_offset_read,
                                        new_queue, g_vars)
-            consumer = AuthlogConsumer(g_vars.config, g_vars.last_offset_read,
-                                       new_queue, writer)
+            consumer = AuthlogConsumer(new_queue, writer, g_vars)
         elif endpoint == "telephony":
             producer = TelephonyProducer(g_vars.config, g_vars.last_offset_read,
                                          new_queue, g_vars)
-            consumer = TelephonyConsumer(g_vars.config, g_vars.last_offset_read,
-                                         new_queue, writer)
+            consumer = TelephonyConsumer(new_queue, writer, g_vars)
         elif endpoint == "adminaction":
             producer = AdminactionProducer(g_vars.config,
                                            g_vars.last_offset_read,
                                            new_queue, g_vars)
-            consumer = AdminactionConsumer(g_vars.config,
-                                           g_vars.last_offset_read,
-                                           new_queue, writer)
+            consumer = AdminactionConsumer(new_queue, writer, g_vars)
         else:
             logging.info("%s is not a recognized endpoint", endpoint)
             del new_queue
