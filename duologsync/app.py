@@ -1,5 +1,27 @@
+"""
+Entry point into DuoLogSync, this module has many important functions and
+tasks for initializing important variables used through DuoLogSync, creating
+asyncio tasks for Producer and Consumer objects, and running those tasks.
+
+Functions
+---------
+
+main():
+    Parses the config file path passed from the command line, calls functions
+    for initializing important variables and creating Producers / Consumers
+
+create_global_tuple():
+    Initialize important variables used throughout DuoLogSync and return a
+    namedtuple which contains them and allows accessing the variables by name
+
+create_consumer_producer_tasks():
+    Create Producer/Consumer objects and return them as a list of runnable
+    asyncio tasks
+"""
+
 import argparse
 import asyncio
+import logging
 
 from collections import namedtuple
 from concurrent.futures import ThreadPoolExecutor
@@ -25,6 +47,8 @@ def main():
                             help='Config to start application')
     args = arg_parser.parse_args()
 
+    # TODO: Validate that the file path for config is valid and readable
+
     # namedtuple containing important variables used through DuoLogSync
     g_vars = create_global_tuple(args.ConfigPath)
 
@@ -37,19 +61,19 @@ def main():
     g_vars.event_loop.run_until_complete(asyncio.gather(*tasks))
     g_vars.event_loop.close()
 
-# TODO: break this function up further when the config file begins to accept 
-# multiple connections. At that point, there will be a separate function for 
+# TODO: break this function up further when the config file begins to accept
+# multiple connections. At that point, there will be a separate function for
 # iterating through each connection which will set up a writer for a connection
-# and then make a call to create consumer producer tasks while passing in the 
+# and then make a call to create consumer producer tasks while passing in the
 # writer
 def create_consumer_producer_tasks(enabled_endpoints, g_vars):
     """
-    Create a pair of Producer-Consumer objects for each enabled endpoint, and 
+    Create a pair of Producer-Consumer objects for each enabled endpoint, and
     return a list containing asyncio tasks for running those objects.
 
-    @param enabled_endpoints    List of endpoints for which DuoLogSync should 
+    @param enabled_endpoints    List of endpoints for which DuoLogSync should
                                 Produce and Consume logs from
-    @param g_vars               Tuple of important variables needed to create 
+    @param g_vars               Tuple of important variables needed to create
                                 the Producer and Consumer objects
 
     @return list of asyncio tasks for running the Producer and Consumer objects
