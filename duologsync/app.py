@@ -28,15 +28,40 @@ def main():
     # namedtuple containing important variables used through DuoLogSync
     g_vars = create_global_tuple(args.ConfigPath)
 
-    #####################
+    # List of Producer/Consumer objects as asyncio tasks to be run
+    tasks = create_consumer_producer_tasks(
+        g_vars.config['logs']['endpoints']['enabled'],
+        g_vars)
 
+    # Run the Producers and Consumers
+    g_vars.event_loop.run_until_complete(asyncio.gather(*tasks))
+    g_vars.event_loop.close()
+
+# TODO: break this function up further when the config file begins to accept 
+# multiple connections. At that point, there will be a separate function for 
+# iterating through each connection which will set up a writer for a connection
+# and then make a call to create consumer producer tasks while passing in the 
+# writer
+def create_consumer_producer_tasks(enabled_endpoints, g_vars):
+    """
+    Create a pair of Producer-Consumer objects for each enabled endpoint, and 
+    return a list containing asyncio tasks for running those objects.
+
+    @param enabled_endpoints    List of endpoints for which DuoLogSync should 
+                                Produce and Consume logs from
+    @param g_vars               Tuple of important variables needed to create 
+                                the Producer and Consumer objects
+
+    @return list of asyncio tasks for running the Producer and Consumer objects
+    """
+    # Object for writing data / logs across a network, used by Consumers
     writer = g_vars.event_loop.run_until_complete(
         create_writer(g_vars.config, g_vars.event_loop)
     )
 
-    # Enable endpoints based on user selection
     tasks = []
-    enabled_endpoints = g_vars.config['logs']['endpoints']['enabled']
+
+    # Enable endpoints based on user selection
     for endpoint in enabled_endpoints:
         new_queue = asyncio.Queue(loop=g_vars.event_loop)
         producer = consumer = None
@@ -48,13 +73,14 @@ def main():
                 endpoint
             )
 
+        # Create the right pair of Producer-Consumer objects based on endpoint
         if endpoint == 'auth':
             producer = AuthlogProducer(new_queue, g_vars)
             consumer = AuthlogConsumer(new_queue, writer, g_vars)
-        elif endpoint == "telephony":
+        elif endpoint == 'telephony':
             producer = TelephonyProducer(new_queue, g_vars)
             consumer = TelephonyConsumer(new_queue, writer, g_vars)
-        elif endpoint == "adminaction":
+        elif endpoint == 'adminaction':
             producer = AdminactionProducer(new_queue, g_vars)
             consumer = AdminactionConsumer(new_queue, writer, g_vars)
         else:
@@ -65,13 +91,7 @@ def main():
         tasks.append(asyncio.ensure_future(producer.produce()))
         tasks.append(asyncio.ensure_future(consumer.consume()))
 
-    g_vars.event_loop.run_until_complete(asyncio.gather(*tasks))
-    g_vars.event_loop.close()
-
-    #####################
-
-    logger = duologsync.duo_log_sync_base.LogSyncBase()
-    logger.start(g_vars)
+    return tasks
 
 def create_global_tuple(config_path):
     """
