@@ -31,9 +31,6 @@ class Producer(ABC):
         from that API call and saving the offset of the latest log read.
         """
 
-        # The key into the last_offset_read dictionary for this log type
-        offset_key = f"{self.log_type}_last_fetched"
-
         # The maximum age in days of any newly retrieved log
         days_in_past = self.config['logs']['polling']['daysinpast']
 
@@ -70,7 +67,7 @@ class Producer(ABC):
                              self.log_type)
 
                 # Important for recovery in the event of a crash
-                self.last_offset_read[offset_key] = last_offset
+                self.last_offset_read[self.log_type] = last_offset
 
     @abstractmethod
     async def _call_log_api(self, mintime):

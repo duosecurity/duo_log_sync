@@ -45,7 +45,6 @@ class BaseConsumer():
                 f"{self.log_type}_checkpoint_data.txt")
             checkpointing_data = open(checkpoint_file, "w")
             checkpointing_data.write(
-                json.dumps(
-                    self.last_offset_read[f"{self.log_type}_last_fetched"]))
+                json.dumps(self.last_offset_read[self.log_type]))
             checkpointing_data.flush()
             checkpointing_data.close()

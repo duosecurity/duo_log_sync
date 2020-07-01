@@ -25,7 +25,7 @@ class AuthlogProducer(Producer):
 
         # For the auth log call, mintime must be in milliseconds, not seconds
         mintime *= Producer.MILLISECONDS_PER_SECOND
-        next_offset = self.last_offset_read.get('auth_last_fetched', None)
+        next_offset = self.last_offset_read.get(self.log_type, None)
 
         # get_authentication_log is a high latency call which will block the
         # event loop. Thus it is run in an executor - a dedicated thread
