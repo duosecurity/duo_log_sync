@@ -50,6 +50,7 @@ coverage.xml
 *.py,cover
 .hypothesis/
 .pytest_cache/
+TEST-duo_log_sync.xml
 
 # Translations
 *.mo
