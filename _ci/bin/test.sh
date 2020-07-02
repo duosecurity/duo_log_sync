@@ -12,10 +12,10 @@ SUCCESS=0
 EXIT_STATUS=$ERROR
 
 # Directory containing source code for DuoLogSync
-SOURCE_DIRECTORY="duologsync"
+SOURCE_DIR="duologsync"
 
 # Directory containing Unit Tests for DuoLogSync
-TESTS_DIRECTORY="tests"
+TESTS_DIR="tests"
 
 # Usage of bash substring expansion (${parameter:-word}) such that if 
 # 'parameter' (CI_PROJECT_DIR) does not have a value, 'word' will be used. 
@@ -25,10 +25,10 @@ CI_PROJECT_DIR="${CI_PROJECT_DIR:-$(git rev-parse --show-toplevel)}"
 
 # Move into the directory where Unit Tests are stored, or exit if the 
 # directory doesn't exist
-cd "${CI_PROJECT_DIR}"/"${TESTS_DIRECTORY}" || exit $EXIT_STATUS
+cd "${CI_PROJECT_DIR}"/"${TESTS_DIR}" || exit $EXIT_STATUS
 
 # Not sure what this is used for, leave commented for now
-# export PYTHONPATH="${CI_PROJECT_DIR}"/"${SOURCE_DIRECTORY}"
+# export PYTHONPATH="${CI_PROJECT_DIR}"/"${SOURCE_DIR}"
 
 # Run pytest and check its return condition
 if pytest; then
