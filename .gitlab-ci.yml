@@ -1,13 +1,13 @@
 ---
 # Set an image to be used by all jobs described in this file. CI_REGISTRY_IMAGE
-# is a Gitlab predefined environment variable that returns the address of the 
-# registry (location where containers are stored) tied to this specific 
-# project. Gitlab has a location where containers are stored. We want to get 
-# the latest image for duo_log_sync, which is what the Docker image being 
+# is a Gitlab predefined environment variable that returns the address of the
+# registry (location where containers are stored) tied to this specific
+# project. Gitlab has a location where containers are stored. We want to get
+# the latest image for duo_log_sync, which is what the Docker image being
 # built for this project is named.
 image: ${CI_REGISTRY_IMAGE}/duo_log_sync:latest
 
-# Like a table of contents, this is a list of stages that each job will map to 
+# Like a table of contents, this is a list of stages that each job will map to
 # and the stages will run in the order given (top to bottom.)
 stages:
     - build
@@ -18,7 +18,7 @@ variables:
     # Colorize output
     TERM: xterm
 
-# Only create a pipeline if any of the given rules evaluate to true. Define 
+# Only create a pipeline if any of the given rules evaluate to true. Define
 # types of diffs for which a pipeline should be created
 workflow:
     # Run pipeline if...
@@ -34,28 +34,28 @@ workflow:
 
 # Job for building the Docker image that is used in subsequent jobs
 build:
-    # Override the globally defined image because this job is building the 
-    # image. Since we are building a Docker image, pull in the latest Docker 
+    # Override the globally defined image because this job is building the
+    # image. Since we are building a Docker image, pull in the latest Docker
     # image from Dockerhub
     image: docker:latest
 
-    # If a diff is mirrored over that supersedes a diff for which the pipeline 
-    # is currently running, cancel the pipeline as the first diff is no longer 
-    # relevant. This cuts down on the number of pipelines being run 
+    # If a diff is mirrored over that supersedes a diff for which the pipeline
+    # is currently running, cancel the pipeline as the first diff is no longer
+    # relevant. This cuts down on the number of pipelines being run
     # unnecessarily
     interruptible: true
 
-    # Each job must be mapped to a stage. This job will be run as part of the 
+    # Each job must be mapped to a stage. This job will be run as part of the
     # building stage.
     stage: build
 
     # Code to run as part of this job. You may define the scripts in this file,
-    # but best practice is to put scripts for a job in a separate file and 
+    # but best practice is to put scripts for a job in a separate file and
     # refer to the file in here. If any parts of the script fail, the whole job
     # fails
     script:
         - ${CI_PROJECT_DIR}/_ci/bin/build.sh
-        # After creating a Docker image, put it in the registry used for this 
+        # After creating a Docker image, put it in the registry used for this
         # project
         - docker push ${CI_REGISTRY_IMAGE}/duo_log_sync
 
@@ -63,29 +63,29 @@ build:
     rules:
         # When one of the following files is changed
         - changes:
-            - ${CI_REGISTRY_IMAGE}/_ci/docker/Dockerfile
-            - ${CI_REGSITRY_IMAGE}/requirements.txt
-            # Then always rebuild the Docker image
-            when: always
+              - ${CI_REGISTRY_IMAGE}/_ci/docker/Dockerfile
+              - ${CI_REGSITRY_IMAGE}/requirements.txt
+          # Then always rebuild the Docker image
+          when: always
 
         # Allow the pipeline to proceed even if this job hasn't run in the case
-        # that this job must be run manually (since the job only runs 
-        # automatically when one of the above files is changed.) If you don't 
-        # allow_failure to be true, this job will wait for someone to manually 
+        # that this job must be run manually (since the job only runs
+        # automatically when one of the above files is changed.) If you don't
+        # allow_failure to be true, this job will wait for someone to manually
         # run it, causing the entire pipeline to be stopped.
         - allow_failure: true
-            when: manual
+          when: manual
 
-        # With Gitlab CI, jobs are executed by runners: a lightweight, highly- 
-        # scalable agent. Runners have tags that say what they can do. Jobs 
-        # also have tags that define what they type of runner is need in order 
-        # to complete the job. In order to complete this job...
-        tags:
-            # Need a runner that has docker
-            - docker
-            # Need a runner that is tagged as build (dedicate certain runners 
-            # to certain tasks / stages in order for load balancing)
-            - build
+    # With Gitlab CI, jobs are executed by runners: a lightweight, highly-
+    # scalable agent. Runners have tags that say what they can do. Jobs also
+    # have tags that define what they type of runner is need in order to
+    # complete the job. In order to complete this job...
+    tags:
+        # Need a runner that has docker
+        - docker
+        # Need a runner that is tagged as build (dedicate certain runners
+        # to certain tasks / stages in order for load balancing)
+        - build
 
 # Job for linting DuoLogSync's python code
 lint:
@@ -94,9 +94,9 @@ lint:
     script:
         - ${CI_PROJECT_DIR}/_ci/bin/lint.sh
 
-    # This job produces a codequality report that Gitlab knows how to read. 
-    # Gitlab will create a tab on the same page as the pipeline that says 
-    # "Code Quality" and will have an overview of everything wrong with the 
+    # This job produces a codequality report that Gitlab knows how to read.
+    # Gitlab will create a tab on the same page as the pipeline that says
+    # "Code Quality" and will have an overview of everything wrong with the
     # source code.
     artifacts:
         reports:
@@ -105,7 +105,7 @@ lint:
                 - ${CI_PROJECT_DIR}/duologsync/codequality.json
     rules:
         - allow_failure: true
-            when: always
+          when: always
     tags:
         - docker
         - test
@@ -118,7 +118,7 @@ test:
         - ${CI_PROJECT_DIR}/_ci/bin/test.sh
 
     # Similar to the lint job, the test job produces a report that Gitlab knows
-    # how to read. This report is about the result of the Unit Tests, which 
+    # how to read. This report is about the result of the Unit Tests, which
     # ones failed, why they failed. Gitlab will have a tab where you may review
     # all this information.
     artifacts:
@@ -129,3 +129,4 @@ test:
     tags:
         - docker
         - test
+...
