@@ -121,6 +121,8 @@ def create_global_tuple(config_path):
     """
     Initialize important variables used throughout DuoLogSync and return a
     namedtuple which contains them and allows accessing the variables by name.
+    Does not actually create a global variable. The tuple is used for passing 
+    common information to the init functions of objects.
 
     @param config_path  Location of a config file which is used to create a
                         config dictionary object.
