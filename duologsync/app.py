@@ -91,11 +91,11 @@ def create_consumer_producer_tasks(enabled_endpoints, g_vars):
         producer = consumer = None
 
         # Populate last_offset_read for each enabled endpoint
-        if g_vars.config['recoverFromCheckpoint']['enabled']:
-            g_vars.last_offset_read[endpoint] = get_last_offset_read(
-                g_vars.config['logs']['checkpointDir'],
-                endpoint
-            )
+        g_vars.last_offset_read[endpoint] = get_log_offset(
+            g_vars.config['recoverFromCheckpoint']['enabled'],
+            g_vars.config['logs']['checkpointDir'],
+            endpoint
+        )
 
         # Create the right pair of Producer-Consumer objects based on endpoint
         if endpoint == 'auth':

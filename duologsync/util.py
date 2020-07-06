@@ -11,7 +11,7 @@ create_writer()
     Create a connection object with a specified protocol for sending logs to a
     specified location
 
-update_last_offset_read()
+get_log_offset()
     Recover the last offset for a log type in case of a crash or error.
 
 create_admin()
@@ -34,6 +34,8 @@ from duologsync.__version__ import __version__
 # logs should be fetched
 _default_log_offset = None
 
+MILLISECONDS_PER_SECOND = 1000
+
 def set_default_log_offset(days_in_past):
    """
    Setter for the variable 'default_log_offset'.
@@ -43,8 +45,8 @@ def set_default_log_offset(days_in_past):
    """
 
    # Create a timestamp for screening logs that are too old
-   default_log_offset = datetime.utcnow() - timedelta(days=days_in_past)
-   default_log_offset = int(default_log_offset.timestamp())
+   _default_log_offset = datetime.utcnow() - timedelta(days=days_in_past)
+   _default_log_offset = int(_default_log_offset.timestamp())
 
 async def create_writer(config, loop):
     host = config['transport']['host']
@@ -104,39 +106,41 @@ async def create_writer(config, loop):
             logging.error("Terminating the application...")
             sys.exit(1)
 
-def get_last_offset_read(checkpoint_dir, log_type):
+def get_log_offset(checkpoint_enabled, checkpoint_dir, log_type):
     """
-    Recover the last offset for a log type in case of a crash or error.
+    Retrieve the offset from which logs of log_type should be fetched either by
+    using the default offset or by using a timestamp saved in a checkpoint file
 
-    @param checkpoint_dir   Directory where checkpoint / recovery files
-                            are stored
-    @param log_type         Name of the log for which recovery is occurring
+    @param checkpoint_enabled   Whether offset is saved in a checkpoint file
+    @param checkpoint_dir       Directory where checkpoint files are stored
+    @param log_type             Name of the log for which recovery is occurring
 
     @return the last offset read for a log type based on checkpointing data
     """
 
-    # TODO: This method should be used not just to recover timestamps, but to
-    # set timestamps from where to start polling for a log if recovery doesn't
-    # work or if recovery is not set. Take this functionality out of Producer
-    last_offset_read = None
+    log_offset = _default_log_offset
 
-    # Reading checkpoint for log_type
-    try:
-        # Open the checkpoint file. The with statement automatically closes it
-        with open(os.path.join(
-                checkpoint_dir,
-                f"{log_type}_checkpoint_data.txt")) as checkpoint:
+    # Auth must have timestamp represented in milliseconds, not seconds
+    if log_type == 'auth':
+        log_offset *= MILLISECONDS_PER_SECOND
 
-            # Set last_offset_read equal to the contents of the checkpoint file
-            last_offset_read = json.loads(checkpoint.read())
+    # In this case, look for a checkpoint file from which to read the log offset
+    if checkpoint_enabled:
+        try:
+            # Open the checkpoint file, 'with' statement automatically closes it
+            with open(os.path.join(
+                    checkpoint_dir,
+                    f"{log_type}_checkpoint_data.txt")) as checkpoint:
 
-    # Most likely, the checkpoint file doesn't exist
-    except OSError:
-        # TODO: Edit this error message with changes made to the above TODO
-        logging.warning("Could not read checkpoint file for %s logs, consuming "
-                        "logs from %s timestamp", log_type, last_offset_read)
+                # Set log_offset equal to the contents of the checkpoint file
+                log_offset = json.loads(checkpoint.read())
 
-    return last_offset_read
+        # Most likely, the checkpoint file doesn't exist
+        except OSError:
+            logging.warning("Could not read checkpoint file for %s logs, "
+                "consuming logs from %s timestamp", log_type, log_offset)
+
+    return log_offset
 
 def create_admin(ikey, skey, host):
     """
