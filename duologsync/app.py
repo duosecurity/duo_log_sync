@@ -26,13 +26,14 @@ import logging
 from collections import namedtuple
 from concurrent.futures import ThreadPoolExecutor
 from duologsync.config_generator import ConfigGenerator
-from duologsync.util import create_admin, create_writer, get_last_offset_read
 from duologsync.consumer.adminaction_consumer import AdminactionConsumer
 from duologsync.producer.adminaction_producer import AdminactionProducer
 from duologsync.consumer.authlog_consumer import AuthlogConsumer
 from duologsync.producer.authlog_producer import AuthlogProducer
 from duologsync.consumer.telephony_consumer import TelephonyConsumer
 from duologsync.producer.telephony_producer import TelephonyProducer
+from duologsync.util import (create_admin, create_writer, get_log_offset,
+                             set_default_log_offset)
 
 def main():
     """
@@ -85,6 +86,8 @@ def create_consumer_producer_tasks(enabled_endpoints, g_vars):
 
     tasks = []
 
+    set_default_log_offset(g_vars.config['logs']['polling']['daysinpast'])
+
     # Enable endpoints based on user selection
     for endpoint in enabled_endpoints:
         new_queue = asyncio.Queue(loop=g_vars.event_loop)
@@ -121,7 +124,7 @@ def create_global_tuple(config_path):
     """
     Initialize important variables used throughout DuoLogSync and return a
     namedtuple which contains them and allows accessing the variables by name.
-    Does not actually create a global variable. The tuple is used for passing 
+    Does not actually create a global variable. The tuple is used for passing
     common information to the init functions of objects.
 
     @param config_path  Location of a config file which is used to create a

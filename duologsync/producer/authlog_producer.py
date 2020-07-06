@@ -13,10 +13,10 @@ class AuthlogProducer(Producer):
         self.log_type = 'auth'
         self.mintime = None
 
-        # log_offset for Auth can be an int or a tuple, depending on if there 
-        # was a checkpoint file. Appropriately set mintime and log_offset if 
+        # log_offset for Auth can be an int or a tuple, depending on if there
+        # was a checkpoint file. Appropriately set mintime and log_offset if
         # log_offset is just an int
-        if type(self.log_offset) is int:
+        if isinstance(self.log_offset, int):
             self.mintime = self.log_offset
             self.log_offset = None
 

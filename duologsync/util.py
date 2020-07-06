@@ -27,26 +27,30 @@ import os
 import ssl
 import sys
 
+from datetime import datetime, timedelta
 from duologsync.__version__ import __version__
 
-# Default timestamp for how far in the past logs may be fetched. Used when a 
-# log-type does not have a recovery file containing a timestamp from which 
+# Default timestamp for how far in the past logs may be fetched. Used when a
+# log-type does not have a recovery file containing a timestamp from which
 # logs should be fetched
-_default_log_offset = None
+default_log_offset = None
 
 MILLISECONDS_PER_SECOND = 1000
 
 def set_default_log_offset(days_in_past):
-   """
-   Setter for the variable 'default_log_offset'.
+    """
+    Setter for the variable 'default_log_offset'.
 
-   @param days_in_past  The maximum amount of days in the past that a log may
+    @param days_in_past  The maximum amount of days in the past that a log may
                         be fetched from
-   """
+    """
 
-   # Create a timestamp for screening logs that are too old
-   _default_log_offset = datetime.utcnow() - timedelta(days=days_in_past)
-   _default_log_offset = int(_default_log_offset.timestamp())
+    # Need to name default_log_offset as global in order to set it
+    global default_log_offset
+
+    # Create a timestamp for screening logs that are too old
+    default_log_offset = datetime.utcnow() - timedelta(days=days_in_past)
+    default_log_offset = int(default_log_offset.timestamp())
 
 async def create_writer(config, loop):
     host = config['transport']['host']
@@ -118,7 +122,7 @@ def get_log_offset(checkpoint_enabled, checkpoint_dir, log_type):
     @return the last offset read for a log type based on checkpointing data
     """
 
-    log_offset = _default_log_offset
+    log_offset = default_log_offset
 
     # Auth must have timestamp represented in milliseconds, not seconds
     if log_type == 'auth':
@@ -138,7 +142,8 @@ def get_log_offset(checkpoint_enabled, checkpoint_dir, log_type):
         # Most likely, the checkpoint file doesn't exist
         except OSError:
             logging.warning("Could not read checkpoint file for %s logs, "
-                "consuming logs from %s timestamp", log_type, log_offset)
+                            "consuming logs from %s timestamp",
+                            log_type, log_offset)
 
     return log_offset
 
