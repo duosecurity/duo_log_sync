@@ -4,6 +4,9 @@ Unrelated, but useful functions used in various places throughout DuoLogSync.
 Functions
 ---------
 
+set_default_log_offset()
+    Setter for the variable 'default_log_offset'
+
 create_writer()
     Create a connection object with a specified protocol for sending logs to a
     specified location
@@ -25,6 +28,23 @@ import ssl
 import sys
 
 from duologsync.__version__ import __version__
+
+# Default timestamp for how far in the past logs may be fetched. Used when a 
+# log-type does not have a recovery file containing a timestamp from which 
+# logs should be fetched
+_default_log_offset = None
+
+def set_default_log_offset(days_in_past):
+   """
+   Setter for the variable 'default_log_offset'.
+
+   @param days_in_past  The maximum amount of days in the past that a log may
+                        be fetched from
+   """
+
+   # Create a timestamp for screening logs that are too old
+   default_log_offset = datetime.utcnow() - timedelta(days=days_in_past)
+   default_log_offset = int(default_log_offset.timestamp())
 
 async def create_writer(config, loop):
     host = config['transport']['host']
