@@ -7,11 +7,11 @@ class AdminactionProducer(Producer):
     and placement into a queue of Adminaction logs.
     """
 
-    def __init__(self, log_queue, g_vars):
-        super().__init__(log_queue, g_vars)
+    def __init__(self, log_queue, log_offset, g_vars):
+        super().__init__(log_queue, log_offset, g_vars)
         self.log_type = 'adminaction'
 
-    async def _call_log_api(self, mintime):
+    async def _call_log_api(self):
         """
         Make a call to the administrator log endpoint and return the result of
         that API call
@@ -22,9 +22,6 @@ class AdminactionProducer(Producer):
         @return the result of a call to the administrator log API endpoint
         """
 
-        # If last_offset_read is None, then set mintime to mintime
-        mintime = self.last_offset_read.get(self.log_type, mintime)
-
         # get_administrator_log is a high latency call which will block the
         # event loop. Thus it is run in an executor - a dedicated thread
         # pool - which allows for asyncio to do other work while this call is
@@ -33,7 +30,7 @@ class AdminactionProducer(Producer):
             self.executor,
             functools.partial(
                 self.admin.get_administrator_log,
-                mintime=mintime
+                mintime=self.log_offset
             )
         )
 

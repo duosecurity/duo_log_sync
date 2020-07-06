@@ -4,9 +4,9 @@ import json
 import logging
 
 class BaseConsumer():
-    def __init__(self, log_queue, writer, g_vars):
+    def __init__(self, log_queue, log_offset, writer, g_vars):
         self.checkpoint_dir = g_vars.config["logs"]["checkpointDir"]
-        self.last_offset_read = g_vars.last_offset_read
+        self.log_offset = log_offset
         self.log_queue = log_queue
         self.writer = writer
         self.log_type = None
@@ -36,7 +36,7 @@ class BaseConsumer():
                 logging.error("Failed to write data to transport with %s", e)
                 sys.exit(1)
 
-            # Idea is to write to last_offset_read file after data is sent
+            # Idea is to write to log_offset file after data is sent
             # When user sets recover=True in toml, we will read from this file
             # if it exists and grab data from that offset
             # Still testing out this logic
@@ -44,7 +44,6 @@ class BaseConsumer():
                 self.checkpoint_dir,
                 f"{self.log_type}_checkpoint_data.txt")
             checkpointing_data = open(checkpoint_file, "w")
-            checkpointing_data.write(
-                json.dumps(self.last_offset_read[self.log_type]))
+            checkpointing_data.write(json.dumps(self.log_offset))
             checkpointing_data.flush()
             checkpointing_data.close()

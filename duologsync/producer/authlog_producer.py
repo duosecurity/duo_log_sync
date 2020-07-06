@@ -8,11 +8,19 @@ class AuthlogProducer(Producer):
     and placement into a queue of Authentication logs
     """
 
-    def __init__(self, log_queue, g_vars):
-        super().__init__(log_queue, g_vars)
+    def __init__(self, log_queue, log_offset, g_vars):
+        super().__init__(log_queue, log_offset, g_vars)
         self.log_type = 'auth'
+        self.mintime = None
 
-    async def _call_log_api(self, mintime):
+        # log_offset for Auth can be an int or a tuple, depending on if there 
+        # was a checkpoint file. Appropriately set mintime and log_offset if 
+        # log_offset is just an int
+        if type(self.log_offset) is int:
+            self.mintime = self.log_offset
+            self.log_offset = None
+
+    async def _call_log_api(self):
         """
         Make a call to the authentication log endpoint and return the result of
         that API call
@@ -23,10 +31,6 @@ class AuthlogProducer(Producer):
         @return the result of a call to the authentication log API endpoint
         """
 
-        # For the auth log call, mintime must be in milliseconds, not seconds
-        mintime *= Producer.MILLISECONDS_PER_SECOND
-        next_offset = self.last_offset_read.get(self.log_type, None)
-
         # get_authentication_log is a high latency call which will block the
         # event loop. Thus it is run in an executor - a dedicated thread
         # pool - which allows for asyncio to do other work while this call is
@@ -36,8 +40,8 @@ class AuthlogProducer(Producer):
             functools.partial(
                 self.admin.get_authentication_log,
                 api_version=2,
-                mintime=mintime,
-                next_offset=next_offset,
+                mintime=self.mintime,
+                next_offset=self.log_offset,
                 sort='ts:asc',
                 limit='1000'
             )
@@ -61,7 +65,7 @@ class AuthlogProducer(Producer):
         return api_result['authlogs']
 
     @staticmethod
-    def _get_last_offset_read(api_result):
+    def _get_log_offset(api_result):
         """
         Return the next_offset given by the result of a call to the
         authentication log API endpoint

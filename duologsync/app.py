@@ -90,8 +90,8 @@ def create_consumer_producer_tasks(enabled_endpoints, g_vars):
         new_queue = asyncio.Queue(loop=g_vars.event_loop)
         producer = consumer = None
 
-        # Populate last_offset_read for each enabled endpoint
-        g_vars.last_offset_read[endpoint] = get_log_offset(
+        # Create log_offset var for each endpoint
+        log_offset = get_log_offset(
             g_vars.config['recoverFromCheckpoint']['enabled'],
             g_vars.config['logs']['checkpointDir'],
             endpoint
@@ -99,14 +99,14 @@ def create_consumer_producer_tasks(enabled_endpoints, g_vars):
 
         # Create the right pair of Producer-Consumer objects based on endpoint
         if endpoint == 'auth':
-            producer = AuthlogProducer(new_queue, g_vars)
-            consumer = AuthlogConsumer(new_queue, writer, g_vars)
+            producer = AuthlogProducer(new_queue, log_offset, g_vars)
+            consumer = AuthlogConsumer(new_queue, log_offset, writer, g_vars)
         elif endpoint == 'telephony':
-            producer = TelephonyProducer(new_queue, g_vars)
-            consumer = TelephonyConsumer(new_queue, writer, g_vars)
+            producer = TelephonyProducer(new_queue, log_offset, g_vars)
+            consumer = TelephonyConsumer(new_queue, log_offset, writer, g_vars)
         elif endpoint == 'adminaction':
-            producer = AdminactionProducer(new_queue, g_vars)
-            consumer = AdminactionConsumer(new_queue, writer, g_vars)
+            producer = AdminactionProducer(new_queue, log_offset, g_vars)
+            consumer = AdminactionConsumer(new_queue, log_offset, writer, g_vars)
         else:
             logging.info("%s is not a recognized endpoint", endpoint)
             del new_queue
@@ -133,7 +133,7 @@ def create_global_tuple(config_path):
     # Create a tuple containing global variables that may be indexed by name
     g_vars = namedtuple(
         'g_vars',
-        ['admin', 'config', 'event_loop', 'executor', 'last_offset_read'])
+        ['admin', 'config', 'event_loop', 'executor'])
 
     # Dictionary populated with values from the config file passed to DuoLogSync
     g_vars.config = ConfigGenerator().get_config(config_path)
@@ -150,8 +150,5 @@ def create_global_tuple(config_path):
 
     # Allocate an execution environment of 3 threads for high latency tasks
     g_vars.executor = ThreadPoolExecutor(3)
-
-    # Dictionary for storing the latest timestamp received for each log type
-    g_vars.last_offset_read = {}
 
     return g_vars

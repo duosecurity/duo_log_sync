@@ -15,13 +15,13 @@ class Producer(ABC):
     SECONDS_PER_MINUTE = 60
     MINIMUM_POLLING_DURATION = 2 * SECONDS_PER_MINUTE
 
-    def __init__(self, log_queue, g_vars):
+    def __init__(self, log_queue, log_offset, g_vars):
         self.log_queue = log_queue
         self.admin = g_vars.admin
         self.config = g_vars.config
         self.event_loop = g_vars.event_loop
         self.executor = g_vars.executor
-        self.last_offset_read = g_vars.last_offset_read
+        self.log_offset = log_offset
         self.log_type = None
 
     async def produce(self):
@@ -30,13 +30,6 @@ class Producer(ABC):
         for the polling duration then making an API call, consuming the logs
         from that API call and saving the offset of the latest log read.
         """
-
-        # The maximum age in days of any newly retrieved log
-        days_in_past = self.config['logs']['polling']['daysinpast']
-
-        # Create a timestamp for screening logs that are too old
-        mintime = datetime.utcnow() - timedelta(days=days_in_past)
-        mintime = int(mintime.timestamp())
 
         # The number of minutes a producer will poll for logs
         polling_duration = self.config['logs']['polling']['duration']
@@ -54,12 +47,10 @@ class Producer(ABC):
             logging.info("Getting data from %s endpoint after %d seconds",
                          self.log_type, polling_duration)
 
-            api_result = await self._call_log_api(mintime)
+            api_result = await self._call_log_api()
             new_logs = self._get_logs(api_result)
 
             if new_logs:
-                last_offset = self._get_last_offset_read(api_result)
-
                 logging.info("Adding %d %s logs to the queue", len(new_logs),
                              self.log_type)
                 await self.log_queue.put(new_logs)
@@ -67,18 +58,14 @@ class Producer(ABC):
                              self.log_type)
 
                 # Important for recovery in the event of a crash
-                self.last_offset_read[self.log_type] = last_offset
+                self.log_offset = self._get_log_offset(api_result)
 
     @abstractmethod
-    async def _call_log_api(self, mintime):
+    async def _call_log_api(self):
         """
         Make a call to a log-specific API and return the API result. An
         implementation of call_log_api must be given by classes that extend
         this class.
-
-        @param mintime  The oldest timestamp (in seconds) acceptable for a log
-                        to have. All logs returned from the API call should
-                        have a timestamp of mintime or newer
 
         @return the result of the API call
         """
@@ -99,7 +86,7 @@ class Producer(ABC):
         return api_result
 
     @staticmethod
-    def _get_last_offset_read(api_result):
+    def _get_log_offset(api_result):
         """
         Return the newest offset read given the last api_result received. The
         default implementation given here will not suffice for every type of
