@@ -10,7 +10,6 @@ class Producer(ABC):
     recorded to allow checkpointing and recovery from a crash.
     """
 
-    MILLISECONDS_PER_SECOND = 1000
     SECONDS_PER_MINUTE = 60
     MINIMUM_POLLING_DURATION = 2 * SECONDS_PER_MINUTE
 
