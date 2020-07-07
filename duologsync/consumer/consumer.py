@@ -6,8 +6,7 @@ import logging
 from duologsync.util import update_log_checkpoint
 
 class Consumer():
-    def __init__(self, log_queue, log_offset, writer, checkpoint_dir):
-        self.checkpoint_dir = checkpoint_dir
+    def __init__(self, log_queue, log_offset, writer):
         self.log_offset = log_offset
         self.log_queue = log_queue
         self.writer = writer
