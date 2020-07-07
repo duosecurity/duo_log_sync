@@ -16,16 +16,16 @@ create_consumer_producer_tasks():
     asyncio tasks
 """
 
-import asyncio
-import duo_client
-import json
-import logging
 import os
 import ssl
 import sys
-
+import json
+import asyncio
+import logging
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
+
+import duo_client
 from duologsync.config_generator import ConfigGenerator
 from duologsync.__version__ import __version__
 
