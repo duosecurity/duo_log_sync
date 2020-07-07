@@ -10,9 +10,6 @@ IMAGE_TAG="duo_log_sync"
 # Path to get to the Dockerfile this script is using to build a Docker image
 DOCKERFILE_PATH="_ci/docker/Dockerfile"
 
-# Directory containing source code for DuoLogSync
-SOURCE_DIR="duologsync"
-
 # If we're building in Gitlab, the registry image prefix is predefined
 if [ -n "${CI_REGISTRY_IMAGE}" ]; then
     IMAGE_TAG="${CI_REGISTRY_IMAGE}/${IMAGE_TAG}"
