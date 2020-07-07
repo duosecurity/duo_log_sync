@@ -2,6 +2,8 @@ import asyncio
 import logging
 from abc import ABC, abstractmethod
 
+from duologsync.util import get_polling_duration
+
 class Producer(ABC):
     """
     Read data from a specific log endpoint via an API call at a polling
@@ -10,13 +12,9 @@ class Producer(ABC):
     recorded to allow checkpointing and recovery from a crash.
     """
 
-    SECONDS_PER_MINUTE = 60
-    MINIMUM_POLLING_DURATION = 2 * SECONDS_PER_MINUTE
-
     def __init__(self, log_queue, log_offset, g_vars):
         self.log_queue = log_queue
         self.admin = g_vars.admin
-        self.config = g_vars.config
         self.event_loop = g_vars.event_loop
         self.executor = g_vars.executor
         self.log_offset = log_offset
@@ -29,21 +27,12 @@ class Producer(ABC):
         from that API call and saving the offset of the latest log read.
         """
 
-        # The number of minutes a producer will poll for logs
-        polling_duration = self.config['logs']['polling']['duration']
-
-        # Convert polling_duration to seconds
-        polling_duration *= self.SECONDS_PER_MINUTE
-
-        # Use the minimum polling duration if the user specifies a lower number
-        polling_duration = max(polling_duration, self.MINIMUM_POLLING_DURATION)
-
         # TODO: Implement interrupt handler / running variable so that the
         # while loop exits on failure or on user exit
         while True:
-            await asyncio.sleep(polling_duration)
-            logging.info("Getting data from %s endpoint after %d seconds",
-                         self.log_type, polling_duration)
+            await asyncio.sleep(get_polling_duration())
+            logging.info("Getting data from %s endpoint after %s seconds",
+                         self.log_type, get_polling_duration())
 
             api_result = await self._call_log_api()
             new_logs = self._get_logs(api_result)

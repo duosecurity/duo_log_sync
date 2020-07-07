@@ -41,6 +41,8 @@ g_vars = namedtuple(
     'g_vars',
     ['admin', 'config', 'event_loop', 'executor'])
 
+polling_duration = None
+
 def update_log_checkpoint(log_type, log_offset):
     """
     Save log_offset to the checkpoint file for log_type.
@@ -202,6 +204,34 @@ def create_admin(ikey, skey, host):
 
     return admin
 
+def set_polling_duration():
+    """
+    Method to set the value of the global variable polling_duration
+    """
+
+    global polling_duration
+
+    SECONDS_PER_MINUTE = 60
+    MINIMUM_POLLING_DURATION = 2 * SECONDS_PER_MINUTE
+
+    # The number of minutes a producer will poll for logs
+    polling_duration = g_vars.config['logs']['polling']['duration']
+
+    # Convert polling_duration to seconds
+    polling_duration *= SECONDS_PER_MINUTE
+
+    # Use the minimum polling duration if the user specifies a lower number
+    polling_duration = max(polling_duration, MINIMUM_POLLING_DURATION)
+
+def get_polling_duration():
+    """
+    Method to get the value of the global variable polling_duration
+
+    @return polling_duration
+    """
+
+    return polling_duration
+
 def create_g_vars(config_path):
     """
     Set important variables used throughout DuoLogSync for the global 
@@ -228,3 +258,5 @@ def create_g_vars(config_path):
 
     # Allocate an execution environment of 3 threads for high latency tasks
     g_vars.executor = ThreadPoolExecutor(3)
+
+    set_polling_duration()
