@@ -71,8 +71,7 @@ def create_consumer_producer_tasks():
     )
 
     tasks = []
-    checkpoint_dir = g_vars.config['logs']['checkpointDir']
-    set_default_log_offset(g_vars.config['logs']['polling']['daysinpast'])
+    set_default_log_offset()
 
     # Enable endpoints based on user selection
     for endpoint in g_vars.config['logs']['endpoints']['enabled']:
@@ -80,11 +79,7 @@ def create_consumer_producer_tasks():
         producer = consumer = None
 
         # Create log_offset var for each endpoint
-        log_offset = get_log_offset(
-            g_vars.config['recoverFromCheckpoint']['enabled'],
-            checkpoint_dir,
-            endpoint
-        )
+        log_offset = get_log_offset(endpoint)
 
         # Create the right pair of Producer-Consumer objects based on endpoint
         if endpoint == 'auth':

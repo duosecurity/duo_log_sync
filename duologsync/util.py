@@ -59,16 +59,16 @@ def update_log_checkpoint(log_type, log_offset):
     # According to Python docs, closing a file also flushes the file
     checkpoint_file.close()
 
-def set_default_log_offset(days_in_past):
+def set_default_log_offset():
     """
     Setter for the variable 'default_log_offset'.
-
-    @param days_in_past  The maximum amount of days in the past that a log may
-                        be fetched from
     """
 
     # Need to name default_log_offset as global in order to set it
     global default_log_offset
+
+    # The maximum amount of days in the past that a log may be fetched from
+    days_in_past = g_vars.config['logs']['polling']['daysinpast']
 
     # Create a timestamp for screening logs that are too old
     default_log_offset = datetime.utcnow() - timedelta(days=days_in_past)
@@ -132,17 +132,18 @@ async def create_writer(config, loop):
             logging.error("Terminating the application...")
             sys.exit(1)
 
-def get_log_offset(checkpoint_enabled, checkpoint_dir, log_type):
+def get_log_offset(log_type):
     """
     Retrieve the offset from which logs of log_type should be fetched either by
     using the default offset or by using a timestamp saved in a checkpoint file
 
-    @param checkpoint_enabled   Whether offset is saved in a checkpoint file
-    @param checkpoint_dir       Directory where checkpoint files are stored
     @param log_type             Name of the log for which recovery is occurring
 
     @return the last offset read for a log type based on checkpointing data
     """
+
+    # Whether checkpoint files should be used to retrieve log offset info
+    recover_log_offset = g_vars.config['recoverFromCheckpoint']['enabled']
 
     log_offset = default_log_offset
 
@@ -151,11 +152,14 @@ def get_log_offset(checkpoint_enabled, checkpoint_dir, log_type):
         log_offset *= MILLISECONDS_PER_SECOND
 
     # In this case, look for a checkpoint file from which to read the log offset
-    if checkpoint_enabled:
+    if recover_log_offset:
+        # Directory where log offset checkpoint files are saved
+        checkpoint_directory = g_vars.config['Logs']['checkpointDir']
+
         try:
             # Open the checkpoint file, 'with' statement automatically closes it
             with open(os.path.join(
-                    checkpoint_dir,
+                    checkpoint_directory,
                     f"{log_type}_checkpoint_data.txt")) as checkpoint:
 
                 # Set log_offset equal to the contents of the checkpoint file
