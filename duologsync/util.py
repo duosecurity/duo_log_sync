@@ -260,7 +260,7 @@ def get_polling_duration():
 
     return polling_duration
 
-def create_g_vars(config_path):
+def set_util_globals(config_path):
     """
     Set important variables used throughout DuoLogSync for the global
     namedtuple variable g_vars.
@@ -288,3 +288,4 @@ def create_g_vars(config_path):
     g_vars.executor = ThreadPoolExecutor(3)
 
     set_polling_duration()
+    set_default_log_offset()

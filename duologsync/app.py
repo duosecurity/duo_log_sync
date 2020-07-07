@@ -25,7 +25,7 @@ from duologsync.consumer.authlog_consumer import AuthlogConsumer
 from duologsync.producer.authlog_producer import AuthlogProducer
 from duologsync.consumer.telephony_consumer import TelephonyConsumer
 from duologsync.producer.telephony_producer import TelephonyProducer
-from duologsync.util import (create_g_vars, create_writer, get_log_offset,
+from duologsync.util import (set_util_globals, create_writer, get_log_offset,
                              set_default_log_offset, g_vars)
 
 def main():
@@ -43,8 +43,8 @@ def main():
 
     # TODO: Validate that the file path for config is valid and readable
 
-    # namedtuple containing important variables used through DuoLogSync
-    create_g_vars(args.ConfigPath)
+    # Call a function to set all the Global variables in util
+    set_util_globals(args.ConfigPath)
 
     # List of Producer/Consumer objects as asyncio tasks to be run
     tasks = create_consumer_producer_tasks()
@@ -71,7 +71,6 @@ def create_consumer_producer_tasks():
     )
 
     tasks = []
-    set_default_log_offset()
 
     # Enable endpoints based on user selection
     for endpoint in g_vars.config['logs']['endpoints']['enabled']:
