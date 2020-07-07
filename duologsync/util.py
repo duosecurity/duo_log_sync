@@ -7,19 +7,13 @@ Functions
 update_log_checkpoint()
     Save offset to the checkpoint file for the log type calling this function
 
-set_default_log_offset()
-    Setter for the variable 'default_log_offset'
+create_g_vars():
+    Initialize important variables used throughout DuoLogSync and return a
+    namedtuple which contains them and allows accessing the variables by name
 
-create_writer()
-    Create a connection object with a specified protocol for sending logs to a
-    specified location
-
-get_log_offset()
-    Recover the last offset for a log type in case of a crash or error.
-
-create_admin()
-    Create an Admin object (from the duo_client library) with user credentials
-    passed to the function
+create_consumer_producer_tasks():
+    Create Producer/Consumer objects and return them as a list of runnable
+    asyncio tasks
 """
 
 import asyncio
@@ -30,7 +24,10 @@ import os
 import ssl
 import sys
 
+from collections import namedtuple
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
+from duologsync.config_generator import ConfigGenerator
 from duologsync.__version__ import __version__
 
 # Default timestamp for how far in the past logs may be fetched. Used when a
@@ -38,6 +35,11 @@ from duologsync.__version__ import __version__
 # logs should be fetched
 default_log_offset = None
 MILLISECONDS_PER_SECOND = 1000
+
+# Create a tuple containing global variables that may be indexed by name
+g_vars = namedtuple(
+    'g_vars',
+    ['admin', 'config', 'event_loop', 'executor'])
 
 def update_log_checkpoint(log_type, log_offset):
     """
@@ -49,7 +51,7 @@ def update_log_checkpoint(log_type, log_offset):
 
     checkpoint_filename = os.path.join(
         g_vars.config['logs']['checkpointDir'],
-        f"{self.log_type}_checkpoint_data.txt")
+        f"{log_type}_checkpoint_data.txt")
 
     checkpoint_file = open(checkpoint_filename, 'w')
     checkpoint_file.write(json.dumps(log_offset))
@@ -195,3 +197,30 @@ def create_admin(ikey, skey, host):
         sys.exit(1)
 
     return admin
+
+def create_g_vars(config_path):
+    """
+    Set important variables used throughout DuoLogSync for the global 
+    namedtuple variable g_vars.
+
+    @param config_path  Location of a config file which is used to create a
+                        config dictionary object.
+    """
+
+    global g_vars
+
+    # Dictionary populated with values from the config file passed to DuoLogSync
+    g_vars.config = ConfigGenerator().get_config(config_path)
+
+    # Object that allows for interaction with Duo APIs to fetch logs / data
+    g_vars.admin = create_admin(
+        g_vars.config['duoclient']['ikey'],
+        g_vars.config['duoclient']['skey'],
+        g_vars.config['duoclient']['host']
+    )
+
+    # Object that can run asynchronous tasks, call-backs and subprocesses
+    g_vars.event_loop = asyncio.get_event_loop()
+
+    # Allocate an execution environment of 3 threads for high latency tasks
+    g_vars.executor = ThreadPoolExecutor(3)
