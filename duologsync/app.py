@@ -85,34 +85,37 @@ def create_consumer_producer_tasks(enabled_endpoints, g_vars):
     )
 
     tasks = []
-
+    checkpoint_dir = g_vars.config['logs']['checkpointDir']
     set_default_log_offset(g_vars.config['logs']['polling']['daysinpast'])
 
     # Enable endpoints based on user selection
     for endpoint in enabled_endpoints:
-        new_queue = asyncio.Queue(loop=g_vars.event_loop)
+        log_queue = asyncio.Queue(loop=g_vars.event_loop)
         producer = consumer = None
 
         # Create log_offset var for each endpoint
         log_offset = get_log_offset(
             g_vars.config['recoverFromCheckpoint']['enabled'],
-            g_vars.config['logs']['checkpointDir'],
+            checkpoint_dir,
             endpoint
         )
 
         # Create the right pair of Producer-Consumer objects based on endpoint
         if endpoint == 'auth':
-            producer = AuthlogProducer(new_queue, log_offset, g_vars)
-            consumer = AuthlogConsumer(new_queue, log_offset, writer, g_vars)
+            producer = AuthlogProducer(log_queue, log_offset, g_vars)
+            consumer = AuthlogConsumer(log_queue, log_offset, writer,
+                                       checkpoint_dir)
         elif endpoint == 'telephony':
-            producer = TelephonyProducer(new_queue, log_offset, g_vars)
-            consumer = TelephonyConsumer(new_queue, log_offset, writer, g_vars)
+            producer = TelephonyProducer(log_queue, log_offset, g_vars)
+            consumer = TelephonyConsumer(log_queue, log_offset, writer,
+                                         checkpoint_dir)
         elif endpoint == 'adminaction':
-            producer = AdminactionProducer(new_queue, log_offset, g_vars)
-            consumer = AdminactionConsumer(new_queue, log_offset, writer, g_vars)
+            producer = AdminactionProducer(log_queue, log_offset, g_vars)
+            consumer = AdminactionConsumer(log_queue, log_offset, writer,
+                                           checkpoint_dir)
         else:
             logging.info("%s is not a recognized endpoint", endpoint)
-            del new_queue
+            del log_queue
             continue
 
         tasks.append(asyncio.ensure_future(producer.produce()))

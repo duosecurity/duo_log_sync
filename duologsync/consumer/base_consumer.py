@@ -4,8 +4,8 @@ import json
 import logging
 
 class BaseConsumer():
-    def __init__(self, log_queue, log_offset, writer, g_vars):
-        self.checkpoint_dir = g_vars.config["logs"]["checkpointDir"]
+    def __init__(self, log_queue, log_offset, writer, checkpoint_dir):
+        self.checkpoint_dir = checkpoint_dir
         self.log_offset = log_offset
         self.log_queue = log_queue
         self.writer = writer
