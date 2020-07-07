@@ -75,7 +75,7 @@ def create_consumer_producer_tasks():
 
     # Enable endpoints based on user selection
     for endpoint in g_vars.config['logs']['endpoints']['enabled']:
-        log_queue = asyncio.Queue(loop=g_vars.event_loop)
+        log_queue = asyncio.Queue()
         producer = consumer = None
 
         # Create log_offset var for each endpoint
