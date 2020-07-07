@@ -7,7 +7,7 @@ Functions
 update_log_checkpoint()
     Save offset to the checkpoint file for the log type calling this function
 
-create_g_vars():
+set_util_globals():
     Initialize important variables used throughout DuoLogSync and return a
     namedtuple which contains them and allows accessing the variables by name
 
@@ -24,7 +24,6 @@ import os
 import ssl
 import sys
 
-from collections import namedtuple
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
 from duologsync.config_generator import ConfigGenerator
@@ -36,12 +35,19 @@ from duologsync.__version__ import __version__
 default_log_offset = None
 MILLISECONDS_PER_SECOND = 1000
 
-# Create a tuple containing global variables that may be indexed by name
-g_vars = namedtuple(
-    'g_vars',
-    ['admin', 'config', 'event_loop', 'executor'])
-
+admin = None
+config = None
+executor = None
 polling_duration = None
+
+def get_enabled_endpoints():
+    """
+    Return the list of endpoints that are enabled from config
+
+    @return the endpoints enabled in config
+    """
+
+    return config['logs']['endpoints']['enabled']
 
 def get_admin():
     """
@@ -50,7 +56,7 @@ def get_admin():
     @return the admin global variable
     """
 
-    return g_vars.admin
+    return admin
 
 async def run_in_executor(function_obj):
     """
@@ -64,8 +70,8 @@ async def run_in_executor(function_obj):
     @return the result of calling the function in function_obj
     """
 
-    result = await g_vars.event_loop.run_in_executor(
-        g_vars.executor,
+    result = await asyncio.get_event_loop().run_in_executor(
+        executor,
         function_obj
     )
 
@@ -80,7 +86,7 @@ def update_log_checkpoint(log_type, log_offset):
     """
 
     checkpoint_filename = os.path.join(
-        g_vars.config['logs']['checkpointDir'],
+        config['logs']['checkpointDir'],
         f"{log_type}_checkpoint_data.txt")
 
     checkpoint_file = open(checkpoint_filename, 'w')
@@ -98,13 +104,13 @@ def set_default_log_offset():
     global default_log_offset
 
     # The maximum amount of days in the past that a log may be fetched from
-    days_in_past = g_vars.config['logs']['polling']['daysinpast']
+    days_in_past = config['logs']['polling']['daysinpast']
 
     # Create a timestamp for screening logs that are too old
     default_log_offset = datetime.utcnow() - timedelta(days=days_in_past)
     default_log_offset = int(default_log_offset.timestamp())
 
-async def create_writer(config, loop):
+async def create_writer():
     host = config['transport']['host']
     port = config['transport']['port']
     protocol = config['transport']['protocol']
@@ -124,7 +130,7 @@ async def create_writer(config, loop):
                 asyncio.open_connection(
                     host,
                     port,
-                    loop=loop,
+                    loop=asyncio.get_event_loop(),
                     ssl=sc),
                 timeout=60)
             return writer
@@ -146,7 +152,7 @@ async def create_writer(config, loop):
                 asyncio.open_connection(
                     host,
                     port,
-                    loop=loop
+                    loop=asyncio.get_event_loop()
                 ),
                 timeout=60
             ) # Default connection timeout set to 1min
@@ -173,7 +179,7 @@ def get_log_offset(log_type):
     """
 
     # Whether checkpoint files should be used to retrieve log offset info
-    recover_log_offset = g_vars.config['recoverFromCheckpoint']['enabled']
+    recover_log_offset = config['recoverFromCheckpoint']['enabled']
 
     log_offset = default_log_offset
 
@@ -184,7 +190,7 @@ def get_log_offset(log_type):
     # In this case, look for a checkpoint file from which to read the log offset
     if recover_log_offset:
         # Directory where log offset checkpoint files are saved
-        checkpoint_directory = g_vars.config['Logs']['checkpointDir']
+        checkpoint_directory = config['Logs']['checkpointDir']
 
         try:
             # Open the checkpoint file, 'with' statement automatically closes it
@@ -243,7 +249,7 @@ def set_polling_duration():
     MINIMUM_POLLING_DURATION = 2 * SECONDS_PER_MINUTE
 
     # The number of minutes a producer will poll for logs
-    polling_duration = g_vars.config['logs']['polling']['duration']
+    polling_duration = config['logs']['polling']['duration']
 
     # Convert polling_duration to seconds
     polling_duration *= SECONDS_PER_MINUTE
@@ -262,30 +268,26 @@ def get_polling_duration():
 
 def set_util_globals(config_path):
     """
-    Set important variables used throughout DuoLogSync for the global
-    namedtuple variable g_vars.
+    Set global variables used throughout util 
 
     @param config_path  Location of a config file which is used to create a
                         config dictionary object.
     """
 
-    global g_vars
+    global config, admin, executor
 
     # Dictionary populated with values from the config file passed to DuoLogSync
-    g_vars.config = ConfigGenerator().get_config(config_path)
+    config = ConfigGenerator().get_config(config_path)
 
     # Object that allows for interaction with Duo APIs to fetch logs / data
-    g_vars.admin = create_admin(
-        g_vars.config['duoclient']['ikey'],
-        g_vars.config['duoclient']['skey'],
-        g_vars.config['duoclient']['host']
+    admin = create_admin(
+        config['duoclient']['ikey'],
+        config['duoclient']['skey'],
+        config['duoclient']['host']
     )
 
-    # Object that can run asynchronous tasks, call-backs and subprocesses
-    g_vars.event_loop = asyncio.get_event_loop()
-
     # Allocate an execution environment of 3 threads for high latency tasks
-    g_vars.executor = ThreadPoolExecutor(3)
+    executor = ThreadPoolExecutor(3)
 
     set_polling_duration()
     set_default_log_offset()

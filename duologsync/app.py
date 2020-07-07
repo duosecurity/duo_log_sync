@@ -26,7 +26,7 @@ from duologsync.producer.authlog_producer import AuthlogProducer
 from duologsync.consumer.telephony_consumer import TelephonyConsumer
 from duologsync.producer.telephony_producer import TelephonyProducer
 from duologsync.util import (set_util_globals, create_writer, get_log_offset,
-                             set_default_log_offset, g_vars)
+                             get_enabled_endpoints)
 
 def main():
     """
@@ -50,8 +50,8 @@ def main():
     tasks = create_consumer_producer_tasks()
 
     # Run the Producers and Consumers
-    g_vars.event_loop.run_until_complete(asyncio.gather(*tasks))
-    g_vars.event_loop.close()
+    asyncio.get_event_loop().run_until_complete(asyncio.gather(*tasks))
+    asyncio.get_event_loop().close()
 
 # TODO: break this function up further when the config file begins to accept
 # multiple connections. At that point, there will be a separate function for
@@ -65,15 +65,14 @@ def create_consumer_producer_tasks():
 
     @return list of asyncio tasks for running the Producer and Consumer objects
     """
+
     # Object for writing data / logs across a network, used by Consumers
-    writer = g_vars.event_loop.run_until_complete(
-        create_writer(g_vars.config, g_vars.event_loop)
-    )
+    writer = asyncio.get_event_loop().run_until_complete(create_writer())
 
     tasks = []
 
     # Enable endpoints based on user selection
-    for endpoint in g_vars.config['logs']['endpoints']['enabled']:
+    for endpoint in get_enabled_endpoints():
         log_queue = asyncio.Queue()
         producer = consumer = None
 
