@@ -43,6 +43,34 @@ g_vars = namedtuple(
 
 polling_duration = None
 
+def get_admin():
+    """
+    Method to retrieve the admin global variable.
+
+    @return the admin global variable
+    """
+
+    return g_vars.admin
+
+async def run_in_executor(function_obj):
+    """
+    The function represented by function_obj is a high latency call which will
+    block the event loop. Thus, the function is run in an executor - a 
+    dedicated thread pool - which allows for the event loop to do other work 
+    while the given function is being made.
+
+    @param function_obj A high-latency, callable object to run in the executor
+
+    @return the result of calling the function in function_obj
+    """
+
+    result = await g_vars.event_loop.run_in_executor(
+        g_vars.executor,
+        function_obj
+    )
+
+    return result
+
 def update_log_checkpoint(log_type, log_offset):
     """
     Save log_offset to the checkpoint file for log_type.

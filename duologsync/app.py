@@ -83,13 +83,13 @@ def create_consumer_producer_tasks():
 
         # Create the right pair of Producer-Consumer objects based on endpoint
         if endpoint == 'auth':
-            producer = AuthlogProducer(log_queue, log_offset, g_vars)
+            producer = AuthlogProducer(log_queue, log_offset)
             consumer = AuthlogConsumer(log_queue, log_offset, writer)
         elif endpoint == 'telephony':
-            producer = TelephonyProducer(log_queue, log_offset, g_vars)
+            producer = TelephonyProducer(log_queue, log_offset)
             consumer = TelephonyConsumer(log_queue, log_offset, writer)
         elif endpoint == 'adminaction':
-            producer = AdminactionProducer(log_queue, log_offset, g_vars)
+            producer = AdminactionProducer(log_queue, log_offset)
             consumer = AdminactionConsumer(log_queue, log_offset, writer)
         else:
             logging.info("%s is not a recognized endpoint", endpoint)

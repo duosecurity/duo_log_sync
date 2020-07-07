@@ -1,6 +1,7 @@
 import functools
 
 from duologsync.producer.producer import Producer
+from duologsync.util import run_in_executor, get_admin
 
 class AuthlogProducer(Producer):
     """
@@ -8,8 +9,8 @@ class AuthlogProducer(Producer):
     and placement into a queue of Authentication logs
     """
 
-    def __init__(self, log_queue, log_offset, g_vars):
-        super().__init__(log_queue, log_offset, g_vars)
+    def __init__(self, log_queue, log_offset):
+        super().__init__(log_queue, log_offset)
         self.log_type = 'auth'
         self.mintime = None
 
@@ -31,14 +32,10 @@ class AuthlogProducer(Producer):
         @return the result of a call to the authentication log API endpoint
         """
 
-        # get_authentication_log is a high latency call which will block the
-        # event loop. Thus it is run in an executor - a dedicated thread
-        # pool - which allows for asyncio to do other work while this call is
-        # being made
-        authlog_api_result = await self.event_loop.run_in_executor(
-            self.executor,
+        # Make an API call to retrieve authlog logs
+        authlog_api_result = await run_in_executor(
             functools.partial(
-                self.admin.get_authentication_log,
+                get_admin().get_authentication_log,
                 api_version=2,
                 mintime=self.mintime,
                 next_offset=self.log_offset,

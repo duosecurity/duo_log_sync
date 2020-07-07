@@ -12,11 +12,8 @@ class Producer(ABC):
     recorded to allow checkpointing and recovery from a crash.
     """
 
-    def __init__(self, log_queue, log_offset, g_vars):
+    def __init__(self, log_queue, log_offset):
         self.log_queue = log_queue
-        self.admin = g_vars.admin
-        self.event_loop = g_vars.event_loop
-        self.executor = g_vars.executor
         self.log_offset = log_offset
         self.log_type = None
 
