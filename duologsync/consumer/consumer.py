@@ -3,6 +3,8 @@ import sys
 import json
 import logging
 
+from duologsync.util import update_log_checkpoint
+
 class Consumer():
     def __init__(self, log_queue, log_offset, writer, checkpoint_dir):
         self.checkpoint_dir = checkpoint_dir
@@ -36,14 +38,5 @@ class Consumer():
                 logging.error("Failed to write data to transport with %s", e)
                 sys.exit(1)
 
-            # Idea is to write to log_offset file after data is sent
-            # When user sets recover=True in toml, we will read from this file
-            # if it exists and grab data from that offset
-            # Still testing out this logic
-            checkpoint_file = os.path.join(
-                self.checkpoint_dir,
-                f"{self.log_type}_checkpoint_data.txt")
-            checkpointing_data = open(checkpoint_file, "w")
-            checkpointing_data.write(json.dumps(self.log_offset))
-            checkpointing_data.flush()
-            checkpointing_data.close()
+            # Save log_offset to log specific checkpoint file
+            update_log_checkpoint(self.log_type, self.log_offset)

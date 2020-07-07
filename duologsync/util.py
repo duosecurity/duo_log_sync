@@ -4,6 +4,9 @@ Unrelated, but useful functions used in various places throughout DuoLogSync.
 Functions
 ---------
 
+update_log_checkpoint()
+    Save offset to the checkpoint file for the log type calling this function
+
 set_default_log_offset()
     Setter for the variable 'default_log_offset'
 
@@ -34,8 +37,25 @@ from duologsync.__version__ import __version__
 # log-type does not have a recovery file containing a timestamp from which
 # logs should be fetched
 default_log_offset = None
-
 MILLISECONDS_PER_SECOND = 1000
+
+def update_log_checkpoint(log_type, log_offset):
+    """
+    Save log_offset to the checkpoint file for log_type.
+
+    @param log_type     Used to determine which checkpoint file open
+    @param log_offset   Information to save in the checkpoint file
+    """
+
+    checkpoint_filename = os.path.join(
+        g_vars.config['logs']['checkpointDir'],
+        f"{self.log_type}_checkpoint_data.txt")
+
+    checkpoint_file = open(checkpoint_filename, 'w')
+    checkpoint_file.write(json.dumps(log_offset))
+
+    # According to Python docs, closing a file also flushes the file
+    checkpoint_file.close()
 
 def set_default_log_offset(days_in_past):
     """
