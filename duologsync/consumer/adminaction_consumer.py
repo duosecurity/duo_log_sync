@@ -1,6 +1,6 @@
-from duologsync.consumer import base_consumer
+from duologsync.consumer.consumer import Consumer
 
-class AdminactionConsumer(base_consumer.BaseConsumer):
+class AdminactionConsumer(Consumer):
 
     def __init__(self, log_queue, log_offset, writer, checkpoint_dir):
         super().__init__(log_queue, log_offset, writer, checkpoint_dir)

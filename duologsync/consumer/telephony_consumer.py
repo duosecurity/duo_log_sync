@@ -1,6 +1,6 @@
-from duologsync.consumer import base_consumer
+from duologsync.consumer.consumer import Consumer
 
-class TelephonyConsumer(base_consumer.BaseConsumer):
+class TelephonyConsumer(Consumer):
 
     def __init__(self, log_queue, log_offset, writer, checkpoint_dir):
         super().__init__(log_queue, log_offset, writer, checkpoint_dir)

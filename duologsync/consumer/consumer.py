@@ -3,7 +3,7 @@ import sys
 import json
 import logging
 
-class BaseConsumer():
+class Consumer():
     def __init__(self, log_queue, log_offset, writer, checkpoint_dir):
         self.checkpoint_dir = checkpoint_dir
         self.log_offset = log_offset
