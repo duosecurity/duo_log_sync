@@ -32,13 +32,15 @@ from duologsync.__version__ import __version__
 # Default timestamp for how far in the past logs may be fetched. Used when a
 # log-type does not have a recovery file containing a timestamp from which
 # logs should be fetched
-default_log_offset = None
+DEFAULT_LOG_OFFSET = None
 MILLISECONDS_PER_SECOND = 1000
+SECONDS_PER_MINUTE = 60
+MINIMUM_POLLING_DURATION = 2 * SECONDS_PER_MINUTE
 
-admin = None
-config = None
-executor = None
-polling_duration = None
+ADMIN = None
+CONFIG = None
+EXECUTOR = None
+POLLING_DURATION = None
 
 def get_enabled_endpoints():
     """
@@ -47,7 +49,7 @@ def get_enabled_endpoints():
     @return the endpoints enabled in config
     """
 
-    return config['logs']['endpoints']['enabled']
+    return CONFIG['logs']['endpoints']['enabled']
 
 def get_admin():
     """
@@ -56,7 +58,7 @@ def get_admin():
     @return the admin global variable
     """
 
-    return admin
+    return ADMIN
 
 async def run_in_executor(function_obj):
     """
@@ -71,7 +73,7 @@ async def run_in_executor(function_obj):
     """
 
     result = await asyncio.get_event_loop().run_in_executor(
-        executor,
+        EXECUTOR,
         function_obj
     )
 
@@ -86,7 +88,7 @@ def update_log_checkpoint(log_type, log_offset):
     """
 
     checkpoint_filename = os.path.join(
-        config['logs']['checkpointDir'],
+        CONFIG['logs']['checkpointDir'],
         f"{log_type}_checkpoint_data.txt")
 
     checkpoint_file = open(checkpoint_filename, 'w')
@@ -101,26 +103,26 @@ def set_default_log_offset():
     """
 
     # Need to name default_log_offset as global in order to set it
-    global default_log_offset
+    global DEFAULT_LOG_OFFSET
 
     # The maximum amount of days in the past that a log may be fetched from
-    days_in_past = config['logs']['polling']['daysinpast']
+    days_in_past = CONFIG['logs']['polling']['daysinpast']
 
     # Create a timestamp for screening logs that are too old
-    default_log_offset = datetime.utcnow() - timedelta(days=days_in_past)
-    default_log_offset = int(default_log_offset.timestamp())
+    DEFAULT_LOG_OFFSET = datetime.utcnow() - timedelta(days=days_in_past)
+    DEFAULT_LOG_OFFSET = int(DEFAULT_LOG_OFFSET.timestamp())
 
 async def create_writer():
-    host = config['transport']['host']
-    port = config['transport']['port']
-    protocol = config['transport']['protocol']
+    host = CONFIG['transport']['host']
+    port = CONFIG['transport']['port']
+    protocol = CONFIG['transport']['protocol']
 
     if protocol == 'TCPSSL':
         try:
             logging.info("Opening connection to server over encrypted tcp...")
             cert_file = os.path.join(
-                config['transport']['certFileDir'],
-                config['transport']['certFileName']
+                CONFIG['transport']['certFileDir'],
+                CONFIG['transport']['certFileName']
             )
 
             sc = ssl.create_default_context(ssl.Purpose.SERVER_AUTH,
@@ -179,9 +181,9 @@ def get_log_offset(log_type):
     """
 
     # Whether checkpoint files should be used to retrieve log offset info
-    recover_log_offset = config['recoverFromCheckpoint']['enabled']
+    recover_log_offset = CONFIG['recoverFromCheckpoint']['enabled']
 
-    log_offset = default_log_offset
+    log_offset = DEFAULT_LOG_OFFSET
 
     # Auth must have timestamp represented in milliseconds, not seconds
     if log_type == 'auth':
@@ -190,7 +192,7 @@ def get_log_offset(log_type):
     # In this case, look for a checkpoint file from which to read the log offset
     if recover_log_offset:
         # Directory where log offset checkpoint files are saved
-        checkpoint_directory = config['Logs']['checkpointDir']
+        checkpoint_directory = CONFIG['Logs']['checkpointDir']
 
         try:
             # Open the checkpoint file, 'with' statement automatically closes it
@@ -243,19 +245,16 @@ def set_polling_duration():
     Method to set the value of the global variable polling_duration
     """
 
-    global polling_duration
-
-    SECONDS_PER_MINUTE = 60
-    MINIMUM_POLLING_DURATION = 2 * SECONDS_PER_MINUTE
+    global POLLING_DURATION
 
     # The number of minutes a producer will poll for logs
-    polling_duration = config['logs']['polling']['duration']
+    POLLING_DURATION = CONFIG['logs']['polling']['duration']
 
     # Convert polling_duration to seconds
-    polling_duration *= SECONDS_PER_MINUTE
+    POLLING_DURATION *= SECONDS_PER_MINUTE
 
     # Use the minimum polling duration if the user specifies a lower number
-    polling_duration = max(polling_duration, MINIMUM_POLLING_DURATION)
+    POLLING_DURATION = max(POLLING_DURATION, MINIMUM_POLLING_DURATION)
 
 def get_polling_duration():
     """
@@ -264,30 +263,30 @@ def get_polling_duration():
     @return polling_duration
     """
 
-    return polling_duration
+    return POLLING_DURATION
 
 def set_util_globals(config_path):
     """
-    Set global variables used throughout util 
+    Set global variables used throughout util
 
     @param config_path  Location of a config file which is used to create a
                         config dictionary object.
     """
 
-    global config, admin, executor
+    global CONFIG, ADMIN, EXECUTOR
 
     # Dictionary populated with values from the config file passed to DuoLogSync
-    config = ConfigGenerator().get_config(config_path)
+    CONFIG = ConfigGenerator().get_config(config_path)
 
     # Object that allows for interaction with Duo APIs to fetch logs / data
-    admin = create_admin(
-        config['duoclient']['ikey'],
-        config['duoclient']['skey'],
-        config['duoclient']['host']
+    ADMIN = create_admin(
+        CONFIG['duoclient']['ikey'],
+        CONFIG['duoclient']['skey'],
+        CONFIG['duoclient']['host']
     )
 
     # Allocate an execution environment of 3 threads for high latency tasks
-    executor = ThreadPoolExecutor(3)
+    EXECUTOR = ThreadPoolExecutor(3)
 
     set_polling_duration()
     set_default_log_offset()
