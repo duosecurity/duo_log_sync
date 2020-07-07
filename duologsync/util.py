@@ -55,8 +55,8 @@ def get_admin():
 async def run_in_executor(function_obj):
     """
     The function represented by function_obj is a high latency call which will
-    block the event loop. Thus, the function is run in an executor - a 
-    dedicated thread pool - which allows for the event loop to do other work 
+    block the event loop. Thus, the function is run in an executor - a
+    dedicated thread pool - which allows for the event loop to do other work
     while the given function is being made.
 
     @param function_obj A high-latency, callable object to run in the executor
@@ -262,7 +262,7 @@ def get_polling_duration():
 
 def create_g_vars(config_path):
     """
-    Set important variables used throughout DuoLogSync for the global 
+    Set important variables used throughout DuoLogSync for the global
     namedtuple variable g_vars.
 
     @param config_path  Location of a config file which is used to create a

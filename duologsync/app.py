@@ -11,7 +11,7 @@ main():
     for initializing important variables and creating Producers / Consumers
 
 create_consumer_producer_tasks():
-    Create Producer/Consumer objects and return them as a list of runnable 
+    Create Producer/Consumer objects and return them as a list of runnable
     asyncio tasks
 """
 
