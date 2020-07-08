@@ -113,6 +113,13 @@ def set_default_log_offset():
     DEFAULT_LOG_OFFSET = int(DEFAULT_LOG_OFFSET.timestamp())
 
 async def create_writer():
+    """
+    Create a network connection for writing logs to wherever the user would
+    like. Values in the user defined config determine where the connection
+    leads to, and the protocol used to send logs.
+
+    @return the writer object, used to write logs to a specific location
+    """
     host = CONFIG['transport']['host']
     port = CONFIG['transport']['port']
     protocol = CONFIG['transport']['protocol']
@@ -125,15 +132,15 @@ async def create_writer():
                 CONFIG['transport']['certFileName']
             )
 
-            sc = ssl.create_default_context(ssl.Purpose.SERVER_AUTH,
-                                            cafile=cert_file)
+            context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH,
+                                                 cafile=cert_file)
 
             _, writer = await asyncio.wait_for(
                 asyncio.open_connection(
                     host,
                     port,
                     loop=asyncio.get_event_loop(),
-                    ssl=sc),
+                    ssl=context),
                 timeout=60)
             return writer
         except ConnectionError:
