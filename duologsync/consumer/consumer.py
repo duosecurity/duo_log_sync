@@ -1,4 +1,7 @@
-import os
+"""
+Definition of the Consumer class
+"""
+
 import sys
 import json
 import logging
@@ -6,6 +9,14 @@ import logging
 from duologsync.util import update_log_checkpoint
 
 class Consumer():
+    """
+    Read logs from a queue shared with a Producer and write those logs 
+    somewhere using the writer object passed. Additionally, once logs have 
+    been written successfully, take the latest log_offset - also shared with 
+    the Producer pair - and save it to a checkpointing file in order to recover
+    progress if a crash occurs.
+    """
+
     def __init__(self, log_queue, log_offset, writer):
         self.log_offset = log_offset
         self.log_queue = log_queue
@@ -33,8 +44,8 @@ class Consumer():
                     self.writer.write(json.dumps(log).encode() + b'\n')
                     await self.writer.drain()
                 logging.info("Wrote data over tcp socket...")
-            except Exception as e:
-                logging.error("Failed to write data to transport with %s", e)
+            except Exception as error:
+                logging.error("Failed to write data to transport: %s", error)
                 sys.exit(1)
 
             # Save log_offset to log specific checkpoint file

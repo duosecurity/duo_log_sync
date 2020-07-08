@@ -1,3 +1,7 @@
+"""
+Definition of the Producer class
+"""
+
 import asyncio
 import logging
 from abc import ABC, abstractmethod
