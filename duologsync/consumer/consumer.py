@@ -10,9 +10,9 @@ from duologsync.util import update_log_checkpoint
 
 class Consumer():
     """
-    Read logs from a queue shared with a Producer and write those logs 
-    somewhere using the writer object passed. Additionally, once logs have 
-    been written successfully, take the latest log_offset - also shared with 
+    Read logs from a queue shared with a Producer and write those logs
+    somewhere using the writer object passed. Additionally, once logs have
+    been written successfully, take the latest log_offset - also shared with
     the Producer pair - and save it to a checkpointing file in order to recover
     progress if a crash occurs.
     """
