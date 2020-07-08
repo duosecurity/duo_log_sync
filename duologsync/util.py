@@ -4,16 +4,30 @@ Unrelated, but useful functions used in various places throughout DuoLogSync.
 Functions
 ---------
 
+run_in_executor()
+    The function represented by function_obj is a high latency call which will
+    block the event loop. Thus, the function is run in an executor - a
+    dedicated thread pool - which allows for the event loop to do other work
+    while the given function is being made.
+
+create_writer()
+    Create a network connection for writing logs to wherever the user would
+    like. Values in the user defined config determine where the connection
+    leads to, and the protocol used to send logs.
+
+get_log_offset()
+    Retrieve the offset from which logs of log_type should be fetched either by
+    using the default offset or by using a timestamp saved in a checkpoint file
+
+get_enabled_endpoints()
+    Return the list of endpoints that are enabled from config
+
 update_log_checkpoint()
     Save offset to the checkpoint file for the log type calling this function
 
 set_util_globals():
     Initialize important variables used throughout DuoLogSync and return a
     namedtuple which contains them and allows accessing the variables by name
-
-create_consumer_producer_tasks():
-    Create Producer/Consumer objects and return them as a list of runnable
-    asyncio tasks
 """
 
 import os
