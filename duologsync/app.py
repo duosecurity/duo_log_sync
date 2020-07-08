@@ -63,7 +63,7 @@ def create_consumer_producer_tasks(enabled_endpoints):
     Create a pair of Producer-Consumer objects for each enabled endpoint, and
     return a list containing asyncio tasks for running those objects.
 
-    @param enabled_endpoints    List of endpoints for which to create Producer 
+    @param enabled_endpoints    List of endpoints for which to create Producer
                                 / Consumer objects
 
     @return list of asyncio tasks for running the Producer and Consumer objects
