@@ -5,7 +5,6 @@ Definition of the Producer class
 import asyncio
 import logging
 from abc import ABC, abstractmethod
-
 from duologsync.util import get_polling_duration
 
 class Producer(ABC):

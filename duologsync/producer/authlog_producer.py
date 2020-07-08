@@ -1,5 +1,8 @@
-import functools
+"""
+Definition of the Authlog Producer class
+"""
 
+import functools
 from duologsync.producer.producer import Producer
 from duologsync.util import run_in_executor, get_admin
 

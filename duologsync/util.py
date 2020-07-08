@@ -38,7 +38,6 @@ import asyncio
 import logging
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
-
 import duo_client
 from duologsync.config_generator import ConfigGenerator
 from duologsync.__version__ import __version__

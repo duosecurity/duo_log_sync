@@ -18,7 +18,6 @@ create_consumer_producer_tasks():
 import argparse
 import asyncio
 import logging
-
 from duologsync.consumer.adminaction_consumer import AdminactionConsumer
 from duologsync.producer.adminaction_producer import AdminactionProducer
 from duologsync.consumer.authlog_consumer import AuthlogConsumer

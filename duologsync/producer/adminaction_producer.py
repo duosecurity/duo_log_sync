@@ -1,3 +1,7 @@
+"""
+Definition of the AdminactionProducer class
+"""
+
 import functools
 from duologsync.producer.producer import Producer
 from duologsync.util import run_in_executor, get_admin

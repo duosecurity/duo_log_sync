@@ -5,7 +5,6 @@ Definition of the Consumer class
 import sys
 import json
 import logging
-
 from duologsync.util import update_log_checkpoint
 
 class Consumer():
