@@ -39,8 +39,8 @@ MINIMUM_POLLING_DURATION = 2 * SECONDS_PER_MINUTE
 
 ADMIN = None
 CONFIG = None
-EXECUTOR = None
-POLLING_DURATION = None
+EXECUTOR = ThreadPoolExecutor(3)
+POLLING_DURATION = 120
 
 def get_enabled_endpoints():
     """
@@ -273,7 +273,7 @@ def set_util_globals(config_path):
                         config dictionary object.
     """
 
-    global CONFIG, ADMIN, EXECUTOR
+    global CONFIG, ADMIN
 
     # Dictionary populated with values from the config file passed to DuoLogSync
     CONFIG = ConfigGenerator().get_config(config_path)
@@ -284,9 +284,6 @@ def set_util_globals(config_path):
         CONFIG['duoclient']['skey'],
         CONFIG['duoclient']['host']
     )
-
-    # Allocate an execution environment of 3 threads for high latency tasks
-    EXECUTOR = ThreadPoolExecutor(3)
 
     set_polling_duration()
     set_default_log_offset()
