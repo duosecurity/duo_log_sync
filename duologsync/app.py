@@ -47,7 +47,7 @@ def main():
     set_util_globals(args.ConfigPath)
 
     # List of Producer/Consumer objects as asyncio tasks to be run
-    tasks = create_consumer_producer_tasks()
+    tasks = create_consumer_producer_tasks(get_enabled_endpoints())
 
     # Run the Producers and Consumers
     asyncio.get_event_loop().run_until_complete(asyncio.gather(*tasks))
@@ -58,10 +58,13 @@ def main():
 # iterating through each connection which will set up a writer for a connection
 # and then make a call to create consumer producer tasks while passing in the
 # writer
-def create_consumer_producer_tasks():
+def create_consumer_producer_tasks(enabled_endpoints):
     """
     Create a pair of Producer-Consumer objects for each enabled endpoint, and
     return a list containing asyncio tasks for running those objects.
+
+    @param enabled_endpoints    List of endpoints for which to create Producer 
+                                / Consumer objects
 
     @return list of asyncio tasks for running the Producer and Consumer objects
     """
@@ -72,7 +75,7 @@ def create_consumer_producer_tasks():
     tasks = []
 
     # Enable endpoints based on user selection
-    for endpoint in get_enabled_endpoints():
+    for endpoint in enabled_endpoints:
         log_queue = asyncio.Queue()
         producer = consumer = None
 
