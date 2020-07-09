@@ -70,33 +70,29 @@ def create_consumer_producer_tasks(enabled_endpoints):
 
     # Object for writing data / logs across a network, used by Consumers
     writer = asyncio.get_event_loop().run_until_complete(create_writer())
-
     tasks = []
 
     # Enable endpoints based on user selection
     for endpoint in enabled_endpoints:
-        log_queue = asyncio.Queue()
-        producer = consumer = None
+        consumer = None
 
         # Create log_offset var for each endpoint
         log_offset = get_log_offset(endpoint)
 
         # Create the right pair of Producer-Consumer objects based on endpoint
         if endpoint == 'auth':
-            producer = AuthlogProducer(log_queue, log_offset)
-            consumer = AuthlogConsumer(log_queue, producer, writer)
+            producer = AuthlogProducer(log_offset)
+            consumer = AuthlogConsumer(producer, writer)
         elif endpoint == 'telephony':
-            producer = TelephonyProducer(log_queue, log_offset)
-            consumer = TelephonyConsumer(log_queue, producer, writer)
+            producer = TelephonyProducer(log_offset)
+            consumer = TelephonyConsumer(producer, writer)
         elif endpoint == 'adminaction':
-            producer = AdminactionProducer(log_queue, log_offset)
-            consumer = AdminactionConsumer(log_queue, producer, writer)
+            producer = AdminactionProducer(log_offset)
+            consumer = AdminactionConsumer(producer, writer)
         else:
             logging.info("%s is not a recognized endpoint", endpoint)
-            del log_queue
             continue
 
-        tasks.append(asyncio.ensure_future(producer.produce()))
         tasks.append(asyncio.ensure_future(consumer.consume()))
 
     return tasks

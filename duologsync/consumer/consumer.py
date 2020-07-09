@@ -4,34 +4,34 @@ Definition of the Consumer class
 
 import sys
 import json
+import asyncio
 import logging
-from duologsync.util import update_log_checkpoint
+from duologsync.util import get_polling_duration, update_log_checkpoint
 
 class Consumer():
     """
-    Read logs from a queue shared with a Producer and write those logs
-    somewhere using the writer object passed. Additionally, once logs have
-    been written successfully, take the latest log_offset - also shared with
-    the Producer pair - and save it to a checkpointing file in order to recover
-    progress if a crash occurs.
+    Read logs from a log API call function provided by a log-specific producer
+    object and write those logs somewhere using the writer object passed.
+    Additionally, once logs have been written successfully, take the latest
+    log_offset - also shared with the Producer pair - and save it to a
+    checkpointing file in order to recover progress if a crash occurs.
     """
 
-    def __init__(self, log_queue, producer, writer):
+    def __init__(self, producer, writer):
         self.log_offset = None
-        self.log_queue = log_queue
         self.producer = producer
         self.writer = writer
         self.log_type = None
 
     async def consume(self):
         """
-        Consumer that will consume data from log_queue that a corresponding
-        Producer writes to. This data is then sent over a configured transport
+        Consumer that will consume data from using a log API call function
+        from producer. This data is then sent over a configured transport
         protocol to respective SIEMs or server.
         """
         while True:
             logging.info("Consuming %s logs...", self.log_type)
-            # TODO: add the polling wait here
+            asyncio.sleep(get_polling_duration())
             api_result = await self.producer.call_log_api()
             logs = self.producer.get_logs(api_result)
 

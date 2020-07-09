@@ -2,51 +2,17 @@
 Definition of the Producer class
 """
 
-import asyncio
-import logging
 from abc import ABC, abstractmethod
-from duologsync.util import get_polling_duration
 
 class Producer(ABC):
     """
-    Read data from a specific log endpoint via an API call at a polling
-    duration that is user specified. The data is published to a queue which
-    is only used for data of the same log type, and offset information is
-    recorded to allow checkpointing and recovery from a crash.
+    Define common function for fetching data from a log specific API endpoint
+    and getting offset information for a log or API result.
     """
 
-    def __init__(self, log_queue, log_offset):
-        self.log_queue = log_queue
+    def __init__(self, log_offset):
         self.log_offset = log_offset
         self.log_type = None
-
-    async def produce(self):
-        """
-        The main function of this class and subclasses. Runs a loop, sleeping
-        for the polling duration then making an API call, consuming the logs
-        from that API call and saving the offset of the latest log read.
-        """
-
-        # TODO: Implement interrupt handler / running variable so that the
-        # while loop exits on failure or on user exit
-        while True:
-            await asyncio.sleep(get_polling_duration())
-            logging.info("Getting data from %s endpoint after %s seconds",
-                         self.log_type, get_polling_duration())
-
-            api_result = await self.call_log_api()
-            new_logs = self.get_logs(api_result)
-
-            if new_logs:
-                logging.info("Adding %d %s logs to the queue", len(new_logs),
-                             self.log_type)
-                await self.log_queue.put(new_logs)
-                logging.info("Added %d %s logs to the queue", len(new_logs),
-                             self.log_type)
-
-                # Important for recovery in the event of a crash
-                self.log_offset = self.get_log_offset(api_result)
-                print('log_offset: %s', self.log_offset)
 
     @abstractmethod
     async def call_log_api(self):
