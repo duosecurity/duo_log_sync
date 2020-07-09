@@ -9,6 +9,6 @@ class AuthlogConsumer(Consumer):
     An implementation of the Consumer class for auth logs
     """
 
-    def __init__(self, log_queue, log_offset, writer):
-        super().__init__(log_queue, log_offset, writer)
+    def __init__(self, log_queue, producer, writer):
+        super().__init__(log_queue, producer, writer)
         self.log_type = "auth"

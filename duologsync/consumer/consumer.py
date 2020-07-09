@@ -16,9 +16,10 @@ class Consumer():
     progress if a crash occurs.
     """
 
-    def __init__(self, log_queue, log_offset, writer):
-        self.log_offset = log_offset
+    def __init__(self, log_queue, producer, writer):
+        self.log_offset = None
         self.log_queue = log_queue
+        self.producer = producer
         self.writer = writer
         self.log_type = None
 
@@ -38,14 +39,19 @@ class Consumer():
 
             logging.info("Consumed %s %s logs...", len(logs), self.log_type)
 
+            save_log = None
+
             try:
                 for log in logs:
                     self.writer.write(json.dumps(log).encode() + b'\n')
                     await self.writer.drain()
+                    save_log = log
                 logging.info("Wrote data over tcp socket...")
             except Exception as error:
                 logging.error("Failed to write data to transport: %s", error)
                 sys.exit(1)
+
+            self.log_offset = self.producer.get_log_offset(save_log)
 
             # Save log_offset to log specific checkpoint file
             update_log_checkpoint(self.log_type, self.log_offset)
