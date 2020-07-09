@@ -24,7 +24,7 @@ class AuthlogProducer(Producer):
             self.mintime = self.log_offset
             self.log_offset = None
 
-    async def _call_log_api(self):
+    async def call_log_api(self):
         """
         Make a call to the authentication log endpoint and return the result of
         that API call
@@ -50,7 +50,7 @@ class AuthlogProducer(Producer):
         return authlog_api_result
 
     @staticmethod
-    def _get_logs(api_result):
+    def get_logs(api_result):
         """
         Retrieve authentication logs from the API result of a call to the
         authentication log endpoint
@@ -65,7 +65,7 @@ class AuthlogProducer(Producer):
         return api_result['authlogs']
 
     @staticmethod
-    def _get_log_offset(api_result):
+    def get_log_offset(api_result):
         """
         Return the next_offset given by the result of a call to the
         authentication log API endpoint

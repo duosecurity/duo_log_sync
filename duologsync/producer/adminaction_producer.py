@@ -16,7 +16,7 @@ class AdminactionProducer(Producer):
         super().__init__(log_queue, log_offset)
         self.log_type = 'adminaction'
 
-    async def _call_log_api(self):
+    async def call_log_api(self):
         """
         Make a call to the administrator log endpoint and return the result of
         that API call

@@ -34,8 +34,8 @@ class Producer(ABC):
             logging.info("Getting data from %s endpoint after %s seconds",
                          self.log_type, get_polling_duration())
 
-            api_result = await self._call_log_api()
-            new_logs = self._get_logs(api_result)
+            api_result = await self.call_log_api()
+            new_logs = self.get_logs(api_result)
 
             if new_logs:
                 logging.info("Adding %d %s logs to the queue", len(new_logs),
@@ -45,10 +45,10 @@ class Producer(ABC):
                              self.log_type)
 
                 # Important for recovery in the event of a crash
-                self.log_offset = self._get_log_offset(api_result)
+                self.log_offset = self.get_log_offset(api_result)
 
     @abstractmethod
-    async def _call_log_api(self):
+    async def call_log_api(self):
         """
         Make a call to a log-specific API and return the API result. An
         implementation of call_log_api must be given by classes that extend
@@ -58,7 +58,7 @@ class Producer(ABC):
         """
 
     @staticmethod
-    def _get_logs(api_result):
+    def get_logs(api_result):
         """
         Perform an action to retrieve logs from a log-specific api_result. The
         default implementation given here will not suffice for every type of
@@ -73,7 +73,7 @@ class Producer(ABC):
         return api_result
 
     @staticmethod
-    def _get_log_offset(api_result):
+    def get_log_offset(api_result):
         """
         Return the newest offset read given the last api_result received. The
         default implementation given here will not suffice for every type of
