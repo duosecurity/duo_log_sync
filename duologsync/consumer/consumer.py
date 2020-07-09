@@ -31,7 +31,9 @@ class Consumer():
         """
         while True:
             logging.info("Consuming %s logs...", self.log_type)
-            logs = await self.log_queue.get()
+            # TODO: add the polling wait here
+            api_result = await self.producer.call_log_api()
+            logs = self.producer.get_logs(api_result)
 
             if logs is None:
                 logging.info("%s logs empty. Nothing to write...", self.log_type)
@@ -46,6 +48,7 @@ class Consumer():
                     self.writer.write(json.dumps(log).encode() + b'\n')
                     await self.writer.drain()
                     save_log = log
+                self.log_offset = self.producer.get_api_result_offset(api_result)
                 logging.info("Wrote data over tcp socket...")
             except Exception as error:
                 logging.error("Failed to write data to transport: %s", error)
