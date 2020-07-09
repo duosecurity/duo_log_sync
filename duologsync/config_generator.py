@@ -65,9 +65,16 @@ class ConfigGenerator:
         """
 
         logging.basicConfig(
+            # Where to save logs
             filename=os.path.join(log_dir, "duologsync.log"),
+
+            # How logs should be formatted
             format='%(asctime)s %(levelname)-8s %(message)s',
+
+            # Minimum level required of a log in order to be seen / written
             level=logging.INFO,
+
+            # Date format to use with logs
             datefmt='%Y-%m-%d %H:%M:%S'
         )
 
