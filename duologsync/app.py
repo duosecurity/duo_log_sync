@@ -24,7 +24,7 @@ from duologsync.consumer.authlog_consumer import AuthlogConsumer
 from duologsync.producer.authlog_producer import AuthlogProducer
 from duologsync.consumer.telephony_consumer import TelephonyConsumer
 from duologsync.producer.telephony_producer import TelephonyProducer
-from duologsync.util import (set_util_globals, create_writer, get_log_offset,
+from duologsync.util import (set_util_globals, create_writer,
                              get_enabled_endpoints)
 
 def main():
@@ -76,18 +76,15 @@ def create_consumer_producer_tasks(enabled_endpoints):
     for endpoint in enabled_endpoints:
         consumer = None
 
-        # Create log_offset var for each endpoint
-        log_offset = get_log_offset(endpoint)
-
         # Create the right pair of Producer-Consumer objects based on endpoint
         if endpoint == 'auth':
-            producer = AuthlogProducer(log_offset)
+            producer = AuthlogProducer()
             consumer = AuthlogConsumer(producer, writer)
         elif endpoint == 'telephony':
-            producer = TelephonyProducer(log_offset)
+            producer = TelephonyProducer()
             consumer = TelephonyConsumer(producer, writer)
         elif endpoint == 'adminaction':
-            producer = AdminactionProducer(log_offset)
+            producer = AdminactionProducer()
             consumer = AdminactionConsumer(producer, writer)
         else:
             logging.info("%s is not a recognized endpoint", endpoint)

@@ -3,6 +3,7 @@ Definition of the Producer class
 """
 
 from abc import ABC, abstractmethod
+from duologsync.util import get_log_offset
 
 class Producer(ABC):
     """
@@ -10,9 +11,9 @@ class Producer(ABC):
     and getting offset information for a log or API result.
     """
 
-    def __init__(self, log_offset):
-        self.log_offset = log_offset
-        self.log_type = None
+    def __init__(self, log_type):
+        self.log_type = log_type
+        self.log_offset = get_log_offset(self.log_type)
 
     @abstractmethod
     async def call_log_api(self):

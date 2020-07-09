@@ -12,9 +12,8 @@ class AuthlogProducer(Producer):
     and placement into a queue of Authentication logs
     """
 
-    def __init__(self, log_offset):
-        super().__init__(log_offset)
-        self.log_type = 'auth'
+    def __init__(self):
+        super().__init__('auth')
         self.mintime = None
 
         # log_offset for Auth can be an int or a tuple, depending on if there
