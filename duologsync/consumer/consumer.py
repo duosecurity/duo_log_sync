@@ -52,6 +52,7 @@ class Consumer():
             last_log_written = None
 
             try:
+                logging.info('%s: writing logs', self.log_type)
                 for log in logs:
                     self.writer.write(json.dumps(log).encode() + b'\n')
                     await self.writer.drain()
@@ -63,7 +64,9 @@ class Consumer():
                 logging.error("Failed to write data to transport: %s", error)
                 sys.exit(1)
             finally:
-                if last_log_written is not None:
+                if last_log_written is None:
+                    logging.info('%s: successfully wrote logs', self.log_type)
+                else:
                     logging.warning('%s: failed to write some logs',
                                     self.log_type)
 
@@ -71,5 +74,6 @@ class Consumer():
                     api_result,
                     last_log_written)
 
+                logging.info('%s: checkpointing log offset', self.log_type)
                 # Save log_offset to log specific checkpoint file
                 update_log_checkpoint(self.log_type, self.log_offset)
