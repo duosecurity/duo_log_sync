@@ -40,31 +40,20 @@ class Producer(ABC):
         # No need to rewrite this function if api_result is a conatiner of logs
         return api_result
 
-    def get_api_result_offset(self, api_result):
-        """
-        Return the offset of the newest log given api_result.
-        The default implementation given here will not suffice for every type of
-        log API and so should be overriden by a child class when necessary.
-
-        @param api_result   The result of an API call
-
-        @return the offset of the latest fetched log
-        """
-
-        # No need to rewrite this function if the latest timestamp may be
-        # obtained from api_result in the following manner
-        return self.get_log_offset(api_result[-1])
-
     @staticmethod
-    def get_log_offset(log):
+    def get_log_offset(api_result, log):
         """
         Get offset information given an individual log from an API result. The
         default implementation given here will not suffice for every type of
         log API and so should be overriden by a child class when necessary.
 
-        @param log  Individual log from which to get offset information
+        @param api_result   Result of an API call to which log belongs
+        @param log          Individual log from which to get offset information
 
         @return the offset of the log
         """
+
+        if log is None:
+            log = api_result[-1]
 
         return log['timestamp'] + 1
