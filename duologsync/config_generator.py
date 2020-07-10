@@ -3,6 +3,7 @@ Definition of the ConfigGenerator class
 """
 
 import os
+import cerberus
 import logging
 import yaml
 from yaml import YAMLError
@@ -27,11 +28,56 @@ class ConfigGenerator:
     DEFAULT_LOG_DIR = '/tmp'
     DEFAULT_DAYS_IN_PAST = 180
     DEFAULT_CHECKPOINT_DIR = '/tmp'
-    DEFAULT_POLLING_DURATION = 2 * SECONDS_PER_MINUTE
+    MINIMUM_POLLING_DURATION = 2
 
     ENABLED_ENDPOINTS = ['adminaction', 'auth', 'telephony']
     TRANSPORT_PROTOCOLS = ['TCP', 'TCPSSL', 'UDP']
     DUOCLIENT_REQUIRED_FIELDS = ['skey', 'ikey', 'host']
+
+    schema = {
+        'duoclient': {
+            'type': 'dict',
+            'schema': {
+                'skey': {'type': 'str', 'required': True},
+                'ikey': {'type': 'str', 'required': True},
+                'host': {'type': 'str', 'required': True}
+            },
+            'required': True
+        },
+        'logs': {
+            'type': 'dict',
+            'schema': {
+                'logDir': {'type': 'str'},
+                'endpoints': {
+                    'type': 'dict',
+                    'schema': {
+                        # Add way to check that enabled is in ENABLED_ENDPOINTS
+                        'enabled': {'type': ['str', 'list'], 'required': True}
+                    }
+                },
+                'polling': {
+                    'type': 'dict',
+                    'schema': {
+                        'duration': {
+                            'type': 'float',
+                            'min': MINIMUM_POLLING_DURATION
+                        },
+                        'daysinpast': {'type': 'int', 'min': 0}
+                    }
+                },
+                'checkpointDir': {}
+            },
+            'required': True
+        },
+        'transport': {
+        },
+        'recoverFromCheckpoint': {
+            'type': 'dict',
+            'schema': {
+                'enabled': {'type': 'bool'}
+            }
+        }
+    }
 
     @staticmethod
     def get_config(config_filepath):
@@ -68,16 +114,12 @@ class ConfigGenerator:
 
     @staticmethod
     def validate_config(config):
-        # Check that duoclient field exists and that it contains values for 
+        # Check that duoclient field exists and that it contains values for
         # skey, ikey, host
 
-        # Check that transport field exists and that it contains values for 
-        # protocol, host, port, and that protocol is valid (along with host 
+        # Check that transport field exists and that it contains values for
+        # protocol, host, port, and that protocol is valid (along with host
         # and port
-
-        #logs
-        #   |_ polling
-        #            |_ duration
         pass
 
     # TODO: move function to util.py, call it from app.py
