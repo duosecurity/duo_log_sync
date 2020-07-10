@@ -2,6 +2,7 @@
 Definition of the ConfigGenerator class
 """
 
+from cerberus import Validator
 import yaml
 from yaml import YAMLError
 
@@ -37,21 +38,21 @@ class ConfigGenerator:
         'duoclient': {
             'type': 'dict',
             'schema': {
-                'skey': {'type': 'str', 'required': True},
-                'ikey': {'type': 'str', 'required': True},
-                'host': {'type': 'str', 'required': True}
+                'skey': {'type': 'string', 'required': True},
+                'ikey': {'type': 'string', 'required': True},
+                'host': {'type': 'string', 'required': True}
             },
             'required': True
         },
         'logs': {
             'type': 'dict',
             'schema': {
-                'logDir': {'type': 'str'},
+                'logDir': {'type': 'string'},
                 'endpoints': {
                     'type': 'dict',
                     'schema': {
                         # Add way to check that enabled is in ENABLED_ENDPOINTS
-                        'enabled': {'type': ['str', 'list'], 'required': True}
+                        'enabled': {'type': ['string', 'list'], 'required': True}
                     },
                     'required': True
                 },
@@ -59,22 +60,22 @@ class ConfigGenerator:
                     'type': 'dict',
                     'schema': {
                         'duration': {
-                            'type': 'float'
+                            'type': 'number'
                         },
-                        'daysinpast': {'type': 'int', 'min': 0}
+                        'daysinpast': {'type': 'integer', 'min': 0}
                     }
                 },
-                'checkpointDir': {'type': 'str'}
+                'checkpointDir': {'type': 'string'}
             },
             'required': True
         },
         'transport': {
             'type': 'dict',
             'schema': {
-                'protocol': {'type': 'str', 'required': True},
-                'host': {'type': 'str', 'required': True},
+                'protocol': {'type': 'string', 'required': True},
+                'host': {'type': 'string', 'required': True},
                 'port': {
-                    'type': 'str',
+                    'type': 'integer',
                     'min': 0,
                     'max': 65535,
                     'required': True
@@ -86,7 +87,7 @@ class ConfigGenerator:
         'recoverFromCheckpoint': {
             'type': 'dict',
             'schema': {
-                'enabled': {'type': 'bool'}
+                'enabled': {'type': 'boolean'}
             }
         }
     }
@@ -132,4 +133,7 @@ class ConfigGenerator:
         # Check that transport field exists and that it contains values for
         # protocol, host, port, and that protocol is valid (along with host
         # and port
-        pass
+        schema = Validator(ConfigGenerator.SCHEMA)
+        result = schema.validate(config)
+        print("Result of validating config is: %s" % result)
+        print(schema.errors)
