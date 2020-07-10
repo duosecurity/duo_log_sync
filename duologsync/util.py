@@ -28,6 +28,9 @@ update_log_checkpoint()
 set_util_globals():
     Initialize important variables used throughout DuoLogSync and return a
     namedtuple which contains them and allows accessing the variables by name
+
+set_logger():
+    Function to set up logging for DuoLogSync
 """
 
 import os
@@ -54,6 +57,31 @@ ADMIN = None
 CONFIG = None
 EXECUTOR = ThreadPoolExecutor(3)
 POLLING_DURATION = 120
+
+def set_logger():
+    """
+    Function to set up logging for DuoLogSync.
+
+    @param log_dir  Directory where logging messages should be saved
+    """
+
+    log_dir = CONFIG['logs']['logDir']
+
+    logging.basicConfig(
+        # Where to save logs
+        filename=os.path.join(log_dir, "duologsync.log"),
+
+        # How logs should be formatted
+        format='%(asctime)s %(levelname)-8s %(message)s',
+
+        # Minimum level required of a log in order to be seen / written
+        level=logging.INFO,
+
+        # Date format to use with logs
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
+
+    logging.info("Starting duologsync...")
 
 def get_enabled_endpoints():
     """

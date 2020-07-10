@@ -24,7 +24,7 @@ from duologsync.consumer.authlog_consumer import AuthlogConsumer
 from duologsync.producer.authlog_producer import AuthlogProducer
 from duologsync.consumer.telephony_consumer import TelephonyConsumer
 from duologsync.producer.telephony_producer import TelephonyProducer
-from duologsync.util import (set_util_globals, create_writer,
+from duologsync.util import (set_util_globals, create_writer, set_logger,
                              get_enabled_endpoints)
 
 def main():
@@ -44,6 +44,7 @@ def main():
 
     # Call a function to set all the Global variables in util
     set_util_globals(args.ConfigPath)
+    set_logger()
 
     # List of Producer/Consumer objects as asyncio tasks to be run
     tasks = create_consumer_producer_tasks(get_enabled_endpoints())

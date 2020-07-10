@@ -2,9 +2,6 @@
 Definition of the ConfigGenerator class
 """
 
-import os
-import cerberus
-import logging
 import yaml
 from yaml import YAMLError
 
@@ -121,28 +118,3 @@ class ConfigGenerator:
         # protocol, host, port, and that protocol is valid (along with host
         # and port
         pass
-
-    # TODO: move function to util.py, call it from app.py
-    @staticmethod
-    def set_logger(log_dir):
-        """
-        Function to set up logging for DuoLogSync.
-
-        @param log_dir  Directory where logging messages should be saved
-        """
-
-        logging.basicConfig(
-            # Where to save logs
-            filename=os.path.join(log_dir, "duologsync.log"),
-
-            # How logs should be formatted
-            format='%(asctime)s %(levelname)-8s %(message)s',
-
-            # Minimum level required of a log in order to be seen / written
-            level=logging.INFO,
-
-            # Date format to use with logs
-            datefmt='%Y-%m-%d %H:%M:%S'
-        )
-
-        logging.info("Starting duologsync...")
