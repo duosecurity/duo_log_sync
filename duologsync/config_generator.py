@@ -31,7 +31,9 @@ class ConfigGenerator:
     TRANSPORT_PROTOCOLS = ['TCP', 'TCPSSL', 'UDP']
     DUOCLIENT_REQUIRED_FIELDS = ['skey', 'ikey', 'host']
 
-    schema = {
+    # Schema for validating the structure of a config dictionary generated from
+    # a user-provided YAML file
+    SCHEMA = {
         'duoclient': {
             'type': 'dict',
             'schema': {
@@ -50,23 +52,36 @@ class ConfigGenerator:
                     'schema': {
                         # Add way to check that enabled is in ENABLED_ENDPOINTS
                         'enabled': {'type': ['str', 'list'], 'required': True}
-                    }
+                    },
+                    'required': True
                 },
                 'polling': {
                     'type': 'dict',
                     'schema': {
                         'duration': {
-                            'type': 'float',
-                            'min': MINIMUM_POLLING_DURATION
+                            'type': 'float'
                         },
                         'daysinpast': {'type': 'int', 'min': 0}
                     }
                 },
-                'checkpointDir': {}
+                'checkpointDir': {'type': 'str'}
             },
             'required': True
         },
         'transport': {
+            'type': 'dict',
+            'schema': {
+                'protocol': {'type': 'str', 'required': True},
+                'host': {'type': 'str', 'required': True},
+                'port': {
+                    'type': 'str',
+                    'min': 0,
+                    'max': 65535,
+                    'required': True
+                },
+                'certFileDir': {},
+                'certFileName': {}
+            }
         },
         'recoverFromCheckpoint': {
             'type': 'dict',
