@@ -74,22 +74,25 @@ def create_consumer_producer_tasks(enabled_endpoints):
 
     # Enable endpoints based on user selection
     for endpoint in enabled_endpoints:
-        consumer = None
+        log_queue = asyncio.Queue()
+        producer = consumer = None
 
         # Create the right pair of Producer-Consumer objects based on endpoint
         if endpoint == 'auth':
-            producer = AuthlogProducer()
-            consumer = AuthlogConsumer(producer, writer)
+            producer = AuthlogProducer(log_queue)
+            consumer = AuthlogConsumer(log_queue, producer, writer)
         elif endpoint == 'telephony':
-            producer = TelephonyProducer()
-            consumer = TelephonyConsumer(producer, writer)
+            producer = TelephonyProducer(log_queue)
+            consumer = TelephonyConsumer(log_queue, producer, writer)
         elif endpoint == 'adminaction':
-            producer = AdminactionProducer()
-            consumer = AdminactionConsumer(producer, writer)
+            producer = AdminactionProducer(log_queue)
+            consumer = AdminactionConsumer(log_queue, producer, writer)
         else:
             logging.info("%s is not a recognized endpoint", endpoint)
+            del log_queue
             continue
 
+        tasks.append(asyncio.ensure_future(producer.produce()))
         tasks.append(asyncio.ensure_future(consumer.consume()))
 
     return tasks

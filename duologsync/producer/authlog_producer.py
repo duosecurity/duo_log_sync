@@ -12,8 +12,8 @@ class AuthlogProducer(Producer):
     and placement into a queue of Authentication logs
     """
 
-    def __init__(self):
-        super().__init__('auth')
+    def __init__(self, log_queue):
+        super().__init__(log_queue, 'auth')
         self.mintime = None
 
         # log_offset for Auth can be an int or a tuple, depending on if there
@@ -78,18 +78,18 @@ class AuthlogProducer(Producer):
 
         return api_result['metadata']['next_offset']
 
-    @staticmethod
-    def get_log_offset(api_result, log):
+    def get_log_offset(self, log=None):
         """
         Return offset information from the authentication log.
 
-        @param log  Authentication log from which to retrieve offset info
+        @param log  Authentication log from which to retrieve offset info. None
+                    indicates that the latest log offset is required
 
         @return offset information from log
         """
 
         if log is None:
-            return api_result['metadata']['next_offset']
+            return self.log_offset
 
         timestamp = log['timestamp'] * 1000
         txid = log['txid']

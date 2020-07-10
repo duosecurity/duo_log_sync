@@ -9,6 +9,5 @@ class AdminactionConsumer(Consumer):
     An implementation of the Consumer class for adminaction logs
     """
 
-    def __init__(self, producer, writer):
-        super().__init__(producer, writer)
-        self.log_type = "adminaction"
+    def __init__(self, log_queue, producer, writer):
+        super().__init__(log_queue, 'adminaction', producer, writer)

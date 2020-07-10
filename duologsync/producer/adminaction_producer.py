@@ -12,8 +12,8 @@ class AdminactionProducer(Producer):
     and placement into a queue of Adminaction logs.
     """
 
-    def __init__(self):
-        super().__init__('adminaction')
+    def __init__(self, log_queue):
+        super().__init__(log_queue, 'adminaction')
 
     async def call_log_api(self):
         """

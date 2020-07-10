@@ -12,8 +12,8 @@ class TelephonyProducer(Producer):
     and placement into a queue of Telephony logs
     """
 
-    def __init__(self):
-        super().__init__('telephony')
+    def __init__(self, log_queue):
+        super().__init__(log_queue, 'telephony')
 
     async def call_log_api(self):
         """
