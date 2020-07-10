@@ -22,6 +22,17 @@ class ConfigGenerator:
     polling_duration = None
     days = None
 
+    SECONDS_PER_MINUTE = 60
+
+    DEFAULT_LOG_DIR = '/tmp'
+    DEFAULT_DAYS_IN_PAST = 180
+    DEFAULT_CHECKPOINT_DIR = '/tmp'
+    DEFAULT_POLLING_DURATION = 2 * SECONDS_PER_MINUTE
+
+    ENABLED_ENDPOINTS = ['adminaction', 'auth', 'telephony']
+    TRANSPORT_PROTOCOLS = ['TCP', 'TCPSSL', 'UDP']
+    DUOCLIENT_REQUIRED_FIELDS = ['skey', 'ikey', 'host']
+
     @staticmethod
     def get_config(config_filepath):
         """
@@ -54,6 +65,20 @@ class ConfigGenerator:
         # If no exception was raised during the try block, return config
         else:
             return config
+
+    @staticmethod
+    def validate_config(config):
+        # Check that duoclient field exists and that it contains values for 
+        # skey, ikey, host
+
+        # Check that transport field exists and that it contains values for 
+        # protocol, host, port, and that protocol is valid (along with host 
+        # and port
+
+        #logs
+        #   |_ polling
+        #            |_ duration
+        pass
 
     # TODO: move function to util.py, call it from app.py
     @staticmethod
