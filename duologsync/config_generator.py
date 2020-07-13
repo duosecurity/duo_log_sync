@@ -35,17 +35,22 @@ class ConfigGenerator:
     # Schema for validating the structure of a config dictionary generated from
     # a user-provided YAML file
     SCHEMA = {
+        # Duo credentials used to access a client's logs
         'duoclient': {
             'type': 'dict',
+            'required': True,
             'schema': {
                 'skey': {'type': 'string', 'required': True},
                 'ikey': {'type': 'string', 'required': True},
                 'host': {'type': 'string', 'required': True}
-            },
-            'required': True
+            }
         },
+
+        # What types of logs to fetch, how often to fetch, from what point in 
+        # time logs should begin to be fetched
         'logs': {
             'type': 'dict',
+            'required': True,
             'schema': {
                 'logDir': {'type': 'string'},
                 'endpoints': {
@@ -66,13 +71,25 @@ class ConfigGenerator:
                     }
                 },
                 'checkpointDir': {'type': 'string'}
-            },
-            'required': True
+            }
         },
+
+        # How and where fetched logs should be sent
         'transport': {
             'type': 'dict',
+            'required': True,
             'schema': {
-                'protocol': {'type': 'string', 'required': True},
+                'protocol': {
+                    'type': 'string',
+                    'required': True,
+                    'oneof': [
+                        {
+                            'allowed': ['TCPSSL'],
+                            'dependencies': ['certFileDir, certFileName']
+                        },
+                        {'allowed': ['TCP', 'UDP']}
+                    ]
+                },
                 'host': {'type': 'string', 'required': True},
                 'port': {
                     'type': 'integer',
@@ -80,10 +97,13 @@ class ConfigGenerator:
                     'max': 65535,
                     'required': True
                 },
-                'certFileDir': {},
-                'certFileName': {}
+                'certFileDir': {'type': 'string'},
+                'certFileName': {'type': 'string'}
             }
         },
+
+        # Whether or not log-specific checkpoint files should be used in the 
+        # case of an error or crash
         'recoverFromCheckpoint': {
             'type': 'dict',
             'schema': {
