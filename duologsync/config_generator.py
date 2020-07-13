@@ -7,10 +7,10 @@ from cerberus import Validator
 import yaml
 from yaml import YAMLError
 
-SECONDS_PER_MINUTE = 60
 DEFAULT_DIRECTORY = '/tmp'
 DEFAULT_DAYS_IN_PAST = 180
-MINIMUM_POLLING_DURATION = 2
+# How many seconds to wait between API requests
+MINIMUM_POLLING_DURATION = 120
 VALID_ENDPOINTS = ['adminaction', 'auth', 'telephony']
 
 
@@ -189,7 +189,7 @@ class ConfigGenerator:
             logging.info("Config: No value given for logs: polling: duration, "
                          "set to default value of %s", MINIMUM_POLLING_DURATION)
             config['logs']['polling']['duration'] = MINIMUM_POLLING_DURATION
-        elif polling_duration < 2:
+        elif polling_duration < MINIMUM_POLLING_DURATION:
             logging.info("Config: Value given for logs: polling: duration was "
                          "too low. Set to default value of %s",
                          MINIMUM_POLLING_DURATION)

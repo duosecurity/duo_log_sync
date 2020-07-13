@@ -56,7 +56,6 @@ MINIMUM_POLLING_DURATION = 2 * SECONDS_PER_MINUTE
 ADMIN = None
 CONFIG = None
 EXECUTOR = ThreadPoolExecutor(3)
-POLLING_DURATION = 120
 
 def set_logger():
     """
@@ -288,22 +287,6 @@ def create_admin(ikey, skey, host):
 
     return admin
 
-def set_polling_duration():
-    """
-    Method to set the value of the global variable polling_duration
-    """
-
-    global POLLING_DURATION
-
-    # The number of minutes a producer will poll for logs
-    POLLING_DURATION = CONFIG['logs']['polling']['duration']
-
-    # Convert polling_duration to seconds
-    POLLING_DURATION *= SECONDS_PER_MINUTE
-
-    # Use the minimum polling duration if the user specifies a lower number
-    POLLING_DURATION = max(POLLING_DURATION, MINIMUM_POLLING_DURATION)
-
 def get_polling_duration():
     """
     Method to get the value of the global variable polling_duration
@@ -333,5 +316,4 @@ def set_util_globals(config_path):
         CONFIG['duoclient']['host']
     )
 
-    set_polling_duration()
     set_default_log_offset()
