@@ -118,7 +118,7 @@ class ConfigGenerator:
 
     def check_config_is_set(self):
         """
-        Used to check that this Config object is set before trying to access 
+        Used to check that this Config object is set before trying to access
         or set values
         """
         if self.config_set:
@@ -149,12 +149,12 @@ class ConfigGenerator:
         curr_value = self.config
         for key in keys:
             curr_value = curr_value.get(key)
-            
+
             if curr_value is None:
                 raise ValueError(f"{key} is an invalid key for this Config")
 
         return curr_value
-    
+
     @staticmethod
     def create_config(config_filepath):
         """
@@ -190,18 +190,20 @@ class ConfigGenerator:
 
     @staticmethod
     def validate_config(config):
-        # Check that duoclient field exists and that it contains values for
-        # skey, ikey, host
+        """
+        Use a schema and the cerberus library to validate that the given config
+        dictionary has a valid structure
 
-        # Check that transport field exists and that it contains values for
-        # protocol, host, port, and that protocol is valid (along with host
-        # and port
+        @param config   Dictionary for which to validate the structure
+        """
+
+        # Generate a Validator object with the given schema
         schema = Validator(ConfigGenerator.SCHEMA)
-        result = schema.validate(config)
-        print("Result of validating config is: %s" % result)
-        # If there are errors, need to create a helpful message and raise the
-        # error to stop the program
-        print(schema.errors)
+
+        # Config is not a valid structure
+        if schema.validate(config) is False:
+            raise RuntimeError("While validating the config, the following "
+                               f"error(s) occurred: {schema.errors}")
 
     @staticmethod
     def set_config_defaults(config):
@@ -213,6 +215,10 @@ class ConfigGenerator:
         @param config   Config dict for which to set defaults
         """
 
+        # Message format for informing a user that an optional field in their
+        # config file was not set and thus a default value is being used
+        default_msg = "Config: No value given for %s, using default value of %s"
+
         if config.get('logs').get('polling') is None:
             config['logs']['polling'] = {}
 
@@ -220,32 +226,29 @@ class ConfigGenerator:
             config['recoverFromCheckpoint'] = {}
 
         if config.get('logs').get('logDir') is None:
-            print("Config: No value given for logs: logDir, set to default "
-                  "value of %s", DEFAULT_DIRECTORY)
+            print(default_msg % ('logs.logDir', DEFAULT_DIRECTORY))
             config['logs']['logDir'] = DEFAULT_DIRECTORY
 
-        polling_duration = config.get('logs', {}).get('polling', {}).get(
-            'duration')
+        polling_duration = config.get('logs').get('polling').get('duration')
         if polling_duration is None:
-            print("Config: No value given for logs: polling: duration, set to "
-                  "default value of %s", MINIMUM_POLLING_DURATION)
+            print(default_msg %
+                  ('logs.polling.duration', MINIMUM_POLLING_DURATION))
             config['logs']['polling']['duration'] = MINIMUM_POLLING_DURATION
+
         elif polling_duration < MINIMUM_POLLING_DURATION:
-            print("Config: Value given for logs: polling: duration was too "
+            print("Config: Value given for logs.polling.duration was too "
                   "low. Set to default value of %s" % MINIMUM_POLLING_DURATION)
             config['logs']['polling']['duration'] = MINIMUM_POLLING_DURATION
 
-        if config.get('logs', {}).get('polling', {}).get('daysinpast') is None:
-            print("Config: No value given for logs: polling: daysinpast, set "
-                  "to default value of %s" % DEFAULT_DAYS_IN_PAST)
+        if config.get('logs').get('polling').get('daysinpast') is None:
+            print(default_msg %
+                  ('logs.polling.daysinpast', DEFAULT_DAYS_IN_PAST))
             config['logs']['polling']['daysinpast'] = DEFAULT_DAYS_IN_PAST
 
         if config.get('logs').get('checkpointDir') is None:
-            print("Config: No value given for logs: checkpointDir, set to "
-                  "default value of %s" % DEFAULT_DIRECTORY)
+            print(default_msg % ('logs.checkpointDir', DEFAULT_DIRECTORY))
             config['logs']['checkpointDir'] = DEFAULT_DIRECTORY
 
-        if config.get('recoverFromCheckpoint', {}).get('enabled') is None:
-            print("Config: No value given for recoverFromCheckpoint: enabled, "
-                  "set to default value of %s" % False)
+        if config.get('recoverFromCheckpoint').get('enabled') is None:
+            print(default_msg % ('recoverFromCheckpoint.enabled', False))
             config['recoverFromCheckpoint']['enabled'] = False

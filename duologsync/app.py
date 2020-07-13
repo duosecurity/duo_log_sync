@@ -45,7 +45,7 @@ def main():
     set_global_config(args.ConfigPath)
 
     # Call a function to set all the Global variables in util
-    set_util_globals(args.ConfigPath)
+    set_util_globals()
     set_logger()
 
     # List of Producer/Consumer objects as asyncio tasks to be run

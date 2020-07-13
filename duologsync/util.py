@@ -56,7 +56,9 @@ CONFIG = ConfigGenerator()
 EXECUTOR = ThreadPoolExecutor(3)
 
 def set_global_config(config_filepath):
-    config = CONFIG.create_config(config_filepath)
+    config = ConfigGenerator.create_config(config_filepath)
+    ConfigGenerator.validate_config(config)
+    ConfigGenerator.set_config_defaults(config)
     CONFIG.set_config(config)
 
 def set_logger():
@@ -91,7 +93,7 @@ def get_enabled_endpoints():
     @return the endpoints enabled in config
     """
 
-    return CONFIG['logs']['endpoints']['enabled']
+    return CONFIG.get_value(['logs', 'endpoints', 'enabled'])
 
 def get_admin():
     """
@@ -130,7 +132,7 @@ def update_log_checkpoint(log_type, log_offset):
     """
 
     checkpoint_filename = os.path.join(
-        CONFIG['logs']['checkpointDir'],
+        CONFIG.get_value(['logs', 'checkpointDir']),
         f"{log_type}_checkpoint_data.txt")
 
     checkpoint_file = open(checkpoint_filename, 'w')
@@ -148,7 +150,7 @@ def set_default_log_offset():
     global DEFAULT_LOG_OFFSET
 
     # The maximum amount of days in the past that a log may be fetched from
-    days_in_past = CONFIG['logs']['polling']['daysinpast']
+    days_in_past = CONFIG.get_value(['logs', 'polling', 'daysinpast'])
 
     # Create a timestamp for screening logs that are too old
     DEFAULT_LOG_OFFSET = datetime.utcnow() - timedelta(days=days_in_past)
@@ -162,16 +164,16 @@ async def create_writer():
 
     @return the writer object, used to write logs to a specific location
     """
-    host = CONFIG['transport']['host']
-    port = CONFIG['transport']['port']
-    protocol = CONFIG['transport']['protocol']
+    host = CONFIG.get_value(['transport', 'host'])
+    port = CONFIG.get_value(['transport', 'port'])
+    protocol = CONFIG.get_value(['transport', 'protocol'])
 
     if protocol == 'TCPSSL':
         try:
             logging.info("Opening connection to server over encrypted tcp...")
             cert_file = os.path.join(
-                CONFIG['transport']['certFileDir'],
-                CONFIG['transport']['certFileName']
+                CONFIG.get_value(['transport', 'certFileDir']),
+                CONFIG.get_value(['transport', 'certFileName'])
             )
 
             context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH,
@@ -230,7 +232,7 @@ def get_log_offset(log_type):
     """
 
     # Whether checkpoint files should be used to retrieve log offset info
-    recover_log_offset = CONFIG['recoverFromCheckpoint']['enabled']
+    recover_log_offset = CONFIG.get_value(['recoverFromCheckpoint', 'enabled'])
 
     log_offset = DEFAULT_LOG_OFFSET
 
@@ -241,7 +243,7 @@ def get_log_offset(log_type):
     # In this case, look for a checkpoint file from which to read the log offset
     if recover_log_offset:
         # Directory where log offset checkpoint files are saved
-        checkpoint_directory = CONFIG['Logs']['checkpointDir']
+        checkpoint_directory = CONFIG.get_value(['Logs', 'checkpointDir'])
 
         try:
             # Open the checkpoint file, 'with' statement automatically closes it
@@ -296,23 +298,20 @@ def get_polling_duration():
     @return polling_duration
     """
 
-    return POLLING_DURATION
+    return CONFIG.get_value(['logs', 'polling', 'duration'])
 
-def set_util_globals(config_path):
+def set_util_globals():
     """
     Set global variables used throughout util
-
-    @param config_path  Location of a config file which is used to create a
-                        config dictionary object.
     """
 
     global ADMIN
-    
+
     # Object that allows for interaction with Duo APIs to fetch logs / data
     ADMIN = create_admin(
-        CONFIG['duoclient']['ikey'],
-        CONFIG['duoclient']['skey'],
-        CONFIG['duoclient']['host']
+        CONFIG.get_value(['duoclient', 'ikey']),
+        CONFIG.get_value(['duoclient', 'skey']),
+        CONFIG.get_value(['duoclient', 'host'])
     )
 
     set_default_log_offset()
