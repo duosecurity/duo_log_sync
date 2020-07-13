@@ -23,93 +23,96 @@ class ConfigGenerator:
 
     SECONDS_PER_MINUTE = 60
 
-    DEFAULT_LOG_DIR = '/tmp'
+    DEFAULT_DIRECTORY = '/tmp'
     DEFAULT_DAYS_IN_PAST = 180
-    DEFAULT_CHECKPOINT_DIR = '/tmp'
     MINIMUM_POLLING_DURATION = 2
 
     ENABLED_ENDPOINTS = ['adminaction', 'auth', 'telephony']
     TRANSPORT_PROTOCOLS = ['TCP', 'TCPSSL', 'UDP']
-    DUOCLIENT_REQUIRED_FIELDS = ['skey', 'ikey', 'host']
+
+    # Duo credentials used to access a client's logs
+    duoclient = {
+        'type': 'dict',
+        'required': True,
+        'schema': {
+            'skey': {'type': 'string', 'required': True},
+            'ikey': {'type': 'string', 'required': True},
+            'host': {'type': 'string', 'required': True}
+        }
+    }
+
+    # What types of logs to fetch, how often to fetch, from what point in
+    # time logs should begin to be fetched
+    logs = {
+        'type': 'dict',
+        'required': True,
+        'schema': {
+            'logDir': {'type': 'string'},
+            'endpoints': {
+                'type': 'dict',
+                'schema': {
+                    # Add way to check that enabled is in ENABLED_ENDPOINTS
+                    'enabled': {'type': ['string', 'list'], 'required': True}
+                },
+                'required': True
+            },
+            'polling': {
+                'type': 'dict',
+                'schema': {
+                    'duration': {
+                        'type': 'number'
+                    },
+                    'daysinpast': {'type': 'integer', 'min': 0}
+                }
+            },
+            'checkpointDir': {'type': 'string'}
+        }
+    }
+
+    # How and where fetched logs should be sent
+    transport = {
+        'type': 'dict',
+        'required': True,
+        'schema': {
+            'protocol': {
+                'type': 'string',
+                'required': True,
+                'oneof': [
+                    {
+                        'allowed': ['TCPSSL'],
+                        'dependencies': ['certFileDir, certFileName']
+                    },
+                    {'allowed': ['TCP', 'UDP']}
+                ]
+            },
+            'host': {'type': 'string', 'required': True},
+            'port': {
+                'type': 'integer',
+                'min': 0,
+                'max': 65535,
+                'required': True
+            },
+            'certFileDir': {'type': 'string'},
+            'certFileName': {'type': 'string'}
+        }
+    }
+
+    # Whether or not log-specific checkpoint files should be used in the
+    # case of an error or crash
+    recoverFromCheckpoint = {
+        'type': 'dict',
+        'schema': {
+            'enabled': {'type': 'boolean'}
+        }
+    }
 
     # Schema for validating the structure of a config dictionary generated from
     # a user-provided YAML file
     SCHEMA = {
-        # Duo credentials used to access a client's logs
-        'duoclient': {
-            'type': 'dict',
-            'required': True,
-            'schema': {
-                'skey': {'type': 'string', 'required': True},
-                'ikey': {'type': 'string', 'required': True},
-                'host': {'type': 'string', 'required': True}
-            }
-        },
-
-        # What types of logs to fetch, how often to fetch, from what point in 
-        # time logs should begin to be fetched
-        'logs': {
-            'type': 'dict',
-            'required': True,
-            'schema': {
-                'logDir': {'type': 'string'},
-                'endpoints': {
-                    'type': 'dict',
-                    'schema': {
-                        # Add way to check that enabled is in ENABLED_ENDPOINTS
-                        'enabled': {'type': ['string', 'list'], 'required': True}
-                    },
-                    'required': True
-                },
-                'polling': {
-                    'type': 'dict',
-                    'schema': {
-                        'duration': {
-                            'type': 'number'
-                        },
-                        'daysinpast': {'type': 'integer', 'min': 0}
-                    }
-                },
-                'checkpointDir': {'type': 'string'}
-            }
-        },
-
-        # How and where fetched logs should be sent
-        'transport': {
-            'type': 'dict',
-            'required': True,
-            'schema': {
-                'protocol': {
-                    'type': 'string',
-                    'required': True,
-                    'oneof': [
-                        {
-                            'allowed': ['TCPSSL'],
-                            'dependencies': ['certFileDir, certFileName']
-                        },
-                        {'allowed': ['TCP', 'UDP']}
-                    ]
-                },
-                'host': {'type': 'string', 'required': True},
-                'port': {
-                    'type': 'integer',
-                    'min': 0,
-                    'max': 65535,
-                    'required': True
-                },
-                'certFileDir': {'type': 'string'},
-                'certFileName': {'type': 'string'}
-            }
-        },
-
-        # Whether or not log-specific checkpoint files should be used in the 
-        # case of an error or crash
-        'recoverFromCheckpoint': {
-            'type': 'dict',
-            'schema': {
-                'enabled': {'type': 'boolean'}
-            }
-        }
+        'duoclient': duoclient,
+        'logs': logs,
+        'transport': transport,
+        'recoverFromCheckpoint': recoverFromCheckpoint
     }
 
     @staticmethod
@@ -156,4 +159,6 @@ class ConfigGenerator:
         schema = Validator(ConfigGenerator.SCHEMA)
         result = schema.validate(config)
         print("Result of validating config is: %s" % result)
+        # If there are errors, need to create a helpful message and raise the
+        # error to stop the program
         print(schema.errors)
