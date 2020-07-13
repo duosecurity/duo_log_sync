@@ -4,10 +4,11 @@ Definition of the Producer class
 
 import asyncio
 import logging
-from abc import ABC, abstractmethod
-from duologsync.util import get_log_offset, get_polling_duration
+import functools
+from duologsync.util import (get_log_offset, get_polling_duration,
+                             run_in_executor)
 
-class Producer(ABC):
+class Producer():
     """
     Read data from a specific log endpoint via an API call at a polling
     duration that is user specified. The data is published to a queue which
@@ -15,7 +16,8 @@ class Producer(ABC):
     recorded to allow checkpointing and recovery from a crash.
     """
 
-    def __init__(self, log_queue, log_type):
+    def __init__(self, api_call, log_queue, log_type):
+        self.api_call = api_call
         self.log_queue = log_queue
         self.log_type = log_type
         self.log_offset = get_log_offset(self.log_type)
@@ -50,15 +52,23 @@ class Producer(ABC):
                 logging.info("%s producer: no new logs available, going back "
                              "to polling", self.log_type)
 
-    @abstractmethod
     async def call_log_api(self):
         """
-        Make a call to a log-specific API and return the API result. An
-        implementation of call_log_api must be given by classes that extend
-        this class.
+        Make a call to a log-specific API and return the API result. The default
+        implementation given here will not suffice for every type of log API and
+        so should be overriden by a child clas when necessary.
 
         @return the result of the API call
         """
+
+        api_result = await run_in_executor(
+            functools.partial(
+                self.api_call,
+                mintime=self.log_offset
+            )
+        )
+
+        return api_result
 
     @staticmethod
     def get_logs(api_result):

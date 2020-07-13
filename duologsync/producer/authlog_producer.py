@@ -4,7 +4,7 @@ Definition of the Authlog Producer class
 
 import functools
 from duologsync.producer.producer import Producer
-from duologsync.util import run_in_executor, get_admin
+from duologsync.util import run_in_executor
 
 class AuthlogProducer(Producer):
     """
@@ -12,8 +12,8 @@ class AuthlogProducer(Producer):
     and placement into a queue of Authentication logs
     """
 
-    def __init__(self, log_queue):
-        super().__init__(log_queue, 'auth')
+    def __init__(self, api_call, log_queue):
+        super().__init__(api_call, log_queue, 'auth')
         self.mintime = None
 
         # log_offset for Auth can be an int or a tuple, depending on if there
@@ -28,16 +28,13 @@ class AuthlogProducer(Producer):
         Make a call to the authentication log endpoint and return the result of
         that API call
 
-        @param mintime  The oldest timestamp (in seconds) acceptable for a new
-                        administrator log
-
         @return the result of a call to the authentication log API endpoint
         """
 
         # Make an API call to retrieve authlog logs
         authlog_api_result = await run_in_executor(
             functools.partial(
-                get_admin().get_authentication_log,
+                self.api_call,
                 api_version=2,
                 mintime=self.mintime,
                 next_offset=self.log_offset,

@@ -51,7 +51,6 @@ from duologsync.__version__ import __version__
 DEFAULT_LOG_OFFSET = None
 MILLISECONDS_PER_SECOND = 1000
 
-ADMIN = None
 CONFIG = ConfigGenerator()
 EXECUTOR = ThreadPoolExecutor(3)
 
@@ -94,15 +93,6 @@ def get_enabled_endpoints():
     """
 
     return CONFIG.get_value(['logs', 'endpoints', 'enabled'])
-
-def get_admin():
-    """
-    Method to retrieve the admin global variable.
-
-    @return the admin global variable
-    """
-
-    return ADMIN
 
 async def run_in_executor(function_obj):
     """
@@ -262,7 +252,7 @@ def get_log_offset(log_type):
 
     return log_offset
 
-def create_admin(ikey, skey, host):
+def create_admin(ikey=None, skey=None, host=None):
     """
     Create an Admin object (from the duo_client library) with the given values.
     The Admin object has many functions for using Duo APIs and retrieving logs.
@@ -274,20 +264,20 @@ def create_admin(ikey, skey, host):
     @return a newly created Admin object
     """
 
-    try:
-        admin = duo_client.Admin(
-            ikey=ikey,
-            skey=skey,
-            host=host,
-            user_agent=f"Duo Log Sync/{__version__}"
-        )
 
-        logging.info("duo_client Admin initialized for ikey: %s, host: %s",
-                     ikey, host)
+    ikey = ikey or CONFIG.get_value(['duoclient', 'ikey'])
+    skey = skey or CONFIG.get_value(['duoclient', 'skey'])
+    host = host or CONFIG.get_value(['duoclient', 'host'])
 
-    except Exception as error:
-        logging.error("Failed to create duo_client Admin: %s", error)
-        sys.exit(1)
+    admin = duo_client.Admin(
+        ikey=ikey,
+        skey=skey,
+        host=host,
+        user_agent=f"Duo Log Sync/{__version__}"
+    )
+
+    logging.info("duo_client Admin initialized for ikey: %s, host: %s",
+                 ikey, host)
 
     return admin
 
@@ -299,19 +289,3 @@ def get_polling_duration():
     """
 
     return CONFIG.get_value(['logs', 'polling', 'duration'])
-
-def set_util_globals():
-    """
-    Set global variables used throughout util
-    """
-
-    global ADMIN
-
-    # Object that allows for interaction with Duo APIs to fetch logs / data
-    ADMIN = create_admin(
-        CONFIG.get_value(['duoclient', 'ikey']),
-        CONFIG.get_value(['duoclient', 'skey']),
-        CONFIG.get_value(['duoclient', 'host'])
-    )
-
-    set_default_log_offset()

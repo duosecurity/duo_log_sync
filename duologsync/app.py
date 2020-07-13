@@ -24,7 +24,7 @@ from duologsync.consumer.authlog_consumer import AuthlogConsumer
 from duologsync.producer.authlog_producer import AuthlogProducer
 from duologsync.consumer.telephony_consumer import TelephonyConsumer
 from duologsync.producer.telephony_producer import TelephonyProducer
-from duologsync.util import (set_util_globals, create_writer, set_logger,
+from duologsync.util import (create_admin, create_writer, set_logger,
                              get_enabled_endpoints, set_global_config)
 
 def main():
@@ -40,12 +40,7 @@ def main():
                             help='Config to start application')
     args = arg_parser.parse_args()
 
-    # TODO: Validate that the file path for config is valid and readable
-
     set_global_config(args.ConfigPath)
-
-    # Call a function to set all the Global variables in util
-    set_util_globals()
     set_logger()
 
     # List of Producer/Consumer objects as asyncio tasks to be run
@@ -71,6 +66,9 @@ def create_consumer_producer_tasks(enabled_endpoints):
     @return list of asyncio tasks for running the Producer and Consumer objects
     """
 
+    # Object with functions needed to utilize log API calls
+    admin = create_admin()
+
     # Object for writing data / logs across a network, used by Consumers
     writer = asyncio.get_event_loop().run_until_complete(create_writer())
     tasks = []
@@ -82,13 +80,14 @@ def create_consumer_producer_tasks(enabled_endpoints):
 
         # Create the right pair of Producer-Consumer objects based on endpoint
         if endpoint == 'auth':
-            producer = AuthlogProducer(log_queue)
+            producer = AuthlogProducer(admin.get_authentication_log, log_queue)
             consumer = AuthlogConsumer(log_queue, producer, writer)
         elif endpoint == 'telephony':
-            producer = TelephonyProducer(log_queue)
+            producer = TelephonyProducer(admin.get_telephony_log, log_queue)
             consumer = TelephonyConsumer(log_queue, producer, writer)
         elif endpoint == 'adminaction':
-            producer = AdminactionProducer(log_queue)
+            producer = AdminactionProducer(admin.get_administrator_log,
+                                           log_queue)
             consumer = AdminactionConsumer(log_queue, producer, writer)
         else:
             logging.info("%s is not a recognized endpoint", endpoint)
