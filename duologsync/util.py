@@ -66,11 +66,11 @@ def set_logger():
     @param log_dir  Directory where logging messages should be saved
     """
 
-    log_dir = CONFIG['logs']['logDir']
+    log_directory = CONFIG.get_value(['logs', 'logDir'])
 
     logging.basicConfig(
         # Where to save logs
-        filename=os.path.join(log_dir, "duologsync.log"),
+        filename=os.path.join(log_directory, "duologsync.log"),
 
         # How logs should be formatted
         format='%(asctime)s %(levelname)-8s %(message)s',

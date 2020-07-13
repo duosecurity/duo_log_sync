@@ -116,6 +116,17 @@ class ConfigGenerator:
         'recoverFromCheckpoint': RECOVER_FROM_CHECKPOINT
     }
 
+    def check_config_is_set(self):
+        """
+        Used to check that this Config object is set before trying to access 
+        or set values
+        """
+        if self.config_set:
+            return
+
+        raise RuntimeError('Cannot access values of a Config object before the '
+                           'object is set.')
+
     def set_config(self, config):
         """
         Function used to set the config of a Config object once and only once.
@@ -129,6 +140,21 @@ class ConfigGenerator:
         self.config = config
         self.config_set = True
 
+    def get_value(self, keys):
+        """
+        Getter for a Config object's 'config' instance variable
+        """
+
+        self.check_config_is_set()
+        curr_value = self.config
+        for key in keys:
+            curr_value = curr_value.get(key)
+            
+            if curr_value is None:
+                raise ValueError(f"{key} is an invalid key for this Config")
+
+        return curr_value
+    
     @staticmethod
     def create_config(config_filepath):
         """
