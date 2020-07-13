@@ -16,45 +16,42 @@ class ConfigGenerator:
     the values given are valid.
     """
 
-    skey, ikey, host = None, None, None
-    endpoints = None
-    polling_duration = None
-    days = None
-
     SECONDS_PER_MINUTE = 60
-
     DEFAULT_DIRECTORY = '/tmp'
     DEFAULT_DAYS_IN_PAST = 180
     MINIMUM_POLLING_DURATION = 2
-
-    ENABLED_ENDPOINTS = ['adminaction', 'auth', 'telephony']
-    TRANSPORT_PROTOCOLS = ['TCP', 'TCPSSL', 'UDP']
+    VALID_ENDPOINTS = ['adminaction', 'auth', 'telephony']
 
     # Duo credentials used to access a client's logs
-    duoclient = {
+    DUOCLIENT = {
         'type': 'dict',
         'required': True,
         'schema': {
-            'skey': {'type': 'string', 'required': True},
-            'ikey': {'type': 'string', 'required': True},
-            'host': {'type': 'string', 'required': True}
+            'skey': {'type': 'string', 'required': True, 'empty': False},
+            'ikey': {'type': 'string', 'required': True, 'empty': False},
+            'host': {'type': 'string', 'required': True, 'empty': False}
         }
     }
 
     # What types of logs to fetch, how often to fetch, from what point in
     # time logs should begin to be fetched
-    logs = {
+    LOGS = {
         'type': 'dict',
         'required': True,
         'schema': {
-            'logDir': {'type': 'string'},
+            'logDir': {'type': 'string', 'empty': False},
             'endpoints': {
                 'type': 'dict',
+                'required': True,
                 'schema': {
                     # Add way to check that enabled is in ENABLED_ENDPOINTS
-                    'enabled': {'type': ['string', 'list'], 'required': True}
-                },
-                'required': True
+                    'enabled': {
+                        'type': ['string', 'list'],
+                        'required': True,
+                        'empty': False,
+                        'allowed': VALID_ENDPOINTS,
+                    }
+                }
             },
             'polling': {
                 'type': 'dict',
@@ -65,12 +62,12 @@ class ConfigGenerator:
                     'daysinpast': {'type': 'integer', 'min': 0}
                 }
             },
-            'checkpointDir': {'type': 'string'}
+            'checkpointDir': {'type': 'string', 'empty': False}
         }
     }
 
     # How and where fetched logs should be sent
-    transport = {
+    TRANSPORT = {
         'type': 'dict',
         'required': True,
         'schema': {
@@ -80,26 +77,26 @@ class ConfigGenerator:
                 'oneof': [
                     {
                         'allowed': ['TCPSSL'],
-                        'dependencies': ['certFileDir, certFileName']
+                        'dependencies': ['certFileDir', 'certFileName']
                     },
                     {'allowed': ['TCP', 'UDP']}
                 ]
             },
-            'host': {'type': 'string', 'required': True},
+            'host': {'type': 'string', 'required': True, 'empty': False},
             'port': {
                 'type': 'integer',
                 'min': 0,
                 'max': 65535,
                 'required': True
             },
-            'certFileDir': {'type': 'string'},
-            'certFileName': {'type': 'string'}
+            'certFileDir': {'type': 'string', 'empty': False},
+            'certFileName': {'type': 'string', 'empty': False}
         }
     }
 
     # Whether or not log-specific checkpoint files should be used in the
     # case of an error or crash
-    recoverFromCheckpoint = {
+    RECOVER_FROM_CHECKPOINT = {
         'type': 'dict',
         'schema': {
             'enabled': {'type': 'boolean'}
@@ -109,10 +106,10 @@ class ConfigGenerator:
     # Schema for validating the structure of a config dictionary generated from
     # a user-provided YAML file
     SCHEMA = {
-        'duoclient': duoclient,
-        'logs': logs,
-        'transport': transport,
-        'recoverFromCheckpoint': recoverFromCheckpoint
+        'duoclient': DUOCLIENT,
+        'logs': LOGS,
+        'transport': TRANSPORT,
+        'recoverFromCheckpoint': RECOVER_FROM_CHECKPOINT
     }
 
     @staticmethod
