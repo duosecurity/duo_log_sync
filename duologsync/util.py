@@ -50,12 +50,14 @@ from duologsync.__version__ import __version__
 # logs should be fetched
 DEFAULT_LOG_OFFSET = None
 MILLISECONDS_PER_SECOND = 1000
-SECONDS_PER_MINUTE = 60
-MINIMUM_POLLING_DURATION = 2 * SECONDS_PER_MINUTE
 
 ADMIN = None
-CONFIG = None
+CONFIG = ConfigGenerator()
 EXECUTOR = ThreadPoolExecutor(3)
+
+def set_global_config(config_filepath):
+    config = CONFIG.create_config(config_filepath)
+    CONFIG.set_config(config)
 
 def set_logger():
     """
@@ -304,11 +306,8 @@ def set_util_globals(config_path):
                         config dictionary object.
     """
 
-    global CONFIG, ADMIN
-
-    # Dictionary populated with values from the config file passed to DuoLogSync
-    CONFIG = ConfigGenerator().get_config(config_path)
-
+    global ADMIN
+    
     # Object that allows for interaction with Duo APIs to fetch logs / data
     ADMIN = create_admin(
         CONFIG['duoclient']['ikey'],

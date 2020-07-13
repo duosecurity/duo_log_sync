@@ -25,7 +25,7 @@ from duologsync.producer.authlog_producer import AuthlogProducer
 from duologsync.consumer.telephony_consumer import TelephonyConsumer
 from duologsync.producer.telephony_producer import TelephonyProducer
 from duologsync.util import (set_util_globals, create_writer, set_logger,
-                             get_enabled_endpoints)
+                             get_enabled_endpoints, set_global_config)
 
 def main():
     """
@@ -41,6 +41,8 @@ def main():
     args = arg_parser.parse_args()
 
     # TODO: Validate that the file path for config is valid and readable
+
+    set_global_config(args.ConfigPath)
 
     # Call a function to set all the Global variables in util
     set_util_globals(args.ConfigPath)

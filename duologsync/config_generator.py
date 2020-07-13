@@ -2,7 +2,6 @@
 Definition of the ConfigGenerator class
 """
 
-import logging
 from cerberus import Validator
 import yaml
 from yaml import YAMLError
@@ -24,6 +23,9 @@ class ConfigGenerator:
     the values given are valid.
     """
 
+    def __init__(self):
+        self.config = None
+        self.config_set = False
 
     # Duo credentials used to access a client's logs
     DUOCLIENT = {
@@ -114,8 +116,21 @@ class ConfigGenerator:
         'recoverFromCheckpoint': RECOVER_FROM_CHECKPOINT
     }
 
+    def set_config(self, config):
+        """
+        Function used to set the config of a Config object once and only once.
+
+        @param config   Dictionary used to set a Config object's 'config'
+                        instance variable
+        """
+        if self.config_set is True:
+            raise RuntimeError('Config object already set. Cannot set Config '
+                               'object more than once')
+        self.config = config
+        self.config_set = True
+
     @staticmethod
-    def get_config(config_filepath):
+    def create_config(config_filepath):
         """
         Attemp to read the file at config_filepath and generate a config
         Dictionary object based on a defined JSON schema
@@ -171,7 +186,7 @@ class ConfigGenerator:
 
         @param config   Config dict for which to set defaults
         """
-        
+
         if config.get('logs').get('polling') is None:
             config['logs']['polling'] = {}
 
@@ -179,33 +194,32 @@ class ConfigGenerator:
             config['recoverFromCheckpoint'] = {}
 
         if config.get('logs').get('logDir') is None:
-            logging.info("Config: No value given for logs: logDir, set to "
-                         "default value of %s", DEFAULT_DIRECTORY)
+            print("Config: No value given for logs: logDir, set to default "
+                  "value of %s", DEFAULT_DIRECTORY)
             config['logs']['logDir'] = DEFAULT_DIRECTORY
 
         polling_duration = config.get('logs', {}).get('polling', {}).get(
             'duration')
         if polling_duration is None:
-            logging.info("Config: No value given for logs: polling: duration, "
-                         "set to default value of %s", MINIMUM_POLLING_DURATION)
+            print("Config: No value given for logs: polling: duration, set to "
+                  "default value of %s", MINIMUM_POLLING_DURATION)
             config['logs']['polling']['duration'] = MINIMUM_POLLING_DURATION
         elif polling_duration < MINIMUM_POLLING_DURATION:
-            logging.info("Config: Value given for logs: polling: duration was "
-                         "too low. Set to default value of %s",
-                         MINIMUM_POLLING_DURATION)
+            print("Config: Value given for logs: polling: duration was too "
+                  "low. Set to default value of %s" % MINIMUM_POLLING_DURATION)
             config['logs']['polling']['duration'] = MINIMUM_POLLING_DURATION
 
         if config.get('logs', {}).get('polling', {}).get('daysinpast') is None:
-            logging.info("Config: No value given for logs: polling: daysinpast,"
-                         " set to default value of %s", DEFAULT_DAYS_IN_PAST)
+            print("Config: No value given for logs: polling: daysinpast, set "
+                  "to default value of %s" % DEFAULT_DAYS_IN_PAST)
             config['logs']['polling']['daysinpast'] = DEFAULT_DAYS_IN_PAST
 
         if config.get('logs').get('checkpointDir') is None:
-            logging.info("Config: No value given for logs: checkpointDir, set "
-                         "to default value of %s", DEFAULT_DIRECTORY)
+            print("Config: No value given for logs: checkpointDir, set to "
+                  "default value of %s" % DEFAULT_DIRECTORY)
             config['logs']['checkpointDir'] = DEFAULT_DIRECTORY
 
         if config.get('recoverFromCheckpoint', {}).get('enabled') is None:
-            logging.info("Config: No value given for recoverFromCheckpoint: "
-                         "enabled, set to default value of %s", False)
+            print("Config: No value given for recoverFromCheckpoint: enabled, "
+                  "set to default value of %s" % False)
             config['recoverFromCheckpoint']['enabled'] = False
