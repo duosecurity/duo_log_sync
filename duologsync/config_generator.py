@@ -2,9 +2,17 @@
 Definition of the ConfigGenerator class
 """
 
+import logging
 from cerberus import Validator
 import yaml
 from yaml import YAMLError
+
+SECONDS_PER_MINUTE = 60
+DEFAULT_DIRECTORY = '/tmp'
+DEFAULT_DAYS_IN_PAST = 180
+MINIMUM_POLLING_DURATION = 2
+VALID_ENDPOINTS = ['adminaction', 'auth', 'telephony']
+
 
 class ConfigGenerator:
     """
@@ -16,11 +24,6 @@ class ConfigGenerator:
     the values given are valid.
     """
 
-    SECONDS_PER_MINUTE = 60
-    DEFAULT_DIRECTORY = '/tmp'
-    DEFAULT_DAYS_IN_PAST = 180
-    MINIMUM_POLLING_DURATION = 2
-    VALID_ENDPOINTS = ['adminaction', 'auth', 'telephony']
 
     # Duo credentials used to access a client's logs
     DUOCLIENT = {
@@ -159,3 +162,46 @@ class ConfigGenerator:
         # If there are errors, need to create a helpful message and raise the
         # error to stop the program
         print(schema.errors)
+
+    @staticmethod
+    def set_config_defaults(config):
+        """
+        Check if optional fields within a config are empty. If they are empty
+        or if they have a bad value, set those values to a default and log a
+        message about the decision to set a default.
+
+        @param config   Config dict for which to set defaults
+        """
+
+        if config.get('logs').get('logDir') is None:
+            logging.info("Config: No value given for logs: logDir, set to "
+                         "default value of %s", DEFAULT_DIRECTORY)
+            config['logs']['logDir'] = DEFAULT_DIRECTORY
+
+        polling_duration = config.get('logs', {}).get('polling', {}).get(
+            'duration')
+
+        if polling_duration is None:
+            logging.info("Config: No value given for logs: polling: duration, "
+                         "set to default value of %s", MINIMUM_POLLING_DURATION)
+            config['logs']['polling']['duration'] = MINIMUM_POLLING_DURATION
+        elif polling_duration < 2:
+            logging.info("Config: Value given for logs: polling: duration was "
+                         "too low. Set to default value of %s",
+                         MINIMUM_POLLING_DURATION)
+            config['logs']['polling']['duration'] = MINIMUM_POLLING_DURATION
+
+        if config.get('logs', {}).get('polling', {}).get('daysinpast') is None:
+            logging.info("Config: No value given for logs: polling: daysinpast,"
+                         " set to default value of %s", DEFAULT_DAYS_IN_PAST)
+            config['logs']['polling']['daysinpast'] = DEFAULT_DAYS_IN_PAST
+
+        if config.get('logs').get('checkpointDir') is None:
+            logging.info("Config: No value given for logs: checkpointDir, set "
+                         "to default value of %s", DEFAULT_DIRECTORY)
+            config['logs']['checkpointDir'] = DEFAULT_DIRECTORY
+
+        if config.get('recoverFromCheckpoint', {}).get('enabled') is None:
+            logging.info("Config: No value given for recoverFromCheckpoint: "
+                         "enabled, set to default value of %s", False)
+            config['recoverFromCheckpoint']['enabled'] = False
