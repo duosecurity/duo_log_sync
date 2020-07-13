@@ -47,7 +47,6 @@ class ConfigGenerator:
                 'type': 'dict',
                 'required': True,
                 'schema': {
-                    # Add way to check that enabled is in ENABLED_ENDPOINTS
                     'enabled': {
                         'type': ['string', 'list'],
                         'required': True,
@@ -172,6 +171,12 @@ class ConfigGenerator:
 
         @param config   Config dict for which to set defaults
         """
+        
+        if config.get('logs').get('polling') is None:
+            config['logs']['polling'] = {}
+
+        if config.get('recoverFromCheckpoint') is None:
+            config['recoverFromCheckpoint'] = {}
 
         if config.get('logs').get('logDir') is None:
             logging.info("Config: No value given for logs: logDir, set to "
@@ -180,7 +185,6 @@ class ConfigGenerator:
 
         polling_duration = config.get('logs', {}).get('polling', {}).get(
             'duration')
-
         if polling_duration is None:
             logging.info("Config: No value given for logs: polling: duration, "
                          "set to default value of %s", MINIMUM_POLLING_DURATION)
