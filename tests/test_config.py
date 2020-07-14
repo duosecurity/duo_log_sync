@@ -61,21 +61,85 @@ class TestConfig(TestCase):
         self.reset_config_variables()
 
     def test_get_enabled_endpoints(self):
-        pass
+        config = {'logs': {'endpoints': {'enabled': ['one', 'two', 'three']}}}
+
+        Config.set_config(config)
+        enabled_endpoints = Config.get_enabled_endpoints()
+
+        self.assertEqual(enabled_endpoints, ['one', 'two', 'three'])
+
+        self.reset_config_variables()
+
     def test_get_polling_duration(self):
-        pass
+        config = {'logs': {'polling': {'duration': 1234}}}
+
+        Config.set_config(config)
+        polling_duration = Config.get_polling_duration()
+
+        self.assertEqual(polling_duration, 1234)
+
+        self.reset_config_variables()
+
     def test_get_checkpoint_directory(self):
-        pass
+        config = {'logs': {'checkpointDir': '/tmp'}}
+
+        Config.set_config(config)
+        checkpoint_directory = Config.get_checkpoint_directory()
+
+        self.assertEqual(checkpoint_directory, '/tmp')
+
+        self.reset_config_variables()
+
     def test_get_ikey(self):
-        pass
+        config = {'duoclient': {'ikey': 'Integration Key'}}
+
+        Config.set_config(config)
+        ikey = Config.get_ikey()
+
+        self.assertEqual(ikey, 'Integration Key')
+
+        self.reset_config_variables()
+
     def test_get_skey(self):
-        pass
+        config = {'duoclient': {'skey': 'Secret Key'}}
+
+        Config.set_config(config)
+        skey = Config.get_skey()
+
+        self.assertEqual(skey, 'Secret Key')
+
+        self.reset_config_variables()
+
     def test_get_host(self):
-        pass
+        config = {'duoclient': {'host': 'duosecurity.com'}}
+
+        Config.set_config(config)
+        host = Config.get_host()
+
+        self.assertEqual(host, 'duosecurity.com')
+
+        self.reset_config_variables()
+
     def test_get_recover_log_offset(self):
-        pass
+        config = {'recoverFromCheckpoint': {'enabled': True}}
+
+        Config.set_config(config)
+        recover_log_offset = Config.get_recover_log_offset()
+
+        self.assertEqual(recover_log_offset, True)
+
+        self.reset_config_variables()
+
     def test_get_log_directory(self):
-        pass
+        config = {'logs': {'logDir': '/tmp'}}
+
+        Config.set_config(config)
+        log_directory = Config.get_log_directory()
+
+        self.assertEqual(log_directory, '/tmp')
+
+        self.reset_config_variables()
+
     def test_create_config_normal(self):
         pass
     def test_create_config_bad_filepath(self):
