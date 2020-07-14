@@ -6,7 +6,7 @@ import os
 import sys
 import json
 import logging
-from duologsync.util import get_checkpoint_directory
+from duologsync.config import Config
 
 class Consumer():
     """
@@ -78,7 +78,7 @@ class Consumer():
                          "checkpointing file", self.log_type)
 
             checkpoint_filename = os.path.join(
-                get_checkpoint_directory(),
+                Config.get_checkpoint_directory(),
                 f"{log_type}_checkpoint_data.txt")
 
             # Open file checkpoint_filename in writing mode only

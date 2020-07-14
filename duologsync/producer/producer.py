@@ -5,8 +5,8 @@ Definition of the Producer class
 import asyncio
 import logging
 import functools
-from duologsync.util import (get_log_offset, get_polling_duration,
-                             run_in_executor)
+from duologsync.util import get_log_offset, run_in_executor
+from duologsync.config import Config
 
 class Producer():
     """
@@ -32,9 +32,9 @@ class Producer():
         # TODO: Implement interrupt handler / running variable so that the
         # while loop exits on failure or on user exit
         while True:
-            await asyncio.sleep(get_polling_duration())
+            await asyncio.sleep(Config.get_polling_duration())
             logging.info("%s producer: getting data after %d seconds",
-                         self.log_type, get_polling_duration())
+                         self.log_type, Config.get_polling_duration())
 
             api_result = await self.call_log_api()
             new_logs = self.get_logs(api_result)

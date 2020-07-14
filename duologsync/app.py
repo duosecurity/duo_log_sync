@@ -24,8 +24,8 @@ from duologsync.consumer.authlog_consumer import AuthlogConsumer
 from duologsync.producer.authlog_producer import AuthlogProducer
 from duologsync.consumer.telephony_consumer import TelephonyConsumer
 from duologsync.producer.telephony_producer import TelephonyProducer
-from duologsync.util import (create_admin, create_writer, set_logger,
-                             get_enabled_endpoints, set_global_config)
+from duologsync.util import create_admin, create_writer, set_logger
+from duologsync.config import Config
 
 def main():
     """
@@ -40,11 +40,22 @@ def main():
                             help='Config to start application')
     args = arg_parser.parse_args()
 
-    set_global_config(args.ConfigPath)
+    # Create a config Dictionary from a YAML file located at args.ConfigPath
+    config = Config.create_config(args.ConfigPath)
+
+    # Check a config Dictionary against a schema to ensure all the needed
+    # fields and values are defined
+    Config.validate_config(config)
+
+    # For fields that are optional and not given a value, populate with default
+    # values
+    Config.set_config_defaults(config)
+    Config.set_config(config)
+
     set_logger()
 
     # List of Producer/Consumer objects as asyncio tasks to be run
-    tasks = create_consumer_producer_tasks(get_enabled_endpoints())
+    tasks = create_consumer_producer_tasks(Config.get_enabled_endpoints())
 
     # Run the Producers and Consumers
     asyncio.get_event_loop().run_until_complete(asyncio.gather(*tasks))

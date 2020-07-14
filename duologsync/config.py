@@ -1,5 +1,5 @@
 """
-Definition of the ConfigGenerator class
+Definition of the Config class
 """
 
 from datetime import datetime, timedelta
@@ -13,141 +13,147 @@ DEFAULT_DAYS_IN_PAST = 180
 MINIMUM_POLLING_DURATION = 120
 VALID_ENDPOINTS = ['adminaction', 'auth', 'telephony']
 
-
-class ConfigGenerator:
-    """
-    This class is used to create an Dictionary-like object based on a YAML file
-    for which the filepath is given. The information in a Config object is used
-    to determine what logs to fetch, how to fetch logs and where to send logs.
-    Additionally, Config handles checking the YAML against a schema to ensure
-    that all required fields are provided with a value and that for any field,
-    the values given are valid.
-    """
-
-    def __init__(self):
-        self.config = None
-        self.config_set = False
-
-    # Duo credentials used to access a client's logs
-    DUOCLIENT = {
-        'type': 'dict',
-        'required': True,
-        'schema': {
-            'skey': {'type': 'string', 'required': True, 'empty': False},
-            'ikey': {'type': 'string', 'required': True, 'empty': False},
-            'host': {'type': 'string', 'required': True, 'empty': False}
-        }
+# Duo credentials used to access a client's logs
+DUOCLIENT = {
+    'type': 'dict',
+    'required': True,
+    'schema': {
+        'skey': {'type': 'string', 'required': True, 'empty': False},
+        'ikey': {'type': 'string', 'required': True, 'empty': False},
+        'host': {'type': 'string', 'required': True, 'empty': False}
     }
+}
 
-    # What types of logs to fetch, how often to fetch, from what point in
-    # time logs should begin to be fetched
-    LOGS = {
-        'type': 'dict',
-        'required': True,
-        'schema': {
-            'logDir': {'type': 'string', 'empty': False},
-            'endpoints': {
-                'type': 'dict',
-                'required': True,
-                'schema': {
-                    'enabled': {
-                        'type': ['string', 'list'],
-                        'required': True,
-                        'empty': False,
-                        'allowed': VALID_ENDPOINTS,
-                    }
+# What types of logs to fetch, how often to fetch, from what point in
+# time logs should begin to be fetched
+LOGS = {
+    'type': 'dict',
+    'required': True,
+    'schema': {
+        'logDir': {'type': 'string', 'empty': False},
+        'endpoints': {
+            'type': 'dict',
+            'required': True,
+            'schema': {
+                'enabled': {
+                    'type': ['string', 'list'],
+                    'required': True,
+                    'empty': False,
+                    'allowed': VALID_ENDPOINTS,
                 }
-            },
-            'polling': {
-                'type': 'dict',
-                'schema': {
-                    'duration': {
-                        'type': 'number'
-                    },
-                    'daysinpast': {'type': 'integer', 'min': 0}
-                }
-            },
-            'checkpointDir': {'type': 'string', 'empty': False}
-        }
+            }
+        },
+        'polling': {
+            'type': 'dict',
+            'schema': {
+                'duration': {
+                    'type': 'number'
+                },
+                'daysinpast': {'type': 'integer', 'min': 0}
+            }
+        },
+        'checkpointDir': {'type': 'string', 'empty': False}
     }
+}
 
-    # How and where fetched logs should be sent
-    TRANSPORT = {
-        'type': 'dict',
-        'required': True,
-        'schema': {
-            'protocol': {
-                'type': 'string',
-                'required': True,
-                'oneof': [
-                    {
-                        'allowed': ['TCPSSL'],
-                        'dependencies': ['certFileDir', 'certFileName']
-                    },
-                    {'allowed': ['TCP', 'UDP']}
-                ]
-            },
-            'host': {'type': 'string', 'required': True, 'empty': False},
-            'port': {
-                'type': 'integer',
-                'min': 0,
-                'max': 65535,
-                'required': True
-            },
-            'certFileDir': {'type': 'string', 'empty': False},
-            'certFileName': {'type': 'string', 'empty': False}
-        }
+# How and where fetched logs should be sent
+TRANSPORT = {
+    'type': 'dict',
+    'required': True,
+    'schema': {
+        'protocol': {
+            'type': 'string',
+            'required': True,
+            'oneof': [
+                {
+                    'allowed': ['TCPSSL'],
+                    'dependencies': ['certFileDir', 'certFileName']
+                },
+                {'allowed': ['TCP', 'UDP']}
+            ]
+        },
+        'host': {'type': 'string', 'required': True, 'empty': False},
+        'port': {
+            'type': 'integer',
+            'min': 0,
+            'max': 65535,
+            'required': True
+        },
+        'certFileDir': {'type': 'string', 'empty': False},
+        'certFileName': {'type': 'string', 'empty': False}
     }
+}
 
-    # Whether or not log-specific checkpoint files should be used in the
-    # case of an error or crash
-    RECOVER_FROM_CHECKPOINT = {
-        'type': 'dict',
-        'schema': {
-            'enabled': {'type': 'boolean'}
-        }
+# Whether or not log-specific checkpoint files should be used in the
+# case of an error or crash
+RECOVER_FROM_CHECKPOINT = {
+    'type': 'dict',
+    'schema': {
+        'enabled': {'type': 'boolean'}
     }
+}
 
-    # Schema for validating the structure of a config dictionary generated from
-    # a user-provided YAML file
-    SCHEMA = {
-        'duoclient': DUOCLIENT,
-        'logs': LOGS,
-        'transport': TRANSPORT,
-        'recoverFromCheckpoint': RECOVER_FROM_CHECKPOINT
-    }
+# Schema for validating the structure of a config dictionary generated from
+# a user-provided YAML file
+SCHEMA = {
+    'duoclient': DUOCLIENT,
+    'logs': LOGS,
+    'transport': TRANSPORT,
+    'recoverFromCheckpoint': RECOVER_FROM_CHECKPOINT
+}
 
-    def check_config_is_set(self):
+class Config:
+    """
+    This class is unique in that no instances of it should be created. It is
+    used as a wrapper around a Dictionary object named config that is contains
+    important values used throughout DuoLogSync. The _config class variable
+    should only be accessed through getter and setter methods and should only
+    be set once. There are useful methods defined in this class for generating
+    a config Dictionary from a YAML file, validating the config against a
+    Schema and setting defaults for a config Dictionary when optional fields
+    are not given values.
+    """
+
+    # Private class variable, should not be accessed directly, only through
+    # getter and setter methods
+    _config = None
+
+    # Used to ensure that the _config variable is set once and only once
+    _config_is_set = False
+
+    @classmethod
+    def check_config_is_set(cls):
         """
         Used to check that this Config object is set before trying to access
         or set values
         """
-        if self.config_set:
+        if cls.config_set:
             return
 
-        raise RuntimeError('Cannot access values of a Config object before the '
-                           'object is set.')
+        raise RuntimeError('Cannot access values of config before setting it')
 
-    def set_config(self, config):
+    @classmethod
+    def set_config(cls, config):
         """
         Function used to set the config of a Config object once and only once.
 
         @param config   Dictionary used to set a Config object's 'config'
                         instance variable
         """
-        if self.config_set is True:
+        if cls.config_set is True:
             raise RuntimeError('Config object already set. Cannot set Config '
                                'object more than once')
-        self.config = config
-        self.config_set = True
+        cls.config = config
+        cls.config_set = True
 
-    def get_value(self, keys):
+    @classmethod
+    def get_value(cls, keys):
         """
         Getter for a Config object's 'config' instance variable
         """
 
-        self.check_config_is_set()
-        curr_value = self.config
+        cls.check_config_is_set()
+        curr_value = cls.config
         for key in keys:
             curr_value = curr_value.get(key)
 
@@ -155,6 +161,30 @@ class ConfigGenerator:
                 raise ValueError(f"{key} is an invalid key for this Config")
 
         return curr_value
+
+    @classmethod
+    def get_enabled_endpoints(cls):
+        """
+        @return the list of log_types for which logs should be fetched
+        """
+
+        return cls.get_value(['logs', 'endpoints', 'enabled'])
+
+    @classmethod
+    def get_polling_duration(cls):
+        """
+        @return the seconds to wait before fetching logs from an endpoint
+        """
+
+        return cls.get_value(['logs', 'polling', 'duration'])
+
+    @classmethod
+    def get_checkpoint_directory(cls):
+        """
+        @return the directory where log offset checkpoint files are saved
+        """
+
+        return cls.get_value(['logs', 'checkpointDir'])
 
     @staticmethod
     def create_config(config_filepath):
@@ -199,7 +229,7 @@ class ConfigGenerator:
         """
 
         # Generate a Validator object with the given schema
-        schema = Validator(ConfigGenerator.SCHEMA)
+        schema = Validator(SCHEMA)
 
         # Config is not a valid structure
         if schema.validate(config) is False:

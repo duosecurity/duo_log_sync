@@ -19,14 +19,8 @@ get_log_offset()
     Retrieve the offset from which logs of log_type should be fetched either by
     using the default offset or by using a timestamp saved in a checkpoint file
 
-get_enabled_endpoints()
-    Return the list of endpoints that are enabled from config
-
 update_log_checkpoint()
     Save offset to the checkpoint file for the log type calling this function
-
-set_global_config():
-    Initialize the Config object which will be used through functions in Util.
 
 set_logger():
     Function to set up logging for DuoLogSync
@@ -40,19 +34,11 @@ import asyncio
 import logging
 from concurrent.futures import ThreadPoolExecutor
 import duo_client
-from duologsync.config_generator import ConfigGenerator
+from duologsync.config import Config
 from duologsync.__version__ import __version__
 
 MILLISECONDS_PER_SECOND = 1000
-
-CONFIG = ConfigGenerator()
 EXECUTOR = ThreadPoolExecutor(3)
-
-def set_global_config(config_filepath):
-    config = ConfigGenerator.create_config(config_filepath)
-    ConfigGenerator.validate_config(config)
-    ConfigGenerator.set_config_defaults(config)
-    CONFIG.set_config(config)
 
 def set_logger():
     """
@@ -61,7 +47,7 @@ def set_logger():
     @param log_dir  Directory where logging messages should be saved
     """
 
-    log_directory = CONFIG.get_value(['logs', 'logDir'])
+    log_directory = Config.get_value(['logs', 'logDir'])
 
     logging.basicConfig(
         # Where to save logs
@@ -78,15 +64,6 @@ def set_logger():
     )
 
     logging.info("Starting duologsync...")
-
-def get_enabled_endpoints():
-    """
-    Return the list of endpoints that are enabled from config
-
-    @return the endpoints enabled in config
-    """
-
-    return CONFIG.get_value(['logs', 'endpoints', 'enabled'])
 
 async def run_in_executor(function_obj):
     """
@@ -107,10 +84,6 @@ async def run_in_executor(function_obj):
 
     return result
 
-
-def get_checkpoint_directory():
-    return CONFIG.get_value(['logs', 'checkpointDir'])
-
 async def create_writer():
     """
     Create a network connection for writing logs to wherever the user would
@@ -119,16 +92,16 @@ async def create_writer():
 
     @return the writer object, used to write logs to a specific location
     """
-    host = CONFIG.get_value(['transport', 'host'])
-    port = CONFIG.get_value(['transport', 'port'])
-    protocol = CONFIG.get_value(['transport', 'protocol'])
+    host = Config.get_value(['transport', 'host'])
+    port = Config.get_value(['transport', 'port'])
+    protocol = Config.get_value(['transport', 'protocol'])
 
     if protocol == 'TCPSSL':
         try:
             logging.info("Opening connection to server over encrypted tcp...")
             cert_file = os.path.join(
-                CONFIG.get_value(['transport', 'certFileDir']),
-                CONFIG.get_value(['transport', 'certFileName'])
+                Config.get_value(['transport', 'certFileDir']),
+                Config.get_value(['transport', 'certFileName'])
             )
 
             context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH,
@@ -187,9 +160,9 @@ def get_log_offset(log_type):
     """
 
     # Whether checkpoint files should be used to retrieve log offset info
-    recover_log_offset = CONFIG.get_value(['recoverFromCheckpoint', 'enabled'])
+    recover_log_offset = Config.get_value(['recoverFromCheckpoint', 'enabled'])
 
-    log_offset = CONFIG.get_value(['logs', 'offset'])
+    log_offset = Config.get_value(['logs', 'offset'])
 
     # Auth must have timestamp represented in milliseconds, not seconds
     if log_type == 'auth':
@@ -198,7 +171,7 @@ def get_log_offset(log_type):
     # In this case, look for a checkpoint file from which to read the log offset
     if recover_log_offset:
         # Directory where log offset checkpoint files are saved
-        checkpoint_directory = CONFIG.get_value(['Logs', 'checkpointDir'])
+        checkpoint_directory = Config.get_value(['Logs', 'checkpointDir'])
 
         try:
             # Open the checkpoint file, 'with' statement automatically closes it
@@ -230,9 +203,9 @@ def create_admin(ikey=None, skey=None, host=None):
     """
 
 
-    ikey = ikey or CONFIG.get_value(['duoclient', 'ikey'])
-    skey = skey or CONFIG.get_value(['duoclient', 'skey'])
-    host = host or CONFIG.get_value(['duoclient', 'host'])
+    ikey = ikey or Config.get_value(['duoclient', 'ikey'])
+    skey = skey or Config.get_value(['duoclient', 'skey'])
+    host = host or Config.get_value(['duoclient', 'host'])
 
     admin = duo_client.Admin(
         ikey=ikey,
@@ -245,12 +218,3 @@ def create_admin(ikey=None, skey=None, host=None):
                  ikey, host)
 
     return admin
-
-def get_polling_duration():
-    """
-    Method to get the value of the global variable polling_duration
-
-    @return polling_duration
-    """
-
-    return CONFIG.get_value(['logs', 'polling', 'duration'])
