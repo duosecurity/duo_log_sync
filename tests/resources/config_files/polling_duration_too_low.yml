@@ -1,0 +1,18 @@
+duoclient:
+  skey: "Shhh, this is a secret..."
+  ikey: "BUNCH OF RANDOM CHARACTERS ALL UPPER CASE"
+  host: "duosecurity.com"
+logs:
+  logDir: "/tmp"
+  endpoints:
+    enabled: ["auth", "adminaction", "telephony"]
+  polling:
+    duration: .05
+    daysinpast: 180
+  checkpointDir: "/tmp"
+transport:
+  protocol: "TCP"
+  host: "localhost"
+  port: 8888
+recoverFromCheckpoint:
+  enabled: False 

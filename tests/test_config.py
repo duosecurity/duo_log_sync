@@ -4,46 +4,47 @@ import sys
 
 from duologsync.config import Config
 
-class TestUtil(TestCase):
+class TestConfig(TestCase):
 
-    def test_set_config_normal():
+    def test_set_config_normal(self):
+        config = {'field_one': {'nested_field': True}, 'field_two': 100}
 
-    def test_set_config_twice():
+        Config.set_config(config)
 
-    def test_get_value_normal():
+        self.assertEqual(Config._config['field_one']['nested_field'], True)
+        self.assertEqual(Config._config['field_two'], 100)
 
-    def test_get_value_before_setting_config():
-
-    def test_get_value_with_invalid_keys():
-
-    def test_get_enabled_endpoints():
-
-    def test_get_polling_duration():
-
-    def test_get_checkpoint_directory():
-
-    def test_get_ikey():
-
-    def test_get_skey():
-
-    def test_get_host():
-
-    def test_get_recover_log_offset():
-
-    def test_get_log_directory():
-
-    def test_create_config_normal():
-
-    def test_create_config_bad_filepath():
-
-    def test_create_config_bad_file():
-
-    def test_create_config_invalid_yaml():
-
-    def test_create_config_invalid_config():
-
-    def test_get_last_offset_read(self):
-       checkpoint_dir = 'resources/checkpoint'
-       log_type = 'auth'
-       get_last_offset_read(checkpoint_dir, log_type) 
-       assert 1 == 2
+    def test_set_config_twice(self):
+        pass
+    def test_get_value_normal(self):
+        pass
+    def test_get_value_before_setting_config(self):
+        pass
+    def test_get_value_with_invalid_keys(self):
+        pass
+    def test_get_enabled_endpoints(self):
+        pass
+    def test_get_polling_duration(self):
+        pass
+    def test_get_checkpoint_directory(self):
+        pass
+    def test_get_ikey(self):
+        pass
+    def test_get_skey(self):
+        pass
+    def test_get_host(self):
+        pass
+    def test_get_recover_log_offset(self):
+        pass
+    def test_get_log_directory(self):
+        pass
+    def test_create_config_normal(self):
+        pass
+    def test_create_config_bad_filepath(self):
+        pass
+    def test_create_config_bad_file(self):
+        pass
+    def test_create_config_invalid_yaml(self):
+        pass
+    def test_create_config_invalid_config(self):
+        pass

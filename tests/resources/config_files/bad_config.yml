@@ -1,0 +1,18 @@
+duoclient:
+  ikey: "BUNCH OF RANDOM CHARACTERS ALL UPPER CASE"
+  host: "duosecurity.com"
+logs:
+  logDir: "/tmp"
+  unnecessary_field: "telephony"
+  endpoints:
+    enabled: ["duo rocks!", "adminaction", "telephony"]
+  polling:
+    duration: "Uh oh" 
+    daysinpast: 180.5
+  checkpointDir: "/tmp"
+transport:
+  protocol: "TPC"
+  host: ""
+  port: 8889998
+recoverFromCheckpoint:
+  enabled: Never 

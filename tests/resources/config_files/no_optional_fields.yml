@@ -1,0 +1,11 @@
+duoclient:
+  skey: "Shhh, this is a secret..."
+  ikey: "BUNCH OF RANDOM CHARACTERS ALL UPPER CASE"
+  host: "duosecurity.com"
+logs:
+  endpoints:
+    enabled: ["auth", "adminaction", "telephony"]
+transport:
+  protocol: "TCP"
+  host: "localhost"
+  port: 8888
