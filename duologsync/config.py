@@ -7,102 +7,6 @@ from cerberus import Validator
 import yaml
 from yaml import YAMLError
 
-DEFAULT_DIRECTORY = '/tmp'
-DEFAULT_DAYS_IN_PAST = 180
-
-# How many seconds to wait between API requests
-MINIMUM_POLLING_DURATION = 120
-VALID_ENDPOINTS = ['adminaction', 'auth', 'telephony']
-
-# Duo credentials used to access a client's logs
-DUOCLIENT = {
-    'type': 'dict',
-    'required': True,
-    'schema': {
-        'skey': {'type': 'string', 'required': True, 'empty': False},
-        'ikey': {'type': 'string', 'required': True, 'empty': False},
-        'host': {'type': 'string', 'required': True, 'empty': False}
-    }
-}
-
-# What types of logs to fetch, how often to fetch, from what point in
-# time logs should begin to be fetched
-LOGS = {
-    'type': 'dict',
-    'required': True,
-    'schema': {
-        'logDir': {'type': 'string', 'empty': False},
-        'endpoints': {
-            'type': 'dict',
-            'required': True,
-            'schema': {
-                'enabled': {
-                    'type': ['string', 'list'],
-                    'required': True,
-                    'empty': False,
-                    'allowed': VALID_ENDPOINTS,
-                }
-            }
-        },
-        'polling': {
-            'type': 'dict',
-            'schema': {
-                'duration': {
-                    'type': 'number'
-                },
-                'daysinpast': {'type': 'integer', 'min': 0}
-            }
-        },
-        'checkpointDir': {'type': 'string', 'empty': False}
-    }
-}
-
-# How and where fetched logs should be sent
-TRANSPORT = {
-    'type': 'dict',
-    'required': True,
-    'schema': {
-        'protocol': {
-            'type': 'string',
-            'required': True,
-            'oneof': [
-                {
-                    'allowed': ['TCPSSL'],
-                    'dependencies': ['certFileDir', 'certFileName']
-                },
-                {'allowed': ['TCP', 'UDP']}
-            ]
-        },
-        'host': {'type': 'string', 'required': True, 'empty': False},
-        'port': {
-            'type': 'integer',
-            'min': 0,
-            'max': 65535,
-            'required': True
-        },
-        'certFileDir': {'type': 'string', 'empty': False},
-        'certFileName': {'type': 'string', 'empty': False}
-    }
-}
-
-# Whether or not log-specific checkpoint files should be used in the
-# case of an error or crash
-RECOVER_FROM_CHECKPOINT = {
-    'type': 'dict',
-    'schema': {
-        'enabled': {'type': 'boolean'}
-    }
-}
-
-# Schema for validating the structure of a config dictionary generated from
-# a user-provided YAML file
-SCHEMA = {
-    'duoclient': DUOCLIENT,
-    'logs': LOGS,
-    'transport': TRANSPORT,
-    'recoverFromCheckpoint': RECOVER_FROM_CHECKPOINT
-}
-
 class Config:
     """
     This class is unique in that no instances of it should be created. It is
@@ -115,6 +19,102 @@ class Config:
     are not given values.
     """
 
+    DEFAULT_DIRECTORY = '/tmp'
+    DEFAULT_DAYS_IN_PAST = 180
+
+    # How many seconds to wait between API requests
+    MINIMUM_POLLING_DURATION = 120
+    VALID_ENDPOINTS = ['adminaction', 'auth', 'telephony']
+
+    # Duo credentials used to access a client's logs
+    DUOCLIENT = {
+        'type': 'dict',
+        'required': True,
+        'schema': {
+            'skey': {'type': 'string', 'required': True, 'empty': False},
+            'ikey': {'type': 'string', 'required': True, 'empty': False},
+            'host': {'type': 'string', 'required': True, 'empty': False}
+        }
+    }
+
+    # What types of logs to fetch, how often to fetch, from what point in
+    # time logs should begin to be fetched
+    LOGS = {
+        'type': 'dict',
+        'required': True,
+        'schema': {
+            'logDir': {'type': 'string', 'empty': False},
+            'endpoints': {
+                'type': 'dict',
+                'required': True,
+                'schema': {
+                    'enabled': {
+                        'type': ['string', 'list'],
+                        'required': True,
+                        'empty': False,
+                        'allowed': VALID_ENDPOINTS,
+                    }
+                }
+            },
+            'polling': {
+                'type': 'dict',
+                'schema': {
+                    'duration': {
+                        'type': 'number'
+                    },
+                    'daysinpast': {'type': 'integer', 'min': 0}
+                }
+            },
+            'checkpointDir': {'type': 'string', 'empty': False}
+        }
+    }
+
+    # How and where fetched logs should be sent
+    TRANSPORT = {
+        'type': 'dict',
+        'required': True,
+        'schema': {
+            'protocol': {
+                'type': 'string',
+                'required': True,
+                'oneof': [
+                    {
+                        'allowed': ['TCPSSL'],
+                        'dependencies': ['certFileDir', 'certFileName']
+                    },
+                    {'allowed': ['TCP', 'UDP']}
+                ]
+            },
+            'host': {'type': 'string', 'required': True, 'empty': False},
+            'port': {
+                'type': 'integer',
+                'min': 0,
+                'max': 65535,
+                'required': True
+            },
+            'certFileDir': {'type': 'string', 'empty': False},
+            'certFileName': {'type': 'string', 'empty': False}
+        }
+    }
+
+    # Whether or not log-specific checkpoint files should be used in the
+    # case of an error or crash
+    RECOVER_FROM_CHECKPOINT = {
+        'type': 'dict',
+        'schema': {
+            'enabled': {'type': 'boolean'}
+        }
+    }
+
+    # Schema for validating the structure of a config dictionary generated from
+    # a user-provided YAML file
+    SCHEMA = {
+        'duoclient': DUOCLIENT,
+        'logs': LOGS,
+        'transport': TRANSPORT,
+        'recoverFromCheckpoint': RECOVER_FROM_CHECKPOINT
+    }
+
     # Private class variable, should not be accessed directly, only through
     # getter and setter methods
     _config = None
@@ -123,7 +123,7 @@ class Config:
     _config_is_set = False
 
     @classmethod
-    def check_config_is_set(cls):
+    def _check_config_is_set(cls):
         """
         Used to check that this Config object is set before trying to access
         or set values
@@ -154,7 +154,7 @@ class Config:
         Getter for a Config object's 'config' instance variable
         """
 
-        cls.check_config_is_set()
+        cls._check_config_is_set()
         curr_value = cls._config
         for key in keys:
             curr_value = curr_value.get(key)
@@ -229,8 +229,8 @@ class Config:
 
         return cls.get_value(['logs', 'logDir'])
 
-    @staticmethod
-    def create_config(config_filepath):
+    @classmethod
+    def create_config(cls, config_filepath):
         """
         Attemp to read the file at config_filepath and generate a config
         Dictionary object based on a defined JSON schema
@@ -258,12 +258,20 @@ class Config:
             # Re-raise exception to be re-handled and for stopping the program
             raise
 
-        # If no exception was raised during the try block, return config
+        # If no exception was raised during the try block, validate and return
+        # config
         else:
+            # Check config against a schema to ensure all the needed fields and
+            # values are defined
+            cls._validate_config(config)
+
+            # For fields that are optional and not given a value, populate with
+            # default values
+            cls._set_config_defaults(config)
             return config
 
-    @staticmethod
-    def validate_config(config):
+    @classmethod
+    def _validate_config(cls, config):
         """
         Use a schema and the cerberus library to validate that the given config
         dictionary has a valid structure
@@ -272,15 +280,15 @@ class Config:
         """
 
         # Generate a Validator object with the given schema
-        schema = Validator(SCHEMA)
+        schema = Validator(cls.SCHEMA)
 
         # Config is not a valid structure
         if schema.validate(config) is False:
             raise RuntimeError("While validating the config, the following "
                                f"error(s) occurred: {schema.errors}")
 
-    @staticmethod
-    def set_config_defaults(config):
+    @classmethod
+    def _set_config_defaults(cls, config):
         """
         Check if optional fields within a config are empty. If they are empty
         or if they have a bad value, set those values to a default and log a
@@ -300,28 +308,28 @@ class Config:
             config['recoverFromCheckpoint'] = {}
 
         if config.get('logs').get('logDir') is None:
-            print(default_msg % ('logs.logDir', DEFAULT_DIRECTORY))
-            config['logs']['logDir'] = DEFAULT_DIRECTORY
+            print(default_msg % ('logs.logDir', cls.DEFAULT_DIRECTORY))
+            config['logs']['logDir'] = cls.DEFAULT_DIRECTORY
 
         polling_duration = config.get('logs').get('polling').get('duration')
         if polling_duration is None:
             print(default_msg %
-                  ('logs.polling.duration', MINIMUM_POLLING_DURATION))
-            config['logs']['polling']['duration'] = MINIMUM_POLLING_DURATION
+                  ('logs.polling.duration', cls.MINIMUM_POLLING_DURATION))
+            config['logs']['polling']['duration'] = cls.MINIMUM_POLLING_DURATION
 
-        elif polling_duration < MINIMUM_POLLING_DURATION:
-            print("Config: Value given for logs.polling.duration was too "
-                  "low. Set to default value of %s" % MINIMUM_POLLING_DURATION)
-            config['logs']['polling']['duration'] = MINIMUM_POLLING_DURATION
+        elif polling_duration < cls.MINIMUM_POLLING_DURATION:
+            print("Config: Value given for logs.polling.duration was too low. "
+                  "Set to default value of %s" % cls.MINIMUM_POLLING_DURATION)
+            config['logs']['polling']['duration'] = cls.MINIMUM_POLLING_DURATION
 
         if config.get('logs').get('polling').get('daysinpast') is None:
             print(default_msg %
-                  ('logs.polling.daysinpast', DEFAULT_DAYS_IN_PAST))
-            config['logs']['polling']['daysinpast'] = DEFAULT_DAYS_IN_PAST
+                  ('logs.polling.daysinpast', cls.DEFAULT_DAYS_IN_PAST))
+            config['logs']['polling']['daysinpast'] = cls.DEFAULT_DAYS_IN_PAST
 
         if config.get('logs').get('checkpointDir') is None:
-            print(default_msg % ('logs.checkpointDir', DEFAULT_DIRECTORY))
-            config['logs']['checkpointDir'] = DEFAULT_DIRECTORY
+            print(default_msg % ('logs.checkpointDir', cls.DEFAULT_DIRECTORY))
+            config['logs']['checkpointDir'] = cls.DEFAULT_DIRECTORY
 
         if config.get('recoverFromCheckpoint').get('enabled') is None:
             print(default_msg % ('recoverFromCheckpoint.enabled', False))

@@ -42,14 +42,6 @@ def main():
 
     # Create a config Dictionary from a YAML file located at args.ConfigPath
     config = Config.create_config(args.ConfigPath)
-
-    # Check a config Dictionary against a schema to ensure all the needed
-    # fields and values are defined
-    Config.validate_config(config)
-
-    # For fields that are optional and not given a value, populate with default
-    # values
-    Config.set_config_defaults(config)
     Config.set_config(config)
 
     set_logger(Config.get_log_directory())
