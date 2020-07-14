@@ -2,6 +2,7 @@
 Definition of the ConfigGenerator class
 """
 
+from datetime import datetime, timedelta
 from cerberus import Validator
 import yaml
 from yaml import YAMLError
@@ -252,3 +253,11 @@ class ConfigGenerator:
         if config.get('recoverFromCheckpoint').get('enabled') is None:
             print(default_msg % ('recoverFromCheckpoint.enabled', False))
             config['recoverFromCheckpoint']['enabled'] = False
+
+        # Add a default offset from which to fetch logs
+        # The maximum amount of days in the past that a log may be fetched from
+        days_in_past = config['logs']['polling']['daysinpast']
+
+        # Create a timestamp for screening logs that are too old
+        default_log_offset = datetime.utcnow() - timedelta(days=days_in_past)
+        config['logs']['offset'] = int(default_log_offset.timestamp())

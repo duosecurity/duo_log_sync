@@ -25,9 +25,8 @@ get_enabled_endpoints()
 update_log_checkpoint()
     Save offset to the checkpoint file for the log type calling this function
 
-set_util_globals():
-    Initialize important variables used throughout DuoLogSync and return a
-    namedtuple which contains them and allows accessing the variables by name
+set_global_config():
+    Initialize the Config object which will be used through functions in Util.
 
 set_logger():
     Function to set up logging for DuoLogSync
@@ -40,15 +39,10 @@ import json
 import asyncio
 import logging
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime, timedelta
 import duo_client
 from duologsync.config_generator import ConfigGenerator
 from duologsync.__version__ import __version__
 
-# Default timestamp for how far in the past logs may be fetched. Used when a
-# log-type does not have a recovery file containing a timestamp from which
-# logs should be fetched
-DEFAULT_LOG_OFFSET = None
 MILLISECONDS_PER_SECOND = 1000
 
 CONFIG = ConfigGenerator()
@@ -131,21 +125,6 @@ def update_log_checkpoint(log_type, log_offset):
     # According to Python docs, closing a file also flushes the file
     checkpoint_file.close()
 
-def set_default_log_offset():
-    """
-    Setter for the variable 'default_log_offset'.
-    """
-
-    # Need to name default_log_offset as global in order to set it
-    global DEFAULT_LOG_OFFSET
-
-    # The maximum amount of days in the past that a log may be fetched from
-    days_in_past = CONFIG.get_value(['logs', 'polling', 'daysinpast'])
-
-    # Create a timestamp for screening logs that are too old
-    DEFAULT_LOG_OFFSET = datetime.utcnow() - timedelta(days=days_in_past)
-    DEFAULT_LOG_OFFSET = int(DEFAULT_LOG_OFFSET.timestamp())
-
 async def create_writer():
     """
     Create a network connection for writing logs to wherever the user would
@@ -224,7 +203,7 @@ def get_log_offset(log_type):
     # Whether checkpoint files should be used to retrieve log offset info
     recover_log_offset = CONFIG.get_value(['recoverFromCheckpoint', 'enabled'])
 
-    log_offset = DEFAULT_LOG_OFFSET
+    log_offset = CONFIG.get_value(['logs', 'offset'])
 
     # Auth must have timestamp represented in milliseconds, not seconds
     if log_type == 'auth':

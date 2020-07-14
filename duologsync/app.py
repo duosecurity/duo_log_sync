@@ -50,11 +50,6 @@ def main():
     asyncio.get_event_loop().run_until_complete(asyncio.gather(*tasks))
     asyncio.get_event_loop().close()
 
-# TODO: break this function up further when the config file begins to accept
-# multiple connections. At that point, there will be a separate function for
-# iterating through each connection which will set up a writer for a connection
-# and then make a call to create consumer producer tasks while passing in the
-# writer
 def create_consumer_producer_tasks(enabled_endpoints):
     """
     Create a pair of Producer-Consumer objects for each enabled endpoint, and
