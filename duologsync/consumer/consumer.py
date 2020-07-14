@@ -2,10 +2,11 @@
 Definition of the Consumer class
 """
 
+import os
 import sys
 import json
 import logging
-from duologsync.util import update_log_checkpoint
+from duologsync.util import get_checkpoint_directory
 
 class Consumer():
     """
@@ -63,6 +64,26 @@ class Consumer():
                                     self.log_type)
 
                 self.log_offset = self.producer.get_log_offset(last_log_written)
-                logging.info("%s consumer: saving latest log offset to a "
-                             "checkpointing file", self.log_type)
                 update_log_checkpoint(self.log_type, self.log_offset)
+
+        def update_log_checkpoint(log_type, log_offset):
+            """
+            Save log_offset to the checkpoint file for log_type.
+
+            @param log_type     Used to determine which checkpoint file to open
+            @param log_offset   Information to save in the checkpoint file
+            """
+
+            logging.info("%s consumer: saving latest log offset to a "
+                         "checkpointing file", self.log_type)
+
+            checkpoint_filename = os.path.join(
+                get_checkpoint_directory(),
+                f"{log_type}_checkpoint_data.txt")
+
+            # Open file checkpoint_filename in writing mode only
+            checkpoint_file = open(checkpoint_filename, 'w')
+            checkpoint_file.write(json.dumps(log_offset))
+
+            # According to Python docs, closing a file also flushes the file
+            checkpoint_file.close()

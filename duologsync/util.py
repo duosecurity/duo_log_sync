@@ -107,23 +107,9 @@ async def run_in_executor(function_obj):
 
     return result
 
-def update_log_checkpoint(log_type, log_offset):
-    """
-    Save log_offset to the checkpoint file for log_type.
 
-    @param log_type     Used to determine which checkpoint file open
-    @param log_offset   Information to save in the checkpoint file
-    """
-
-    checkpoint_filename = os.path.join(
-        CONFIG.get_value(['logs', 'checkpointDir']),
-        f"{log_type}_checkpoint_data.txt")
-
-    checkpoint_file = open(checkpoint_filename, 'w')
-    checkpoint_file.write(json.dumps(log_offset))
-
-    # According to Python docs, closing a file also flushes the file
-    checkpoint_file.close()
+def get_checkpoint_directory():
+    return CONFIG.get_value(['logs', 'checkpointDir'])
 
 async def create_writer():
     """
