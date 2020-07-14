@@ -52,7 +52,7 @@ def main():
     Config.set_config_defaults(config)
     Config.set_config(config)
 
-    set_logger()
+    set_logger(Config.get_log_directory())
 
     # List of Producer/Consumer objects as asyncio tasks to be run
     tasks = create_consumer_producer_tasks(Config.get_enabled_endpoints())
@@ -73,7 +73,8 @@ def create_consumer_producer_tasks(enabled_endpoints):
     """
 
     # Object with functions needed to utilize log API calls
-    admin = create_admin()
+    admin = create_admin(Config.get_ikey(), Config.get_skey(),
+                         Config.get_host())
 
     # Object for writing data / logs across a network, used by Consumers
     writer = asyncio.get_event_loop().run_until_complete(create_writer())

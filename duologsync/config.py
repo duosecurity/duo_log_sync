@@ -186,6 +186,47 @@ class Config:
 
         return cls.get_value(['logs', 'checkpointDir'])
 
+    @classmethod
+    def get_ikey(cls):
+        """
+        @return the ikey used by Duo to identify a customer
+        """
+
+        return cls.get_value(['duoclient', 'ikey'])
+
+    @classmethod
+    def get_skey(cls):
+        """
+        @return the skey used by Duo to authenticate access to a customer's logs
+        """
+
+        return cls.get_value(['duoclient', 'skey'])
+
+    @classmethod
+    def get_host(cls):
+        """
+        @return the host where a customer's logs are stored
+        """
+
+        return cls.get_value(['duoclient', 'host'])
+
+    @classmethod
+    def get_recover_log_offset(cls):
+        """
+        @return boolean indicating if checkpoint files should be used to
+                recover log offsets
+        """
+
+        return cls.get_value(['recoverFromCheckpoint', 'enabled'])
+
+    @classmethod
+    def get_log_directory(cls):
+        """
+        @return the directory where DuoLogSync's logs should be saved
+        """
+
+        return cls.get_value(['logs', 'logDir'])
+
     @staticmethod
     def create_config(config_filepath):
         """

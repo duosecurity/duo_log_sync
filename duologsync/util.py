@@ -1,29 +1,5 @@
 """
 Unrelated, but useful functions used in various places throughout DuoLogSync.
-
-Functions
----------
-
-run_in_executor()
-    The function represented by function_obj is a high latency call which will
-    block the event loop. Thus, the function is run in an executor - a
-    dedicated thread pool - which allows for the event loop to do other work
-    while the given function is being made.
-
-create_writer()
-    Create a network connection for writing logs to wherever the user would
-    like. Values in the user defined config determine where the connection
-    leads to, and the protocol used to send logs.
-
-get_log_offset()
-    Retrieve the offset from which logs of log_type should be fetched either by
-    using the default offset or by using a timestamp saved in a checkpoint file
-
-update_log_checkpoint()
-    Save offset to the checkpoint file for the log type calling this function
-
-set_logger():
-    Function to set up logging for DuoLogSync
 """
 
 import os
@@ -37,17 +13,14 @@ import duo_client
 from duologsync.config import Config
 from duologsync.__version__ import __version__
 
-MILLISECONDS_PER_SECOND = 1000
 EXECUTOR = ThreadPoolExecutor(3)
 
-def set_logger():
+def set_logger(log_directory):
     """
     Function to set up logging for DuoLogSync.
 
-    @param log_dir  Directory where logging messages should be saved
+    @param log_directory    Directory where logging messages should be saved
     """
-
-    log_directory = Config.get_value(['logs', 'logDir'])
 
     logging.basicConfig(
         # Where to save logs
@@ -149,30 +122,28 @@ async def create_writer():
             logging.error("Terminating the application...")
             sys.exit(1)
 
-def get_log_offset(log_type):
+def get_log_offset(log_type, recover_log_offset, checkpoint_directory):
     """
     Retrieve the offset from which logs of log_type should be fetched either by
     using the default offset or by using a timestamp saved in a checkpoint file
 
     @param log_type             Name of the log for which recovery is occurring
+    @param recover_log_offset   Whether checkpoint files should be used to
+                                retrieve log offset info
+    @param checkpoint_directory Directory containing log offset checkpoint files
 
     @return the last offset read for a log type based on checkpointing data
     """
 
-    # Whether checkpoint files should be used to retrieve log offset info
-    recover_log_offset = Config.get_value(['recoverFromCheckpoint', 'enabled'])
-
+    milliseconds_per_second = 1000
     log_offset = Config.get_value(['logs', 'offset'])
 
     # Auth must have timestamp represented in milliseconds, not seconds
     if log_type == 'auth':
-        log_offset *= MILLISECONDS_PER_SECOND
+        log_offset *= milliseconds_per_second
 
     # In this case, look for a checkpoint file from which to read the log offset
     if recover_log_offset:
-        # Directory where log offset checkpoint files are saved
-        checkpoint_directory = Config.get_value(['Logs', 'checkpointDir'])
-
         try:
             # Open the checkpoint file, 'with' statement automatically closes it
             with open(os.path.join(
@@ -190,7 +161,7 @@ def get_log_offset(log_type):
 
     return log_offset
 
-def create_admin(ikey=None, skey=None, host=None):
+def create_admin(ikey, skey, host):
     """
     Create an Admin object (from the duo_client library) with the given values.
     The Admin object has many functions for using Duo APIs and retrieving logs.
@@ -201,11 +172,6 @@ def create_admin(ikey=None, skey=None, host=None):
 
     @return a newly created Admin object
     """
-
-
-    ikey = ikey or Config.get_value(['duoclient', 'ikey'])
-    skey = skey or Config.get_value(['duoclient', 'skey'])
-    host = host or Config.get_value(['duoclient', 'host'])
 
     admin = duo_client.Admin(
         ikey=ikey,

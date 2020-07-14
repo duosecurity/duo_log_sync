@@ -20,7 +20,10 @@ class Producer():
         self.api_call = api_call
         self.log_queue = log_queue
         self.log_type = log_type
-        self.log_offset = get_log_offset(self.log_type)
+        self.log_offset = get_log_offset(
+            self.log_type,
+            Config.get_recover_log_offset(),
+            Config.get_checkpoint_directory())
 
     async def produce(self):
         """
