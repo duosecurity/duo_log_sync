@@ -31,11 +31,35 @@ class TestConfig(TestCase):
         self.reset_config_variables()
 
     def test_get_value_normal(self):
-        pass
+        config = {'field_one': {'nested_field': True}, 'field_two': 100}
+
+        Config.set_config(config)
+        value_one = Config.get_value(['field_one', 'nested_field'])
+        value_two = Config.get_value(['field_two'])
+
+        self.assertEqual(value_one, True)
+        self.assertEqual(value_two, 100)
+        
+        self.reset_config_variables()
+
     def test_get_value_before_setting_config(self):
-        pass
+        config = {'field_one': {'nested_field': True}, 'field_two': 100}
+
+        with self.assertRaises(RuntimeError):
+            Config.get_value(['field_one', 'nested_field'])
+
+        self.reset_config_variables()
+
     def test_get_value_with_invalid_keys(self):
-        pass
+        config = {'field_one': {'nested_field': True}, 'field_two': 100}
+
+        Config.set_config(config)
+
+        with self.assertRaises(ValueError):
+            Config.get_value(['house_key', 'car_key'])
+
+        self.reset_config_variables()
+
     def test_get_enabled_endpoints(self):
         pass
     def test_get_polling_duration(self):
