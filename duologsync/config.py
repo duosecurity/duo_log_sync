@@ -284,8 +284,8 @@ class Config:
 
         # Config is not a valid structure
         if schema.validate(config) is False:
-            raise RuntimeError("While validating the config, the following "
-                               f"error(s) occurred: {schema.errors}")
+            raise ValueError("While validating the config, the following "
+                             f"error(s) occurred: {schema.errors}")
 
     @classmethod
     def _set_config_defaults(cls, config):

@@ -1,7 +1,7 @@
 from unittest import mock, TestCase
 import os
 import sys
-
+from yaml import YAMLError
 from duologsync.config import Config
 
 class TestConfig(TestCase):
@@ -141,12 +141,72 @@ class TestConfig(TestCase):
         self.reset_config_variables()
 
     def test_create_config_normal(self):
-        pass
+        config_filepath = 'tests/resources/config_files/standard.yml'
+        correct_config = {
+            'duoclient': {
+                'skey': 'Shhh, this is a secret...',
+                'ikey': 'BUNCH OF RANDOM CHARACTERS ALL UPPER CASE',
+                'host': 'duosecurity.com'
+            },
+            'logs': {
+                'logDir': '/tmp',
+                'endpoints': {
+                    'enabled': ['auth', 'adminaction', 'telephony']
+                },
+                'polling': {
+                    'duration': 120,
+                    'daysinpast': 180
+                },
+                'checkpointDir': '/tmp',
+                'offset': None
+            },
+            'transport': {
+                'protocol': 'TCP',
+                'host': 'localhost',
+                'port': 8888
+            },
+            'recoverFromCheckpoint': {
+                'enabled': False
+            }
+        }
+
+        config = Config.create_config(config_filepath)
+        config['logs']['offset'] = None
+
+        self.assertEqual(correct_config, config)
+
     def test_create_config_bad_filepath(self):
-        pass
-    def test_create_config_bad_file(self):
-        pass
+        config_filepath = 'absolute/nonsense/this/goes/nowhere.yml'
+
+        with self.assertRaises(OSError):
+            Config.create_config(config_filepath)
+
     def test_create_config_invalid_yaml(self):
-        pass
+        config_filepath = 'tests/resources/config_files/bad_yaml.yml'
+
+        with self.assertRaises(YAMLError):
+            Config.create_config(config_filepath)
+
     def test_create_config_invalid_config(self):
-        pass
+        config_filepath = 'tests/resources/config_files/bad_config.yml'
+
+        with self.assertRaises(ValueError):
+            Config.create_config(config_filepath)
+
+    def test_create_config_with_missing_optional_fields(self):
+        config_filepath = 'tests/resources/config_files/no_optional_fields.yml'
+
+        config = Config.create_config(config_filepath)
+
+        self.assertNotEqual(config['logs']['logDir'], None)
+        self.assertNotEqual(config['logs']['polling']['duration'], None)
+        self.assertNotEqual(config['logs']['polling']['daysinpast'], None)
+        self.assertNotEqual(config['logs']['checkpointDir'], None)
+        self.assertNotEqual(config['recoverFromCheckpoint']['enabled'], None)
+
+    def test_create_config_with_polling_too_low(self):
+        config_filepath = 'tests/resources/config_files/polling_too_low.yml'
+
+        config = Config.create_config(config_filepath)
+
+        self.assertEqual(config['logs']['polling']['duration'], 120)
