@@ -9,6 +9,7 @@ from yaml import YAMLError
 
 DEFAULT_DIRECTORY = '/tmp'
 DEFAULT_DAYS_IN_PAST = 180
+
 # How many seconds to wait between API requests
 MINIMUM_POLLING_DURATION = 120
 VALID_ENDPOINTS = ['adminaction', 'auth', 'telephony']
@@ -127,7 +128,7 @@ class Config:
         Used to check that this Config object is set before trying to access
         or set values
         """
-        if cls.config_set:
+        if cls._config_is_set:
             return
 
         raise RuntimeError('Cannot access values of config before setting it')
@@ -140,11 +141,12 @@ class Config:
         @param config   Dictionary used to set a Config object's 'config'
                         instance variable
         """
-        if cls.config_set is True:
+        if cls._config_is_set:
             raise RuntimeError('Config object already set. Cannot set Config '
                                'object more than once')
-        cls.config = config
-        cls.config_set = True
+
+        cls._config = config
+        cls._config_is_set = True
 
     @classmethod
     def get_value(cls, keys):
@@ -153,7 +155,7 @@ class Config:
         """
 
         cls.check_config_is_set()
-        curr_value = cls.config
+        curr_value = cls._config
         for key in keys:
             curr_value = curr_value.get(key)
 

@@ -35,10 +35,12 @@ class Producer():
         # TODO: Implement interrupt handler / running variable so that the
         # while loop exits on failure or on user exit
         while True:
-            await asyncio.sleep(Config.get_polling_duration())
-            logging.info("%s producer: getting data after %d seconds",
+            logging.info("%s producer: begin polling for %d seconds",
                          self.log_type, Config.get_polling_duration())
+            await asyncio.sleep(Config.get_polling_duration())
 
+            logging.info("%s producer: fetching logs after %d seconds",
+                         self.log_type, Config.get_polling_duration())
             api_result = await self.call_log_api()
             new_logs = self.get_logs(api_result)
 

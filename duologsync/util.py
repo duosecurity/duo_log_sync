@@ -24,7 +24,7 @@ def set_logger(log_directory):
 
     logging.basicConfig(
         # Where to save logs
-        filename=os.path.join(log_directory, "duologsync.log"),
+        filename=os.path.join(log_directory, 'duologsync.log'),
 
         # How logs should be formatted
         format='%(asctime)s %(levelname)-8s %(message)s',
