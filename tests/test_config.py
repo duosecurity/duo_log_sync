@@ -5,6 +5,10 @@ import sys
 from duologsync.config import Config
 
 class TestConfig(TestCase):
+    @staticmethod
+    def reset_config_variables():
+        Config._config = None
+        Config._config_is_set = False
 
     def test_set_config_normal(self):
         config = {'field_one': {'nested_field': True}, 'field_two': 100}
@@ -14,8 +18,18 @@ class TestConfig(TestCase):
         self.assertEqual(Config._config['field_one']['nested_field'], True)
         self.assertEqual(Config._config['field_two'], 100)
 
+        self.reset_config_variables()
+
     def test_set_config_twice(self):
-        pass
+        config = {'field_one': {'nested_field': True}, 'field_two': 100}
+
+        Config.set_config(config)
+        
+        with self.assertRaises(RuntimeError):
+            Config.set_config(config)
+
+        self.reset_config_variables()
+
     def test_get_value_normal(self):
         pass
     def test_get_value_before_setting_config(self):
