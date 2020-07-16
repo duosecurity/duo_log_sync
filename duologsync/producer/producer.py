@@ -2,10 +2,9 @@
 Definition of the Producer class
 """
 
-import asyncio
 import logging
 import functools
-from duologsync.util import get_log_offset, run_in_executor
+from duologsync.util import get_log_offset, run_in_executor, restless_sleep
 from duologsync.config import Config
 
 class Producer():
@@ -37,7 +36,18 @@ class Producer():
         while Config.program_is_running():
             logging.info("%s producer: begin polling for %d seconds",
                          self.log_type, Config.get_polling_duration())
-            await asyncio.sleep(Config.get_polling_duration())
+            await restless_sleep(Config.get_polling_duration())
+
+            # Time to shutdown
+            if not Config.program_is_running():
+                logging.info("%s producer: quit polling early due to program "
+                             "shutdown", self.log_type)
+
+                # Put anything in the queue to unblock the consumer, since the
+                # consumer will not be able to do anything until an item is
+                # added to the queue
+                await self.log_queue.put([])
+                continue
 
             logging.info("%s producer: fetching logs after %d seconds",
                          self.log_type, Config.get_polling_duration())

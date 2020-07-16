@@ -15,6 +15,29 @@ from duologsync.__version__ import __version__
 
 EXECUTOR = ThreadPoolExecutor(3)
 
+async def restless_sleep(duration):
+    """
+    Wrapper for the asyncio.sleep function to sleep for duration seconds
+    but check every second that DuoLogSync is still running. This is
+    necessary in the case that the program should be shutting down but
+    a producer is in the middle of a 2 minute poll and will not be aware
+    of program shutdown until much later.
+
+    @param duration The number of seconds to sleep for
+    """
+
+    while duration > 0:
+        asyncio.sleep(1)
+
+        # Poll for program running state
+        if Config.program_is_running():
+            duration = duration - 1
+            continue
+        
+        # Otherwise, program is done running, time to start shutdown
+        else:
+            break
+
 def set_logger(log_directory):
     """
     Function to set up logging for DuoLogSync.
