@@ -3,8 +3,6 @@ Unrelated, but useful functions used in various places throughout DuoLogSync.
 """
 
 import os
-import ssl
-import sys
 import json
 import asyncio
 import logging
@@ -78,71 +76,6 @@ async def run_in_executor(function_obj):
     )
 
     return result
-
-async def create_writer():
-    """
-    Create a network connection for writing logs to wherever the user would
-    like. Values in the user defined config determine where the connection
-    leads to, and the protocol used to send logs.
-
-    @return the writer object, used to write logs to a specific location
-    """
-    host = Config.get_value(['transport', 'host'])
-    port = Config.get_value(['transport', 'port'])
-    protocol = Config.get_value(['transport', 'protocol'])
-
-    if protocol == 'TCPSSL':
-        try:
-            logging.info("Opening connection to server over encrypted tcp...")
-            cert_file = os.path.join(
-                Config.get_value(['transport', 'certFileDir']),
-                Config.get_value(['transport', 'certFileName'])
-            )
-
-            context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH,
-                                                 cafile=cert_file)
-
-            _, writer = await asyncio.wait_for(
-                asyncio.open_connection(
-                    host,
-                    port,
-                    loop=asyncio.get_event_loop(),
-                    ssl=context),
-                timeout=60)
-            return writer
-        except ConnectionError:
-            logging.error("Connection to server failed at host %s and "
-                          "port %s", 'localhost', '8888')
-            sys.exit(1)
-        except Exception as error:
-            logging.error("Connection to server failed with exception "
-                          "%s", error)
-            logging.error("Terminating the application...")
-            sys.exit(1)
-
-    if protocol == 'TCP':
-        try:
-            logging.info(
-                "Opening connection to server over tcp...")
-            _, writer = await asyncio.wait_for(
-                asyncio.open_connection(
-                    host,
-                    port,
-                    loop=asyncio.get_event_loop()
-                ),
-                timeout=60
-            ) # Default connection timeout set to 1min
-            return writer
-        except asyncio.TimeoutError as timeout_error:
-            logging.error("Connection to server timedout after 60 seconds "
-                          "%s", timeout_error)
-            logging.error("Terminating the application...")
-            sys.exit(1)
-        except Exception as error:
-            logging.error("Connection to server failed with exception "
-                          "%s", error)
-            logging.error("Terminating the application...")
-            sys.exit(1)
 
 def get_log_offset(log_type, recover_log_offset, checkpoint_directory):
     """
