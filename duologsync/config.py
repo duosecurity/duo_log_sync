@@ -2,6 +2,7 @@
 Definition of the Config class
 """
 
+import logging
 from datetime import datetime, timedelta
 from cerberus import Validator
 import yaml
@@ -131,14 +132,17 @@ class Config:
         """
         @return _program_is_running
         """
+
         return cls._program_is_running
 
     @classmethod
-    def initiate_shutdown(cls):
+    def initiate_shutdown(cls, reason):
         """
         Simply set _program_is_running to False which will cause all consumers,
-        producers, and tasks to stop running.
+        producers, and tasks to stop running. Also, log the reason for shutdown
         """
+
+        logging.info("DuoLogSync: Shutting down due to [%s]", reason)
         cls._program_is_running = False
 
     @classmethod

@@ -62,16 +62,18 @@ def main():
 
 def sigint_handler(signal_number, stack_frame):
     """
-    Handler for SIGINT (Ctrl-c) to gracefully shutdown DuoLogSync
+    Handler for SIGINT (Ctrl-C) to gracefully shutdown DuoLogSync
     """
 
+    shutdown_reason = ''
+
     if signal_number is signal.SIGINT:
-        logging.info('DuoLogSync: recevied SIGINT (Ctrl-c). Shutting down')
+        shutdown_reason = 'received SIGINT (Ctrl-C)'
+
+    Config.initiate_shutdown(shutdown_reason)
 
     if stack_frame:
-        logging.info('DuoLogSync')
-
-    Config.initiate_shutdown()
+        logging.info('DuoLogSync: stack frame from Ctrl-C is %s', stack_frame)
 
 def create_consumer_producer_tasks(enabled_endpoints):
     """
