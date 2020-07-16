@@ -122,6 +122,25 @@ class Config:
     # Used to ensure that the _config variable is set once and only once
     _config_is_set = False
 
+    # Used to determine whether consumer and producer should continue running
+    # or start the shutdown process (if _program_is_running is false)
+    _program_is_running = True
+
+    @classmethod
+    def program_is_running(cls)
+        """
+        @return _program_is_running
+        """
+        return cls._program_is_running
+
+    @classmethod
+    def initiate_shutdown(cls)
+        """
+        Simply set _program_is_running to False which will cause all consumers,
+        producers, and tasks to stop running.
+        """
+        cls._program_is_running = False
+
     @classmethod
     def _check_config_is_set(cls):
         """

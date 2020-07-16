@@ -30,7 +30,7 @@ class Consumer():
         ovject. Data from the queue is then sent over a configured transport
         protocol to respective SIEMs or servers.
         """
-        while True:
+        while Config.program_is_running():
             logging.info("%s consumer: waiting for logs from producer",
                          self.log_type)
 
@@ -65,6 +65,8 @@ class Consumer():
 
                 self.log_offset = self.producer.get_log_offset(last_log_written)
                 self.update_log_checkpoint(self.log_type, self.log_offset)
+
+        logging.info("%s consumer: shutting down", self.log_type)
 
     @staticmethod
     def update_log_checkpoint(log_type, log_offset):

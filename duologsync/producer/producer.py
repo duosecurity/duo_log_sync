@@ -34,13 +34,23 @@ class Producer():
 
         # TODO: Implement interrupt handler / running variable so that the
         # while loop exits on failure or on user exit
-        while True:
+        while Config.program_is_running():
             logging.info("%s producer: begin polling for %d seconds",
                          self.log_type, Config.get_polling_duration())
             await asyncio.sleep(Config.get_polling_duration())
 
             logging.info("%s producer: fetching logs after %d seconds",
                          self.log_type, Config.get_polling_duration())
+            
+            # If given a bad integration key: RuntimeError: Received 401 
+            # Invalid integration key in request credentials
+            # If given a bad secret key: RuntimeError: Received 401 Invalid
+            # signature in request credentials
+            # If given a bad host: socket.gaierror [Errno 8] nodename nor 
+            # servname provided, or not known; TimeoutError: operation timed,
+            # out; OSError: [Errno 65] No route to host
+            # If your computer has no connection: socket.gaierror: [Errno 8]
+            # nodename nor servname provided, or not known
             api_result = await self.call_log_api()
             new_logs = self.get_logs(api_result)
 
@@ -56,6 +66,8 @@ class Producer():
             else:
                 logging.info("%s producer: no new logs available, going back "
                              "to polling", self.log_type)
+
+        logging.info("%s producer: shutting down", self.log_type)
 
     async def call_log_api(self):
         """
