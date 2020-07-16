@@ -116,6 +116,10 @@ def create_consumer_producer_tasks(enabled_endpoints):
 
     tasks = []
 
+    # Check if an error from creating the writer caused a program shutdown
+    if not Config.program_is_running():
+        return tasks
+
     # Enable endpoints based on user selection
     for endpoint in enabled_endpoints:
         log_queue = asyncio.Queue()

@@ -3,7 +3,6 @@ Definition of the Consumer class
 """
 
 import os
-import sys
 import json
 import logging
 from duologsync.config import Config
@@ -57,9 +56,14 @@ class Consumer():
 
                 # All the logs were written successfully
                 last_log_written = None
-            except Exception as error:
-                logging.error("Failed to write data to transport: %s", error)
-                sys.exit(1)
+
+            # Specifically watch out for errno 32 - Broken pipe. This means
+            # that the connect established by writer was reset or shutdown.
+            except BrokenPipeError as broken_pipe_error:
+                shutdown_reason = f"{broken_pipe_error}"
+                Config.initiate_shutdown(shutdown_reason)
+                logging.warning("DuoLogSync: connection to server was reset")
+
             finally:
                 if last_log_written is None:
                     logging.info("%s consumer: successfully wrote all logs",
