@@ -51,12 +51,12 @@ class Producer():
 
             logging.info("%s producer: fetching logs after %d seconds",
                          self.log_type, Config.get_polling_duration())
-            
-            # If given a bad integration key: RuntimeError: Received 401 
+
+            # If given a bad integration key: RuntimeError: Received 401
             # Invalid integration key in request credentials
             # If given a bad secret key: RuntimeError: Received 401 Invalid
             # signature in request credentials
-            # If given a bad host: socket.gaierror [Errno 8] nodename nor 
+            # If given a bad host: socket.gaierror [Errno 8] nodename nor
             # servname provided, or not known; TimeoutError: operation timed,
             # out; OSError: [Errno 65] No route to host
             # If your computer has no connection: socket.gaierror: [Errno 8]

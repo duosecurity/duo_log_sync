@@ -18,6 +18,7 @@ create_consumer_producer_tasks():
 import argparse
 import asyncio
 import logging
+import signal
 from duologsync.consumer.adminaction_consumer import AdminactionConsumer
 from duologsync.producer.adminaction_producer import AdminactionProducer
 from duologsync.consumer.authlog_consumer import AuthlogConsumer
@@ -40,6 +41,9 @@ def main():
                             help='Config to start application')
     args = arg_parser.parse_args()
 
+    # Handle shutting down the program via Ctrl-C
+    signal.signal(signal.SIGINT, sigint_handler)
+
     # Create a config Dictionary from a YAML file located at args.ConfigPath
     config = Config.create_config(args.ConfigPath)
     Config.set_config(config)
@@ -52,6 +56,22 @@ def main():
     # Run the Producers and Consumers
     asyncio.get_event_loop().run_until_complete(asyncio.gather(*tasks))
     asyncio.get_event_loop().close()
+
+    print("DuoLogSync: shutdown successfully. Check %s/duologsync.log for "
+          "program messages and logs." % Config.get_log_directory())
+
+def sigint_handler(signal_number, stack_frame):
+    """
+    Handler for SIGINT (Ctrl-c) to gracefully shutdown DuoLogSync
+    """
+
+    if signal_number is signal.SIGINT:
+        logging.info('DuoLogSync: recevied SIGINT (Ctrl-c). Shutting down')
+
+    if stack_frame:
+        logging.info('DuoLogSync')
+
+    Config.initiate_shutdown()
 
 def create_consumer_producer_tasks(enabled_endpoints):
     """

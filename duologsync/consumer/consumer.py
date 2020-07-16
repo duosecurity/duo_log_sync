@@ -36,6 +36,11 @@ class Consumer():
 
             # Call unblocks only when there is an element in the queue to get
             logs = await self.log_queue.get()
+
+            # Time to shutdown
+            if not Config.program_is_running():
+                continue
+
             logging.info("%s consumer: received %d logs from producer",
                          self.log_type, len(logs))
 

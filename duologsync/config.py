@@ -127,14 +127,14 @@ class Config:
     _program_is_running = True
 
     @classmethod
-    def program_is_running(cls)
+    def program_is_running(cls):
         """
         @return _program_is_running
         """
         return cls._program_is_running
 
     @classmethod
-    def initiate_shutdown(cls)
+    def initiate_shutdown(cls):
         """
         Simply set _program_is_running to False which will cause all consumers,
         producers, and tasks to stop running.

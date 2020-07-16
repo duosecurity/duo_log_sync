@@ -27,16 +27,15 @@ async def restless_sleep(duration):
     """
 
     while duration > 0:
-        asyncio.sleep(1)
+        await asyncio.sleep(1)
 
         # Poll for program running state
         if Config.program_is_running():
             duration = duration - 1
             continue
-        
+
         # Otherwise, program is done running, time to start shutdown
-        else:
-            break
+        break
 
 def set_logger(log_directory):
     """
