@@ -120,13 +120,13 @@ class TestConfig(TestCase):
 
         self.assertEqual(recover_log_offset, True)
 
-    def test_get_log_directory(self):
-        config = {'logs': {'logDir': '/tmp'}}
+    def test_get_log_filepath(self):
+        config = {'logs': {'logFilepath': '/tmp/duologsync.log'}}
 
         Config.set_config(config)
-        log_directory = Config.get_log_directory()
+        log_filepath = Config.get_log_filepath()
 
-        self.assertEqual(log_directory, '/tmp')
+        self.assertEqual(log_filepath, '/tmp/duologsync.log')
 
     def test_create_config_normal(self):
         config_filepath = 'tests/resources/config_files/standard.yml'
@@ -137,7 +137,7 @@ class TestConfig(TestCase):
                 'host': 'duosecurity.com'
             },
             'logs': {
-                'logDir': '/tmp',
+                'logFilepath': '/tmp/duologsync.log',
                 'endpoints': {
                     'enabled': ['auth', 'adminaction', 'telephony']
                 },
@@ -186,7 +186,7 @@ class TestConfig(TestCase):
 
         config = Config.create_config(config_filepath)
 
-        self.assertNotEqual(config['logs']['logDir'], None)
+        self.assertNotEqual(config['logs']['logFilepath'], None)
         self.assertNotEqual(config['logs']['polling']['duration'], None)
         self.assertNotEqual(config['logs']['polling']['daysinpast'], None)
         self.assertNotEqual(config['logs']['checkpointDir'], None)

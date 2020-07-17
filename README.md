@@ -19,7 +19,7 @@ Duologsync is a utility written by Duo Security to enable fetching logs from dif
 
 ##### Logging
 
-- Logging directory can be specified in `config.yml`. By default, logs will be stored under /tmp/ folder with name `duologsync.log`
+- Logging filepath can be specified in `config.yml`. By default, logs will be stored under /tmp/ folder with name `duologsync.log`
 
 ---
 
@@ -54,7 +54,7 @@ duoclient:
   host: ""
 
 logs:
-  logDir: "/tmp"
+  logFilepath: "/tmp/duologsync.log"
   endpoints:
     enabled: ["auth", "telephony", "adminaction"]
   polling:
@@ -83,7 +83,7 @@ recoverFromCheckpoint:
 - Choose which endpoints data should be fetched from. Polling duration is recommended to be kept 5 minutes. Choose how far in past to start fetching data from using daysinpast parameter. Configuration to store log and checkpoint files
 
 `logs:
-  logDir: "/tmp"
+  logFilepath: "/tmp/duologsync.log"
   endpoints:
     enabled: ["auth", "telephony", "adminaction"]
   polling:

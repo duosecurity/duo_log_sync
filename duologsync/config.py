@@ -21,6 +21,7 @@ class Config:
     """
 
     DEFAULT_DIRECTORY = '/tmp'
+    DEFAULT_LOG_PATH = DEFAULT_DIRECTORY + '/duologsync.log'
     DEFAULT_DAYS_IN_PAST = 180
 
     # How many seconds to wait between API requests
@@ -44,7 +45,7 @@ class Config:
         'type': 'dict',
         'required': True,
         'schema': {
-            'logDir': {'type': 'string', 'empty': False},
+            'logFilepath': {'type': 'string', 'empty': False},
             'endpoints': {
                 'type': 'dict',
                 'required': True,
@@ -245,12 +246,12 @@ class Config:
         return cls.get_value(['recoverFromCheckpoint', 'enabled'])
 
     @classmethod
-    def get_log_directory(cls):
+    def get_log_filepath(cls):
         """
         @return the directory where DuoLogSync's logs should be saved
         """
 
-        return cls.get_value(['logs', 'logDir'])
+        return cls.get_value(['logs', 'logFilepath'])
 
     @classmethod
     def create_config(cls, config_filepath):
@@ -306,7 +307,7 @@ class Config:
         schema = Validator(cls.SCHEMA)
 
         # Config is not a valid structure
-        if schema.validate(config) == False:
+        if not schema.validate(config):
             raise ValueError("While validating the config, the following "
                              f"error(s) occurred: {schema.errors}")
 
@@ -330,9 +331,9 @@ class Config:
         if config.get('recoverFromCheckpoint') is None:
             config['recoverFromCheckpoint'] = {}
 
-        if config.get('logs').get('logDir') is None:
-            print(default_msg % ('logs.logDir', cls.DEFAULT_DIRECTORY))
-            config['logs']['logDir'] = cls.DEFAULT_DIRECTORY
+        if config.get('logs').get('logFilepath') is None:
+            print(default_msg % ('logs.logDir', cls.DEFAULT_LOG_PATH))
+            config['logs']['logFilepath'] = cls.DEFAULT_LOG_PATH
 
         polling_duration = config.get('logs').get('polling').get('duration')
         if polling_duration is None:

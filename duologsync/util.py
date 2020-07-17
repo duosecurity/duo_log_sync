@@ -35,16 +35,16 @@ async def restless_sleep(duration):
         # Otherwise, program is done running, time to start shutdown
         break
 
-def set_logger(log_directory):
+def set_logger(log_filepath):
     """
     Function to set up logging for DuoLogSync.
 
-    @param log_directory    Directory where logging messages should be saved
+    @param log_filepath Filepath where logging messages should be saved
     """
 
     logging.basicConfig(
         # Where to save logs
-        filename=os.path.join(log_directory, 'duologsync.log'),
+        filename=log_filepath,
 
         # How logs should be formatted
         format='%(asctime)s %(levelname)-8s %(message)s',

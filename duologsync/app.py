@@ -50,7 +50,7 @@ def main():
     config = Config.create_config(args.ConfigPath)
     Config.set_config(config)
 
-    set_logger(Config.get_log_directory())
+    set_logger(Config.get_log_filepath())
 
     # List of Producer/Consumer objects as asyncio tasks to be run
     tasks = create_consumer_producer_tasks(Config.get_enabled_endpoints())
@@ -59,8 +59,8 @@ def main():
     asyncio.get_event_loop().run_until_complete(asyncio.gather(*tasks))
     asyncio.get_event_loop().close()
 
-    print("DuoLogSync: shutdown successfully. Check %s/duologsync.log for "
-          "program messages and logs." % Config.get_log_directory())
+    print("DuoLogSync: shutdown successfully. Check %s for "
+          "program messages and logs." % Config.get_log_filepath())
 
 def sigint_handler(signal_number, stack_frame):
     """

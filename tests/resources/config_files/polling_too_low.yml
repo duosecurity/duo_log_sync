@@ -3,7 +3,7 @@ duoclient:
   ikey: "BUNCH OF RANDOM CHARACTERS ALL UPPER CASE"
   host: "duosecurity.com"
 logs:
-  logDir: "/tmp"
+  logFilepath: "/tmp/duologsync.log"
   endpoints:
     enabled: ["auth", "adminaction", "telephony"]
   polling:
