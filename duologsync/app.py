@@ -69,9 +69,10 @@ def sigint_handler(signal_number, stack_frame):
 
     shutdown_reason = ''
 
-    if signal_number is signal.SIGINT:
+    if signal_number == signal.SIGINT:
         shutdown_reason = 'received SIGINT (Ctrl-C)'
 
+    print(shutdown_reason)
     Config.initiate_shutdown(shutdown_reason)
 
     if stack_frame:

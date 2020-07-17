@@ -45,7 +45,7 @@ class Producer():
             logging.info("%s producer: fetching logs after %d seconds",
                          self.log_type, Config.get_polling_duration())
 
-            api_result = self.call_log_api_safely()
+            api_result = await self.call_log_api_safely()
 
             if not Config.program_is_running():
                 continue

@@ -9,7 +9,6 @@ import ssl
 from socket import gaierror
 from duologsync.config import Config
 
-@staticmethod
 async def create_tcpssl_writer(host, port, cert_filename):
     """
     Wrapper for the create_writer function for the encrypted TCP protocol.
@@ -32,7 +31,6 @@ async def create_tcpssl_writer(host, port, cert_filename):
     writer = create_writer(host, port, ssl_context)
     return writer
 
-@staticmethod
 async def create_writer(host, port, ssl_context=None):
     """
     Wrapper around the asyncio.open_connection function with exception handling

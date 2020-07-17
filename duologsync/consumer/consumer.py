@@ -26,7 +26,7 @@ class Consumer():
     async def consume(self):
         """
         Consumer that will consume data from a queue shared with a producer
-        ovject. Data from the queue is then sent over a configured transport
+        object. Data from the queue is then sent over a configured transport
         protocol to respective SIEMs or servers.
         """
         while Config.program_is_running():

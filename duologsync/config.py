@@ -141,7 +141,7 @@ class Config:
         Simply set _program_is_running to False which will cause all consumers,
         producers, and tasks to stop running. Also, log the reason for shutdown
         """
-
+        print(reason)
         logging.info("DuoLogSync: Shutting down due to [%s]", reason)
         cls._program_is_running = False
 
@@ -306,7 +306,7 @@ class Config:
         schema = Validator(cls.SCHEMA)
 
         # Config is not a valid structure
-        if schema.validate(config) is False:
+        if schema.validate(config) == False:
             raise ValueError("While validating the config, the following "
                              f"error(s) occurred: {schema.errors}")
 
