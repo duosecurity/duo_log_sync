@@ -8,6 +8,7 @@ class TestConfig(TestCase):
     def tearDown(self):
         Config._config = None
         Config._config_is_set = False
+        Config._program_is_running = True
 
     def test_set_config_normal(self):
         config = {'field_one': {'nested_field': True}, 'field_two': 100}
@@ -24,6 +25,20 @@ class TestConfig(TestCase):
         
         with self.assertRaises(RuntimeError):
             Config.set_config(config)
+
+    def test_program_is_running(self):
+        self.assertEqual(Config.program_is_running(), True)
+
+        Config._program_is_running = False
+
+        self.assertEqual(Config.program_is_running(), False)
+
+    def test_initiate_shutdown(self):
+        self.assertEqual(Config._program_is_running, True)
+
+        Config.initiate_shutdown('test')
+
+        self.assertEqual(Config._program_is_running, False)
 
     def test_get_value_normal(self):
         config = {'field_one': {'nested_field': True}, 'field_two': 100}
