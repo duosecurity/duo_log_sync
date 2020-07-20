@@ -6,6 +6,7 @@ import os
 import json
 import logging
 from duologsync.config import Config
+from duologsync.program import Program
 
 class Consumer():
     """
@@ -29,26 +30,25 @@ class Consumer():
         object. Data from the queue is then sent over a configured transport
         protocol to respective SIEMs or servers.
         """
-        while Config.program_is_running():
-            logging.info("%s consumer: waiting for logs from producer",
-                         self.log_type)
+        while Program.is_running():
+            Program.log(f"{self.log_type} consumer: waiting for logs")
 
             # Call unblocks only when there is an element in the queue to get
             logs = await self.log_queue.get()
 
             # Time to shutdown
-            if not Config.program_is_running():
+            if not Program.is_running():
                 continue
 
-            logging.info("%s consumer: received %d logs from producer",
-                         self.log_type, len(logs))
+            Program.log(f"{self.log_type} consumer: received {len(logs)} logs "
+                        "from producer")
 
             # Keep track of the latest log written in the case that a problem
             # occurs in the middle of writing logs
             last_log_written = None
 
             try:
-                logging.info("%s consumer: writing logs", self.log_type)
+                Program.log(f"{self.log_type} consumer: writing logs")
                 for log in logs:
                     self.writer.write(json.dumps(log).encode() + b'\n')
                     await self.writer.drain()
@@ -61,21 +61,22 @@ class Consumer():
             # that the connect established by writer was reset or shutdown.
             except BrokenPipeError as broken_pipe_error:
                 shutdown_reason = f"{broken_pipe_error}"
-                Config.initiate_shutdown(shutdown_reason)
-                logging.warning("DuoLogSync: connection to server was reset")
+                Program.initiate_shutdown(shutdown_reason)
+                Program.log("DuoLogSync: connection to server was reset",
+                            logging.WARNING)
 
             finally:
                 if last_log_written is None:
-                    logging.info("%s consumer: successfully wrote all logs",
-                                 self.log_type)
+                    Program.log(f"{self.log_type} consumer: successfully wrote "
+                                "all logs")
                 else:
-                    logging.warning("%s consumer: failed to write some logs",
-                                    self.log_type)
+                    Program.log(f"{self.log_type} consumer: failed to write "
+                                "some logs", logging.WARNING)
 
                 self.log_offset = self.producer.get_log_offset(last_log_written)
                 self.update_log_checkpoint(self.log_type, self.log_offset)
 
-        logging.info("%s consumer: shutting down", self.log_type)
+        Program.log(f"{self.log_type} consumer: shutting down")
 
     @staticmethod
     def update_log_checkpoint(log_type, log_offset):
@@ -86,8 +87,8 @@ class Consumer():
         @param log_offset   Information to save in the checkpoint file
         """
 
-        logging.info("%s consumer: saving latest log offset to a "
-                     "checkpointing file", log_type)
+        Program.log(f"{log_type} consumer: saving latest log offset to a "
+                    "checkpointing file")
 
         checkpoint_filename = os.path.join(
             Config.get_checkpoint_directory(),

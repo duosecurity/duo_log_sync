@@ -5,10 +5,10 @@ Unrelated, but useful functions used in various places throughout DuoLogSync.
 import os
 import json
 import asyncio
-import logging
 from concurrent.futures import ThreadPoolExecutor
 import duo_client
 from duologsync.config import Config
+from duologsync.program import Program
 from duologsync.__version__ import __version__
 
 EXECUTOR = ThreadPoolExecutor(3)
@@ -28,35 +28,12 @@ async def restless_sleep(duration):
         await asyncio.sleep(1)
 
         # Poll for program running state
-        if Config.program_is_running():
+        if Program.is_running():
             duration = duration - 1
             continue
 
         # Otherwise, program is done running, time to start shutdown
         break
-
-def set_logger(log_filepath):
-    """
-    Function to set up logging for DuoLogSync.
-
-    @param log_filepath Filepath where logging messages should be saved
-    """
-
-    logging.basicConfig(
-        # Where to save logs
-        filename=log_filepath,
-
-        # How logs should be formatted
-        format='%(asctime)s %(levelname)-8s %(message)s',
-
-        # Minimum level required of a log in order to be seen / written
-        level=logging.INFO,
-
-        # Date format to use with logs
-        datefmt='%Y-%m-%d %H:%M:%S'
-    )
-
-    logging.info("Starting duologsync...")
 
 async def run_in_executor(function_obj):
     """
@@ -110,9 +87,8 @@ def get_log_offset(log_type, recover_log_offset, checkpoint_directory):
 
         # Most likely, the checkpoint file doesn't exist
         except OSError:
-            logging.warning("Could not read checkpoint file for %s logs, "
-                            "consuming logs from %s timestamp",
-                            log_type, log_offset)
+            Program.log(f"Could not read checkpoint file for {log_type} logs, "
+                        "consuming logs from {log_offset} timestamp")
 
     return log_offset
 
@@ -135,7 +111,5 @@ def create_admin(ikey, skey, host):
         user_agent=f"Duo Log Sync/{__version__}"
     )
 
-    logging.info("duo_client Admin initialized for ikey: %s, host: %s",
-                 ikey, host)
-
+    Program.log(f"duo_client Admin initialized for ikey: {ikey}, host: {host}")
     return admin

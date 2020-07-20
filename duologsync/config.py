@@ -2,11 +2,11 @@
 Definition of the Config class
 """
 
-import logging
 from datetime import datetime, timedelta
 from cerberus import Validator
 import yaml
 from yaml import YAMLError
+from duologsync.program import Program
 
 class Config:
     """
@@ -124,28 +124,6 @@ class Config:
     # Used to ensure that the _config variable is set once and only once
     _config_is_set = False
 
-    # Used to determine whether consumer and producer should continue running
-    # or start the shutdown process (if _program_is_running is false)
-    _program_is_running = True
-
-    @classmethod
-    def program_is_running(cls):
-        """
-        @return _program_is_running
-        """
-
-        return cls._program_is_running
-
-    @classmethod
-    def initiate_shutdown(cls, reason):
-        """
-        Simply set _program_is_running to False which will cause all consumers,
-        producers, and tasks to stop running. Also, log the reason for shutdown
-        """
-        print(reason)
-        logging.info("DuoLogSync: Shutting down due to [%s]", reason)
-        cls._program_is_running = False
-
     @classmethod
     def _check_config_is_set(cls):
         """
@@ -262,6 +240,8 @@ class Config:
         @param config_filepath  File from which to generate a config object
         """
 
+        shutdown_reason = None
+
         try:
             with open(config_filepath) as config_file:
                 # PyYAML gives better error messages for streams than for files
@@ -269,30 +249,34 @@ class Config:
                 config = yaml.full_load(config_file_data)
 
         # Will occur when given a bad filepath or a bad file
-        except OSError:
-            print('An error occurred while opening the config file. Check '
-                  'that the filename and filepath are correct')
-            # Re-raise exception to be re-handled and for stopping the program
-            raise
+        except OSError as os_error:
+            shutdown_reason = f"{os_error}"
+            Program.log('DuoLogSync: Failed to open the config file. Check '
+                        'that the filename and filepath are correct')
 
         # Will occur if the config file does not contain valid YAML
-        except YAMLError:
-            print('An error occurred while reading the config file. Check '
-                  'that the file has valid YAML.')
-            # Re-raise exception to be re-handled and for stopping the program
-            raise
+        except YAMLError as yaml_error:
+            shutdown_reason = f"{yaml_error}"
+            Program.log('DuoLogSync: Failed to parse the config file. Check '
+                        'that the config file has valid YAML.')
 
-        # If no exception was raised during the try block, validate and return
-        # config
+        # No exception raised during the try block, validate and return config
         else:
             # Check config against a schema to ensure all the needed fields and
             # values are defined
             cls._validate_config(config)
+            if not Program.is_running():
+                return None
 
             # For fields that are optional and not given a value, populate with
             # default values
             cls._set_config_defaults(config)
             return config
+
+        # At this point, it is guaranteed that an exception was raised, which
+        # means that it is shutdown time
+        Program.initiate_shutdown(shutdown_reason)
+        return None
 
     @classmethod
     def _validate_config(cls, config):
@@ -308,8 +292,9 @@ class Config:
 
         # Config is not a valid structure
         if not schema.validate(config):
-            raise ValueError("While validating the config, the following "
-                             f"error(s) occurred: {schema.errors}")
+            Program.initiate_shutdown(f"{schema.errors}")
+            Program.log('DuoLogSync: Validation of the config file failed. '
+                        'Check that required fields have proper values.')
 
     @classmethod
     def _set_config_defaults(cls, config):
@@ -332,31 +317,33 @@ class Config:
             config['recoverFromCheckpoint'] = {}
 
         if config.get('logs').get('logFilepath') is None:
-            print(default_msg % ('logs.logDir', cls.DEFAULT_LOG_PATH))
+            Program.log(default_msg %
+                        ('logs.logFilepath', cls.DEFAULT_LOG_PATH))
             config['logs']['logFilepath'] = cls.DEFAULT_LOG_PATH
 
         polling_duration = config.get('logs').get('polling').get('duration')
         if polling_duration is None:
-            print(default_msg %
-                  ('logs.polling.duration', cls.MINIMUM_POLLING_DURATION))
+            Program.log(default_msg % ('logs.polling.duration',
+                                       cls.MINIMUM_POLLING_DURATION))
             config['logs']['polling']['duration'] = cls.MINIMUM_POLLING_DURATION
 
         elif polling_duration < cls.MINIMUM_POLLING_DURATION:
-            print("Config: Value given for logs.polling.duration was too low. "
-                  "Set to default value of %s" % cls.MINIMUM_POLLING_DURATION)
+            Program.log("Config: Value given for logs.polling.duration was too "
+                        "low. Set to %s" % cls.MINIMUM_POLLING_DURATION)
             config['logs']['polling']['duration'] = cls.MINIMUM_POLLING_DURATION
 
         if config.get('logs').get('polling').get('daysinpast') is None:
-            print(default_msg %
-                  ('logs.polling.daysinpast', cls.DEFAULT_DAYS_IN_PAST))
+            Program.log(default_msg %
+                        ('logs.polling.daysinpast', cls.DEFAULT_DAYS_IN_PAST))
             config['logs']['polling']['daysinpast'] = cls.DEFAULT_DAYS_IN_PAST
 
         if config.get('logs').get('checkpointDir') is None:
-            print(default_msg % ('logs.checkpointDir', cls.DEFAULT_DIRECTORY))
+            Program.log(default_msg %
+                        ('logs.checkpointDir', cls.DEFAULT_DIRECTORY))
             config['logs']['checkpointDir'] = cls.DEFAULT_DIRECTORY
 
         if config.get('recoverFromCheckpoint').get('enabled') is None:
-            print(default_msg % ('recoverFromCheckpoint.enabled', False))
+            Program.log(default_msg % ('recoverFromCheckpoint.enabled', False))
             config['recoverFromCheckpoint']['enabled'] = False
 
         # Add a default offset from which to fetch logs

@@ -17,7 +17,6 @@ create_consumer_producer_tasks():
 
 import argparse
 import asyncio
-import logging
 import os
 import signal
 from duologsync.consumer.adminaction_consumer import AdminactionConsumer
@@ -26,9 +25,10 @@ from duologsync.consumer.authlog_consumer import AuthlogConsumer
 from duologsync.producer.authlog_producer import AuthlogProducer
 from duologsync.consumer.telephony_consumer import TelephonyConsumer
 from duologsync.producer.telephony_producer import TelephonyProducer
-from duologsync.util import create_admin, set_logger
+from duologsync.util import create_admin
 from duologsync.writer import create_tcpssl_writer, create_writer
 from duologsync.config import Config
+from duologsync.program import Program
 
 def main():
     """
@@ -50,7 +50,7 @@ def main():
     config = Config.create_config(args.ConfigPath)
     Config.set_config(config)
 
-    set_logger(Config.get_log_filepath())
+    Program.setup_logging(Config.get_log_filepath())
 
     # List of Producer/Consumer objects as asyncio tasks to be run
     tasks = create_consumer_producer_tasks(Config.get_enabled_endpoints())
@@ -73,10 +73,10 @@ def sigint_handler(signal_number, stack_frame):
         shutdown_reason = 'received SIGINT (Ctrl-C)'
 
     print(shutdown_reason)
-    Config.initiate_shutdown(shutdown_reason)
+    Program.initiate_shutdown(shutdown_reason)
 
     if stack_frame:
-        logging.info('DuoLogSync: stack frame from Ctrl-C is %s', stack_frame)
+        Program.log(f"DuoLogSync: stack frame from Ctrl-C is {stack_frame}")
 
 def create_consumer_producer_tasks(enabled_endpoints):
     """
@@ -118,7 +118,7 @@ def create_consumer_producer_tasks(enabled_endpoints):
     tasks = []
 
     # Check if an error from creating the writer caused a program shutdown
-    if not Config.program_is_running():
+    if not Program.is_running():
         return tasks
 
     # Enable endpoints based on user selection
@@ -138,7 +138,7 @@ def create_consumer_producer_tasks(enabled_endpoints):
                                            log_queue)
             consumer = AdminactionConsumer(log_queue, producer, writer)
         else:
-            logging.info("%s is not a recognized endpoint", endpoint)
+            Program.log(f"{endpoint} is not a recognized endpoint")
             del log_queue
             continue
 

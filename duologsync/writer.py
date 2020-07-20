@@ -4,10 +4,10 @@ Asyncion streams.
 """
 
 import asyncio
-import logging
 import ssl
+import logging
 from socket import gaierror
-from duologsync.config import Config
+from duologsync.program import Program
 
 async def create_tcpssl_writer(host, port, cert_filename):
     """
@@ -24,7 +24,7 @@ async def create_tcpssl_writer(host, port, cert_filename):
                                                  cafile=cert_filename)
 
     except FileNotFoundError:
-        Config.initiate_shutdown(
+        Program.initiate_shutdown(
             f"The certificate file {cert_filename} could not be opened.")
         return None
 
@@ -45,7 +45,7 @@ async def create_writer(host, port, ssl_context=None):
     """
 
     shutdown_reason = None
-    logging.info("DuoLogSync: Opening connection to %s:%s", host, port)
+    Program.log(f"DuoLogSync: Opening connection to {host}:{port}")
 
     try:
         _, writer = await asyncio.wait_for(
@@ -69,7 +69,7 @@ async def create_writer(host, port, ssl_context=None):
     else:
         return writer
 
-    Config.initiate_shutdown(shutdown_reason)
-    logging.warning("DuoLogSync: check that host - %s and port - %s are "
-                    "correct in the config file", host, port)
+    Program.initiate_shutdown(shutdown_reason)
+    Program.log(f"DuoLogSync: check that host-{host} and port-{port} are "
+                "correct in the config file", logging.WARNING)
     return None
