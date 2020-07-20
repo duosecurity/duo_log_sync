@@ -47,19 +47,26 @@ class Program:
         @param log_filepath Filepath where logging messages should be saved
         """
 
-        logging.basicConfig(
-            #Where to save logs
-            filename=log_filepath,
+        try:
+            logging.basicConfig(
+                #Where to save logs
+                filename=log_filepath,
 
-            #How logs should be formatted
-            format='%(asctime)s %(levelname)-8s %(message)s',
+                #How logs should be formatted
+                format='%(asctime)s %(levelname)-8s %(message)s',
 
-            #Minimum level required of a log in order to be seen / written
-            level=logging.INFO,
+                #Minimum level required of a log in order to be seen / written
+                level=logging.INFO,
 
-            # Date format to use with logs
-            datefmt='%Y-%m-%d %H:%M:%S'
-        )
+                # Date format to use with logs
+                datefmt='%Y-%m-%d %H:%M:%S'
+            )
+
+        except FileNotFoundError as file_not_found_error:
+            cls.log(f"DuoLogSync: Could not follow the path {log_filepath}. "
+                    "Make sure the directories in the filepath exist.")
+            cls.initiate_shutdown(f"{file_not_found_error}")
+            return
 
         cls._logging_set = True
         cls.log('Starting DuoLogSync')

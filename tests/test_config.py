@@ -1,14 +1,19 @@
-from unittest import mock, TestCase
+from unittest import TestCase
+from unittest.mock import patch
 import os
 import sys
 from yaml import YAMLError
 from duologsync.config import Config
+from duologsync.program import Program
+
+def running_is_false(msg):
+    Program._running = False
 
 class TestConfig(TestCase):
     def tearDown(self):
         Config._config = None
         Config._config_is_set = False
-        Config._program_is_running = True
+        Program._running = True
 
     def test_set_config_normal(self):
         config = {'field_one': {'nested_field': True}, 'field_two': 100}
@@ -25,20 +30,6 @@ class TestConfig(TestCase):
         
         with self.assertRaises(RuntimeError):
             Config.set_config(config)
-
-    def test_program_is_running(self):
-        self.assertEqual(Config.program_is_running(), True)
-
-        Config._program_is_running = False
-
-        self.assertEqual(Config.program_is_running(), False)
-
-    def test_initiate_shutdown(self):
-        self.assertEqual(Config._program_is_running, True)
-
-        Config.initiate_shutdown('test')
-
-        self.assertEqual(Config._program_is_running, False)
 
     def test_get_value_normal(self):
         config = {'field_one': {'nested_field': True}, 'field_two': 100}
@@ -163,23 +154,30 @@ class TestConfig(TestCase):
 
         self.assertEqual(correct_config, config)
 
-    def test_create_config_bad_filepath(self):
+    @patch('duologsync.program.Program.initiate_shutdown')
+    def test_create_config_bad_filepath(self, mock_initiate_shutdown):
         config_filepath = 'absolute/nonsense/this/goes/nowhere.yml'
 
-        with self.assertRaises(OSError):
-            Config.create_config(config_filepath)
+        Config.create_config(config_filepath)
 
-    def test_create_config_invalid_yaml(self):
+        mock_initiate_shutdown.assert_called_once()
+
+    @patch('duologsync.program.Program.initiate_shutdown')
+    def test_create_config_invalid_yaml(self, mock_initiate_shutdown):
         config_filepath = 'tests/resources/config_files/bad_yaml.yml'
 
-        with self.assertRaises(YAMLError):
-            Config.create_config(config_filepath)
+        Config.create_config(config_filepath)
 
-    def test_create_config_invalid_config(self):
+        mock_initiate_shutdown.assert_called_once()
+
+    @patch('duologsync.program.Program.initiate_shutdown',
+           side_effect=running_is_false)
+    def test_create_config_invalid_config(self, mock_initiate_shutdown):
         config_filepath = 'tests/resources/config_files/bad_config.yml'
 
-        with self.assertRaises(ValueError):
-            Config.create_config(config_filepath)
+        Config.create_config(config_filepath)
+        
+        mock_initiate_shutdown.assert_called_once()
 
     def test_create_config_with_missing_optional_fields(self):
         config_filepath = 'tests/resources/config_files/no_optional_fields.yml'
@@ -196,5 +194,7 @@ class TestConfig(TestCase):
         config_filepath = 'tests/resources/config_files/polling_too_low.yml'
 
         config = Config.create_config(config_filepath)
+
+        print(config)
 
         self.assertEqual(config['logs']['polling']['duration'], 120)

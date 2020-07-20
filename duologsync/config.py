@@ -240,6 +240,7 @@ class Config:
         @param config_filepath  File from which to generate a config object
         """
 
+        print('ooooooga booooooooga')
         shutdown_reason = None
 
         try:
@@ -271,6 +272,7 @@ class Config:
             # For fields that are optional and not given a value, populate with
             # default values
             cls._set_config_defaults(config)
+            print(config)
             return config
 
         # At this point, it is guaranteed that an exception was raised, which

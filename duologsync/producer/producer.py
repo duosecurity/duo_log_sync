@@ -36,7 +36,7 @@ class Producer():
         # Exit when DuoLogSync is shutting down (due to error or Ctrl-C)
         while Program.is_running():
             Program.log(f"{self.log_type} producer: begin polling for "
-                        "{Config.get_polling_duration()} seconds")
+                        f"{Config.get_polling_duration()} seconds")
             await restless_sleep(Config.get_polling_duration())
 
             # Time to shutdown
