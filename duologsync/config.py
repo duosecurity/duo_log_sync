@@ -2,6 +2,7 @@
 Definition of the Config class
 """
 
+import logging
 from datetime import datetime, timedelta
 from cerberus import Validator
 import yaml
@@ -116,6 +117,9 @@ class Config:
         'transport': TRANSPORT,
         'recoverFromCheckpoint': RECOVER_FROM_CHECKPOINT
     }
+
+    # Generate a Validator object with the given schema
+    SCHEMA_VALIDATOR = Validator(SCHEMA)
 
     # Private class variable, should not be accessed directly, only through
     # getter and setter methods
@@ -240,7 +244,6 @@ class Config:
         @param config_filepath  File from which to generate a config object
         """
 
-        print('ooooooga booooooooga')
         shutdown_reason = None
 
         try:
@@ -249,11 +252,15 @@ class Config:
                 config_file_data = config_file.read()
                 config = yaml.full_load(config_file_data)
 
+                # Check config against a schema to ensure all the needed fields
+                # and values are defined
+                cls._validate_config(config)
+
         # Will occur when given a bad filepath or a bad file
         except OSError as os_error:
             shutdown_reason = f"{os_error}"
             Program.log('DuoLogSync: Failed to open the config file. Check '
-                        'that the filename and filepath are correct')
+                        'that the filename is correct')
 
         # Will occur if the config file does not contain valid YAML
         except YAMLError as yaml_error:
@@ -261,18 +268,17 @@ class Config:
             Program.log('DuoLogSync: Failed to parse the config file. Check '
                         'that the config file has valid YAML.')
 
-        # No exception raised during the try block, validate and return config
-        else:
-            # Check config against a schema to ensure all the needed fields and
-            # values are defined
-            cls._validate_config(config)
-            if not Program.is_running():
-                return None
+        # Validation of the config against a schema failed
+        except ValueError:
+            shutdown_reason = f"{cls.SCHEMA_VALIDATOR.errors}"
+            Program.log('DuoLogSync: Validation of the config file failed. '
+                        'Check that required fields have proper values.')
 
+        # No exception raised during the try block, return config
+        else:
             # For fields that are optional and not given a value, populate with
             # default values
             cls._set_config_defaults(config)
-            print(config)
             return config
 
         # At this point, it is guaranteed that an exception was raised, which
@@ -289,14 +295,9 @@ class Config:
         @param config   Dictionary for which to validate the structure
         """
 
-        # Generate a Validator object with the given schema
-        schema = Validator(cls.SCHEMA)
-
         # Config is not a valid structure
-        if not schema.validate(config):
-            Program.initiate_shutdown(f"{schema.errors}")
-            Program.log('DuoLogSync: Validation of the config file failed. '
-                        'Check that required fields have proper values.')
+        if not cls.SCHEMA_VALIDATOR.validate(config):
+            raise ValueError
 
     @classmethod
     def _set_config_defaults(cls, config):
@@ -320,32 +321,38 @@ class Config:
 
         if config.get('logs').get('logFilepath') is None:
             Program.log(default_msg %
-                        ('logs.logFilepath', cls.DEFAULT_LOG_PATH))
+                        ('logs.logFilepath', cls.DEFAULT_LOG_PATH),
+                        logging.INFO)
             config['logs']['logFilepath'] = cls.DEFAULT_LOG_PATH
 
         polling_duration = config.get('logs').get('polling').get('duration')
         if polling_duration is None:
             Program.log(default_msg % ('logs.polling.duration',
-                                       cls.MINIMUM_POLLING_DURATION))
+                                       cls.MINIMUM_POLLING_DURATION),
+                        logging.INFO)
             config['logs']['polling']['duration'] = cls.MINIMUM_POLLING_DURATION
 
         elif polling_duration < cls.MINIMUM_POLLING_DURATION:
             Program.log("Config: Value given for logs.polling.duration was too "
-                        "low. Set to %s" % cls.MINIMUM_POLLING_DURATION)
+                        "low. Set to %s" % cls.MINIMUM_POLLING_DURATION,
+                        logging.INFO)
             config['logs']['polling']['duration'] = cls.MINIMUM_POLLING_DURATION
 
         if config.get('logs').get('polling').get('daysinpast') is None:
             Program.log(default_msg %
-                        ('logs.polling.daysinpast', cls.DEFAULT_DAYS_IN_PAST))
+                        ('logs.polling.daysinpast', cls.DEFAULT_DAYS_IN_PAST),
+                        logging.INFO)
             config['logs']['polling']['daysinpast'] = cls.DEFAULT_DAYS_IN_PAST
 
         if config.get('logs').get('checkpointDir') is None:
             Program.log(default_msg %
-                        ('logs.checkpointDir', cls.DEFAULT_DIRECTORY))
+                        ('logs.checkpointDir', cls.DEFAULT_DIRECTORY),
+                        logging.INFO)
             config['logs']['checkpointDir'] = cls.DEFAULT_DIRECTORY
 
         if config.get('recoverFromCheckpoint').get('enabled') is None:
-            Program.log(default_msg % ('recoverFromCheckpoint.enabled', False))
+            Program.log(default_msg % ('recoverFromCheckpoint.enabled', False),
+                        logging.INFO)
             config['recoverFromCheckpoint']['enabled'] = False
 
         # Add a default offset from which to fetch logs

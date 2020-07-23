@@ -31,7 +31,8 @@ class Consumer():
         protocol to respective SIEMs or servers.
         """
         while Program.is_running():
-            Program.log(f"{self.log_type} consumer: waiting for logs")
+            Program.log(f"{self.log_type} consumer: waiting for logs",
+                        logging.INFO)
 
             # Call unblocks only when there is an element in the queue to get
             logs = await self.log_queue.get()
@@ -41,14 +42,15 @@ class Consumer():
                 continue
 
             Program.log(f"{self.log_type} consumer: received {len(logs)} logs "
-                        "from producer")
+                        "from producer", logging.INFO)
 
             # Keep track of the latest log written in the case that a problem
             # occurs in the middle of writing logs
             last_log_written = None
 
             try:
-                Program.log(f"{self.log_type} consumer: writing logs")
+                Program.log(f"{self.log_type} consumer: writing logs",
+                            logging.INFO)
                 for log in logs:
                     self.writer.write(json.dumps(log).encode() + b'\n')
                     await self.writer.drain()
@@ -68,7 +70,7 @@ class Consumer():
             finally:
                 if last_log_written is None:
                     Program.log(f"{self.log_type} consumer: successfully wrote "
-                                "all logs")
+                                "all logs", logging.INFO)
                 else:
                     Program.log(f"{self.log_type} consumer: failed to write "
                                 "some logs", logging.WARNING)
@@ -76,7 +78,7 @@ class Consumer():
                 self.log_offset = self.producer.get_log_offset(last_log_written)
                 self.update_log_checkpoint(self.log_type, self.log_offset)
 
-        Program.log(f"{self.log_type} consumer: shutting down")
+        Program.log(f"{self.log_type} consumer: shutting down", logging.INFO)
 
     @staticmethod
     def update_log_checkpoint(log_type, log_offset):
@@ -88,7 +90,7 @@ class Consumer():
         """
 
         Program.log(f"{log_type} consumer: saving latest log offset to a "
-                    "checkpointing file")
+                    "checkpointing file", logging.INFO)
 
         checkpoint_filename = os.path.join(
             Config.get_checkpoint_directory(),

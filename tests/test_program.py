@@ -3,9 +3,17 @@ from unittest.mock import patch
 from duologsync.program import Program
 
 class TestConfig(TestCase):
+    
     def tearDown(self):
         Program._running = True
         Program._logging_set = False
+
+    def test_is_logging_set(self):
+        self.assertEqual(Program.is_logging_set(), False)
+
+        Program._logging_set = True
+
+        self.assertEqual(Program.is_logging_set(), True)
 
     def test_is_running(self):
         self.assertEqual(Program.is_running(), True)

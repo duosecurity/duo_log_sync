@@ -17,6 +17,7 @@ create_consumer_producer_tasks():
 
 import argparse
 import asyncio
+import logging
 import os
 import signal
 from duologsync.consumer.adminaction_consumer import AdminactionConsumer
@@ -59,8 +60,10 @@ def main():
     asyncio.get_event_loop().run_until_complete(asyncio.gather(*tasks))
     asyncio.get_event_loop().close()
 
-    print("DuoLogSync: shutdown successfully. Check %s for "
-          "program messages and logs." % Config.get_log_filepath())
+    if Program.is_logging_set():
+        Program.log(f"DuoLogSync: shutdown successfully. Check "
+                    f"{Config.get_log_filepath()} for program logs",
+                    logging.INFO)
 
 def sigint_handler(signal_number, stack_frame):
     """
@@ -72,11 +75,11 @@ def sigint_handler(signal_number, stack_frame):
     if signal_number == signal.SIGINT:
         shutdown_reason = 'received SIGINT (Ctrl-C)'
 
-    print(shutdown_reason)
     Program.initiate_shutdown(shutdown_reason)
 
     if stack_frame:
-        Program.log(f"DuoLogSync: stack frame from Ctrl-C is {stack_frame}")
+        Program.log(f"DuoLogSync: stack frame from Ctrl-C is {stack_frame}",
+                    logging.INFO)
 
 def create_consumer_producer_tasks(enabled_endpoints):
     """
@@ -138,7 +141,8 @@ def create_consumer_producer_tasks(enabled_endpoints):
                                            log_queue)
             consumer = AdminactionConsumer(log_queue, producer, writer)
         else:
-            Program.log(f"{endpoint} is not a recognized endpoint")
+            Program.log(f"{endpoint} is not a recognized endpoint",
+                        logging.WARNING)
             del log_queue
             continue
 

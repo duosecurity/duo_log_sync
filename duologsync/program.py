@@ -20,6 +20,14 @@ class Program:
     _logging_set = False
 
     @classmethod
+    def is_logging_set(cls):
+        """
+        @return _logging_set
+        """
+
+        return cls._logging_set
+
+    @classmethod
     def is_running(cls):
         """
         @return _running
@@ -72,7 +80,7 @@ class Program:
         cls.log('Starting DuoLogSync')
 
     @classmethod
-    def log(cls, message, level=logging.INFO):
+    def log(cls, message, level=logging.ERROR):
         """
         Wrapper around the logging.log method with additional functionality to
         use a print statement in the case that logging has yet to be set up

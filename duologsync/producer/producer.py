@@ -36,7 +36,8 @@ class Producer():
         # Exit when DuoLogSync is shutting down (due to error or Ctrl-C)
         while Program.is_running():
             Program.log(f"{self.log_type} producer: begin polling for "
-                        f"{Config.get_polling_duration()} seconds")
+                        f"{Config.get_polling_duration()} seconds",
+                        logging.INFO)
             await restless_sleep(Config.get_polling_duration())
 
             # Time to shutdown
@@ -44,13 +45,9 @@ class Producer():
                 continue
 
             Program.log(f"{self.log_type} producer: fetching logs after "
-                        "{Config.get_polling_duration()} seconds")
+                        "{Config.get_polling_duration()} seconds", logging.INFO)
 
             api_result = await self.call_log_api_safely()
-
-            if not Program.is_running():
-                continue
-
             new_logs = self.get_logs(api_result)
 
             if new_logs:
@@ -58,20 +55,20 @@ class Producer():
                 self.log_offset = self.get_api_result_offset(api_result)
 
                 Program.log(f"{self.log_type} producer: adding {len(new_logs)} "
-                            "logs to the queue")
+                            "logs to the queue", logging.INFO)
                 await self.log_queue.put(new_logs)
                 Program.log(f"{self.log_type} producer: added {len(new_logs)} "
-                            "logs to the queue")
+                            "logs to the queue", logging.INFO)
 
             else:
-                Program.log("{self.log_type} producer: no new logs available, "
-                            "going back to polling")
+                Program.log("{self.log_type} producer: no new logs available",
+                            logging.INFO)
 
         # Put anything in the queue to unblock the consumer, since the
         # consumer will not be able to do anything until an item is
         # added to the queue
         await self.log_queue.put([])
-        Program.log(f"{self.log_type} producer: shutting down")
+        Program.log(f"{self.log_type} producer: shutting down", logging.INFO)
 
     async def call_log_api_safely(self):
         """
@@ -93,7 +90,7 @@ class Producer():
             # Error with the Socket using the hostname provided
             if gai_error.errno is not None and gai_error.errno == 8:
                 Program.log('DuoLogSync: check that the duoclient host provided'
-                            ' in the config file is correct', logging.WARNING)
+                            ' in the config file is correct')
 
         # OSError will be thrown if a horribly messed up hostname is given
         except OSError as os_error:
@@ -105,7 +102,7 @@ class Producer():
             # No route to host, issue with hostname given
             if os_error.errno is not None and os_error.errno == 65:
                 Program.log('DuoLogSync: check that the duoclient host provided'
-                            ' in the config file is correct', logging.WARNING)
+                            ' in the config file is correct')
 
         # duo_client will throw a RuntimeError if the integration key or
         # secret key is invalid
@@ -116,7 +113,7 @@ class Producer():
             )
 
             Program.log('DuoLogSync: check that the duoclient ikey and skey '
-                        'in the config file are correct', logging.WARNING)
+                        'in the config file are correct')
 
         # If no error occurred, go ahead and return the api_result
         else:
@@ -124,7 +121,7 @@ class Producer():
 
         # Can only reach this point if an error occurred, time to shutdown
         Program.initiate_shutdown(shutdown_reason)
-        return None
+        return {}
 
     async def call_log_api(self):
         """

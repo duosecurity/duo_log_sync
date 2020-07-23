@@ -58,7 +58,7 @@ class AuthlogProducer(Producer):
                 authentication log endpoint
         """
 
-        return api_result['authlogs']
+        return api_result.get('authlogs')
 
     @staticmethod
     def get_api_result_offset(api_result):

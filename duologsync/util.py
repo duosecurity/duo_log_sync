@@ -5,6 +5,7 @@ Unrelated, but useful functions used in various places throughout DuoLogSync.
 import os
 import json
 import asyncio
+import logging
 from concurrent.futures import ThreadPoolExecutor
 import duo_client
 from duologsync.config import Config
@@ -111,5 +112,6 @@ def create_admin(ikey, skey, host):
         user_agent=f"Duo Log Sync/{__version__}"
     )
 
-    Program.log(f"duo_client Admin initialized for ikey: {ikey}, host: {host}")
+    Program.log(f"duo_client Admin initialized for ikey: {ikey}, host: {host}",
+                logging.INFO)
     return admin

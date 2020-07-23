@@ -45,7 +45,8 @@ async def create_writer(host, port, ssl_context=None):
     """
 
     shutdown_reason = None
-    Program.log(f"DuoLogSync: Opening connection to {host}:{port}")
+    Program.log(f"DuoLogSync: Opening connection to {host}:{port}",
+                logging.INFO)
 
     try:
         _, writer = await asyncio.wait_for(
@@ -71,5 +72,5 @@ async def create_writer(host, port, ssl_context=None):
 
     Program.initiate_shutdown(shutdown_reason)
     Program.log(f"DuoLogSync: check that host-{host} and port-{port} are "
-                "correct in the config file", logging.WARNING)
+                "correct in the config file")
     return None
