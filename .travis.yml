@@ -8,4 +8,4 @@ install:
     - pip install -r requirements.txt
     - pip install -r requirements-dev.txt
 script:
-    - python3 .tests/__init__.py
+    - python3 ./tests/__init__.py
