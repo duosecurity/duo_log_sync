@@ -18,7 +18,6 @@ create_consumer_producer_tasks():
 import argparse
 import asyncio
 import logging
-import os
 import signal
 from duologsync.consumer.adminaction_consumer import AdminactionConsumer
 from duologsync.producer.adminaction_producer import AdminactionProducer
@@ -27,7 +26,7 @@ from duologsync.producer.authlog_producer import AuthlogProducer
 from duologsync.consumer.telephony_consumer import TelephonyConsumer
 from duologsync.producer.telephony_producer import TelephonyProducer
 from duologsync.util import create_admin
-from duologsync.writer import create_tcpssl_writer, create_writer
+from duologsync.writer import Writer
 from duologsync.config import Config
 from duologsync.program import Program
 
@@ -97,27 +96,9 @@ def create_consumer_producer_tasks(enabled_endpoints):
                          Config.get_host())
 
     # Object for writing data / logs across a network, used by Consumers
-    protocol = Config.get_value(['transport', 'protocol'])
-    host = Config.get_value(['transport', 'host'])
-    port = Config.get_value(['transport', 'port'])
-    writer = None
+    writer = Writer(Config.get_value(['transport']))
 
-    if protocol == 'TCPSSL':
-        writer = asyncio.get_event_loop().run_until_complete(
-            create_tcpssl_writer(
-                host,
-                port,
-                os.path.join(
-                    Config.get_value(['transport', 'certFileDir']),
-                    Config.get_value(['transport', 'certFileName'])
-                )
-            )
-        )
-    else:
-        writer = asyncio.get_event_loop().run_until_complete(
-            create_writer(host, port)
-        )
-
+    # List of Consumer / Writer tasks to be run in the Asyncio event loop
     tasks = []
 
     # Check if an error from creating the writer caused a program shutdown

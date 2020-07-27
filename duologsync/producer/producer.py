@@ -45,7 +45,8 @@ class Producer():
                 continue
 
             Program.log(f"{self.log_type} producer: fetching logs after "
-                        "{Config.get_polling_duration()} seconds", logging.INFO)
+                        f"{Config.get_polling_duration()} seconds",
+                        logging.INFO)
 
             api_result = await self.call_log_api_safely()
             new_logs = self.get_logs(api_result)
@@ -61,7 +62,7 @@ class Producer():
                             "logs to the queue", logging.INFO)
 
             else:
-                Program.log("{self.log_type} producer: no new logs available",
+                Program.log(f"{self.log_type} producer: no new logs available",
                             logging.INFO)
 
         # Put anything in the queue to unblock the consumer, since the

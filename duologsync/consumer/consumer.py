@@ -52,8 +52,7 @@ class Consumer():
                 Program.log(f"{self.log_type} consumer: writing logs",
                             logging.INFO)
                 for log in logs:
-                    self.writer.write(json.dumps(log).encode() + b'\n')
-                    await self.writer.drain()
+                    await self.writer.write(json.dumps(log).encode() + b'\n')
                     last_log_written = log
 
                 # All the logs were written successfully

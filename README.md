@@ -66,8 +66,7 @@ transport:
   protocol: "TCP"
   host: "localhost"
   port: 8888
-  certFileDir: "/tmp"
-  certFileName: "selfsigned.cert"
+  certFilepath: "/tmp/selfsigned.cert"
 
 recoverFromCheckpoint:
   enabled: False
@@ -91,7 +90,7 @@ recoverFromCheckpoint:
     daysinpast: 180
   checkpointDir: "/tmp"`
 
-- Choose whether to receive data on TCP/TCPSSL/UDP. In case of TCPSSL, you will also need to provide directory and name of cert file. For normal TCP, it can be left blank.
+- Choose whether to receive data on TCP/TCPSSL/UDP. In case of TCPSSL, you will also need to provide filepath of the cert file. For normal TCP, it can be left blank.
 
 `transport:
   protocol: "TCP"

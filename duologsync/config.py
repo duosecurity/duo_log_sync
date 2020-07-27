@@ -83,7 +83,7 @@ class Config:
                 'oneof': [
                     {
                         'allowed': ['TCPSSL'],
-                        'dependencies': ['certFileDir', 'certFileName']
+                        'dependencies': ['certFilepath']
                     },
                     {'allowed': ['TCP', 'UDP']}
                 ]
@@ -95,8 +95,7 @@ class Config:
                 'max': 65535,
                 'required': True
             },
-            'certFileDir': {'type': 'string', 'empty': False},
-            'certFileName': {'type': 'string', 'empty': False}
+            'certFilepath': {'type': 'string', 'empty': False}
         }
     }
 
