@@ -1,23 +1,57 @@
 """
-This module contains functions related to creating open_connection objects /
-Asyncio streams.
+Definition of the Writer class
 """
 
 import asyncio
 import ssl
 import logging
+import functools
 from socket import gaierror
 from duologsync.program import Program
 
 class DatagramProtocol(asyncio.DatagramProtocol):
+    """
+    DLS implementation of Asyncio's abstact DatagramProtocol class. This is
+    required for creating a network connection over UDP.
+    """
+
+    def __init__(self, host, port):
+        self.host = host
+        self.port = port
+        self.transport = None
+        super().__init__()
+
     def connection_made(self, transport):
         self.transport = transport
 
+    def connection_lost(self, exc):
+        shutdown_reason = None
+
+        if exc:
+            shutdown_reason = (
+                f"DuoLogSync: UDP connection with host-{self.host} and port-"
+                f"{self.port} was closed for the following reason [{exc}]"
+            )
+
+        else:
+            shutdown_reason = (
+                f"DuoLogSync: UDP connection with host-{self.host} and port-"
+                f"{self.port} was closed"
+            )
+
+        Program.initiate_shutdown(shutdown_reason)
+
 class Writer:
+    """
+    Class for creating Writer objects which are a wrapper for Asyncio streams
+    and open_connections objects for sending data over UDP, TCP and TCPSSL.
+    """
 
     def __init__(self, transport_settings):
         # Needed to determine what type of writer to create and how to use it
         self.protocol = transport_settings['protocol']
+
+        # Create the actual writer
         self.writer = asyncio.get_event_loop().run_until_complete(
             self.create_connection(
                 transport_settings['host'],
@@ -51,78 +85,68 @@ class Writer:
         @return a 'writer' object for writing data over the connection made
         """
 
-        writer = None
+        writer_func = None
+
+        # Which component of the returned writer tuple is actually the writer
+        writer_index = 1
 
         # UDP connection is very different from creating a TCP connection
         # because UDP is unsorted and not buffered
         if self.protocol == 'UDP':
-            writer = await Writer.create_datagram_writer(host, port)
+            writer_index = 0
+            writer_func = functools.partial(
+                asyncio.get_event_loop().create_datagram_endpoint,
+                lambda: DatagramProtocol(host, port), remote_addr=(host, port))
 
-        # Create an SSL context if the protocol is TCP over SSL
-        elif self.protocol == 'TCPSSL':
-            writer = await Writer.create_tcpssl_writer(host, port, cert_filepath)
-
-        # Default to creating a regular TCP connection and writer
+        # TCP connection (either over SSL or not)
         else:
-            writer = await Writer.create_writer(host, port)
+            ssl_context = None
 
-        return writer
+            if self.protocol == 'TCPSSL':
+                ssl_context = Writer.get_ssl_context(cert_filepath)
 
-    @staticmethod
-    async def create_datagram_writer(host, port):
-        """
-        Wrapper function for creating a connection via UDP.
+            writer_func = functools.partial(
+                asyncio.open_connection, host, port, ssl=ssl_context)
 
-        @param host Hostname of the network connection to establish
-        @param port Port of the network connection to establish
-
-        @return an Asyncio Datagram transport object
-        """
-
-        # TODO: error handling for this section!
-        writer, _ = await asyncio.get_event_loop().create_datagram_endpoint(
-            DatagramProtocol,
-            remote_addr=(host, port))
-
-        return writer
+        writer_tuple = await Writer.create_writer(writer_func, host, port)
+        return writer_tuple[writer_index]
 
     @staticmethod
-    async def create_tcpssl_writer(host, port, cert_filename):
+    async def get_ssl_context(cert_filepath):
         """
-        Wrapper for the create_writer function for the encrypted TCP protocol.
+        Wrapper for creating an ssl context.
 
-        @param host Hostname of the network connection to establish
-        @param port Port of the network connection to establish
+        @param cert_filepath    Location of the certificate to use for SSL
 
-        @return an asyncio open_connection object
+        @return an ssl context
         """
 
         try:
             ssl_context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH,
-                                                     cafile=cert_filename)
+                                                     cafile=cert_filepath)
 
         except FileNotFoundError:
             Program.initiate_shutdown(
-                f"The certificate file {cert_filename} could not be opened.")
+                f"The certificate file {cert_filepath} could not be opened.")
             Program.log('DuoLogSync: Make sure the filepath for SSL cert '
                         'file is correct.', logging.ERROR)
             return None
 
-        writer = await Writer.create_writer(host, port, ssl_context)
-        return writer
+        else:
+            return ssl_context
 
     @staticmethod
-    async def create_writer(host, port, ssl_context=None):
+    async def create_writer(writer_function, host, port):
         """
         Wrapper around the asyncio.open_connection function with exception
         handling for creating a network connection to host and port.
 
-        @param host Hostname of the network connection to establish
-        @param port Port of the network connection to establish
-        @param ssl  Used to create an encrypted connect. Not required
+        @param writer_function  Function used for creating a network connection
+        @param host             Hostname of the network connection to establish
+        @param port             Port of the network connection to establish
 
-        @return an asyncio open_connection object used to write over an
-                established network connection to the host and port specified
+        @return an asyncio open_connection tuple containing an object used to
+                write data over an established network connection
         """
 
         shutdown_reason = None
@@ -130,8 +154,8 @@ class Writer:
                     logging.INFO)
 
         try:
-            _, writer = await asyncio.wait_for(
-                asyncio.open_connection(host, port, ssl=ssl_context),
+            writer_tuple = await asyncio.wait_for(
+                writer_function(),
                 timeout=60
             )
 
@@ -149,7 +173,7 @@ class Writer:
 
         # An error did not occur and the writer was successfully created
         else:
-            return writer
+            return writer_tuple
 
         Program.initiate_shutdown(shutdown_reason)
         Program.log(f"DuoLogSync: check that host-{host} and port-{port} are "
