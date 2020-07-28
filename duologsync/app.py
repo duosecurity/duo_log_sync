@@ -69,11 +69,7 @@ def sigint_handler(signal_number, stack_frame):
     Handler for SIGINT (Ctrl-C) to gracefully shutdown DuoLogSync
     """
 
-    shutdown_reason = ''
-
-    if signal_number == signal.SIGINT:
-        shutdown_reason = 'received SIGINT (Ctrl-C)'
-
+    shutdown_reason = f"received signal {signal_number} (Ctrl-C)"
     Program.initiate_shutdown(shutdown_reason)
 
     if stack_frame:
@@ -113,14 +109,14 @@ def create_consumer_producer_tasks(enabled_endpoints):
         # Create the right pair of Producer-Consumer objects based on endpoint
         if endpoint == 'auth':
             producer = AuthlogProducer(admin.get_authentication_log, log_queue)
-            consumer = AuthlogConsumer(log_queue, producer, writer)
+            consumer = AuthlogConsumer(log_queue, writer)
         elif endpoint == 'telephony':
             producer = TelephonyProducer(admin.get_telephony_log, log_queue)
-            consumer = TelephonyConsumer(log_queue, producer, writer)
+            consumer = TelephonyConsumer(log_queue, writer)
         elif endpoint == 'adminaction':
             producer = AdminactionProducer(admin.get_administrator_log,
                                            log_queue)
-            consumer = AdminactionConsumer(log_queue, producer, writer)
+            consumer = AdminactionConsumer(log_queue, writer)
         else:
             Program.log(f"{endpoint} is not a recognized endpoint",
                         logging.WARNING)

@@ -7,6 +7,7 @@ import json
 import logging
 from duologsync.config import Config
 from duologsync.program import Program
+from duologsync.producer.producer import Producer
 
 class Consumer():
     """
@@ -17,10 +18,9 @@ class Consumer():
     progress if a crash occurs.
     """
 
-    def __init__(self, log_queue, log_type, producer, writer):
+    def __init__(self, log_queue, log_type, writer):
         self.log_queue = log_queue
         self.log_type = log_type
-        self.producer = producer
         self.writer = writer
         self.log_offset = None
 
@@ -30,6 +30,7 @@ class Consumer():
         object. Data from the queue is then sent over a configured transport
         protocol to respective SIEMs or servers.
         """
+
         while Program.is_running():
             Program.log(f"{self.log_type} consumer: waiting for logs",
                         logging.INFO)
@@ -47,6 +48,7 @@ class Consumer():
             # Keep track of the latest log written in the case that a problem
             # occurs in the middle of writing logs
             last_log_written = None
+            successful_write = False
 
             try:
                 Program.log(f"{self.log_type} consumer: writing logs",
@@ -56,7 +58,7 @@ class Consumer():
                     last_log_written = log
 
                 # All the logs were written successfully
-                last_log_written = None
+                successful_write = True
 
             # Specifically watch out for errno 32 - Broken pipe. This means
             # that the connect established by writer was reset or shutdown.
@@ -67,14 +69,14 @@ class Consumer():
                             logging.WARNING)
 
             finally:
-                if last_log_written is None:
+                if successful_write:
                     Program.log(f"{self.log_type} consumer: successfully wrote "
                                 "all logs", logging.INFO)
                 else:
                     Program.log(f"{self.log_type} consumer: failed to write "
                                 "some logs", logging.WARNING)
 
-                self.log_offset = self.producer.get_log_offset(last_log_written)
+                self.log_offset = Producer.get_log_offset(last_log_written)
                 self.update_log_checkpoint(self.log_type, self.log_offset)
 
         Program.log(f"{self.log_type} consumer: shutting down", logging.INFO)

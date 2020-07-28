@@ -59,35 +59,3 @@ class AuthlogProducer(Producer):
         """
 
         return api_result.get('authlogs')
-
-    @staticmethod
-    def get_api_result_offset(api_result):
-        """
-        Return the next_offset given by the result of a call to the
-        authentication log API endpoint
-
-        @param api_result   The result of an API call to the authentication
-                            log endpoint
-
-        @return the next_offset given by the result of a call to the
-                authentication log API endpoint
-        """
-
-        return api_result['metadata']['next_offset']
-
-    def get_log_offset(self, log=None):
-        """
-        Return offset information from the authentication log.
-
-        @param log  Authentication log from which to retrieve offset info. None
-                    indicates that the latest log offset is required
-
-        @return offset information from log
-        """
-
-        if log is None:
-            return self.log_offset
-
-        timestamp = str(log['timestamp'] * 1000)
-        txid = log['txid']
-        return [timestamp, txid]

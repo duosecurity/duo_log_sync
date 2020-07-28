@@ -81,7 +81,7 @@ class Producer():
 
         if logs:
             # Important for recovery in the event of a crash
-            self.log_offset = self.get_log_offset(logs[-1])
+            self.log_offset = Producer.get_log_offset(logs[-1])
 
             Program.log(f"{self.log_type} producer: adding {len(logs)} "
                         "logs to the queue", logging.INFO)
@@ -127,31 +127,20 @@ class Producer():
         return api_result
 
     @staticmethod
-    def get_api_result_offset(api_result):
+    def get_log_offset(log):
         """
-        Get offset information given an API result. The default implementation
-        given here will not suffice for every type of log API and so should be
-        overriden by a child class when necessary.
-
-        @param api_result   The result of an API call
-
-        @return the offset of api_result
-        """
-
-        return api_result[-1]['timestamp'] + 1
-
-    def get_log_offset(self, log=None):
-        """
-        Get offset information given an individual log. The default
-        implementation given here will not suffice for every type of log API
-        and so should be overriden by a child class when necessary.
+        Get offset information given an individual log.
 
         @param log  Individual log from which to get offset information
 
         @return the offset of the log
         """
 
-        if log is None:
-            return self.log_offset
+        timestamp = log['timestamp']
+        txid = log.get('txid')
 
-        return log['timestamp'] + 1
+        if txid:
+            timestamp *= 1000
+            return [timestamp, txid]
+
+        return timestamp + 1
