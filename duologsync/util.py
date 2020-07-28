@@ -9,7 +9,7 @@ import logging
 from concurrent.futures import ThreadPoolExecutor
 import duo_client
 from duologsync.config import Config
-from duologsync.program import Program
+from duologsync.program import Program, ProgramShutdownError
 from duologsync.__version__ import __version__
 
 EXECUTOR = ThreadPoolExecutor(3)
@@ -33,8 +33,8 @@ async def restless_sleep(duration):
             duration = duration - 1
             continue
 
-        # Otherwise, program is done running, time to start shutdown
-        break
+        # Otherwise, program is done running, raise an exception to be caught
+        raise ProgramShutdownError
 
 async def run_in_executor(function_obj):
     """

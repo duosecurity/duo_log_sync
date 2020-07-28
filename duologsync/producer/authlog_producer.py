@@ -88,6 +88,6 @@ class AuthlogProducer(Producer):
         if log is None:
             return self.log_offset
 
-        timestamp = log['timestamp'] * 1000
+        timestamp = str(log['timestamp'] * 1000)
         txid = log['txid']
         return [timestamp, txid]

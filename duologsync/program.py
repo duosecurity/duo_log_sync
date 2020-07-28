@@ -4,6 +4,12 @@ Definition of the Program class
 
 import logging
 
+class ProgramShutdownError(Exception):
+    """
+    Raise when the program is no longer running and a task needs to begin
+    shutdown procedures. Definition is inherited from the Exception class
+    """
+
 class Program:
     """
     The Program class is used not to create objects, but to keep track of this

@@ -117,13 +117,10 @@ class Writer:
         except asyncio.TimeoutError:
             shutdown_reason = 'connection to server timed-out after 60 seconds'
 
-        # If an invalid hostname or port number is given
-        except gaierror as gai_error:
-            shutdown_reason = f"{gai_error}"
-
-        # Simply failed to connect using the host and port given
-        except OSError as os_error:
-            shutdown_reason = f"{os_error}"
+        # If an invalid hostname or port number is given or simply failed to
+        # connect using the host and port given
+        except (gaierror, OSError) as error:
+            shutdown_reason = f"{error}"
 
         # An error did not occur and the writer was successfully created
         else:

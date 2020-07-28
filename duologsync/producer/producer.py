@@ -7,7 +7,7 @@ import functools
 from socket import gaierror
 from duologsync.util import get_log_offset, run_in_executor, restless_sleep
 from duologsync.config import Config
-from duologsync.program import Program
+from duologsync.program import Program, ProgramShutdownError
 
 class Producer():
     """
@@ -35,94 +35,63 @@ class Producer():
 
         # Exit when DuoLogSync is shutting down (due to error or Ctrl-C)
         while Program.is_running():
+            shutdown_reason = None
             Program.log(f"{self.log_type} producer: begin polling for "
                         f"{Config.get_polling_duration()} seconds",
                         logging.INFO)
-            await restless_sleep(Config.get_polling_duration())
 
-            # Time to shutdown
-            if not Program.is_running():
-                continue
-
-            Program.log(f"{self.log_type} producer: fetching logs after "
-                        f"{Config.get_polling_duration()} seconds",
-                        logging.INFO)
-
-            api_result = await self.call_log_api_safely()
-            new_logs = self.get_logs(api_result)
-
-            if new_logs:
-                # Important for recovery in the event of a crash
-                self.log_offset = self.get_api_result_offset(api_result)
-
-                Program.log(f"{self.log_type} producer: adding {len(new_logs)} "
-                            "logs to the queue", logging.INFO)
-                await self.log_queue.put(new_logs)
-                Program.log(f"{self.log_type} producer: added {len(new_logs)} "
-                            "logs to the queue", logging.INFO)
-
-            else:
-                Program.log(f"{self.log_type} producer: no new logs available",
+            try:
+                # Sleep for polling_duration amount of time, but check for
+                # program shutdown every second
+                await restless_sleep(Config.get_polling_duration())
+                Program.log(f"{self.log_type} producer: fetching logs",
                             logging.INFO)
+                api_result = await self.call_log_api()
+                await self.add_logs_to_queue(self.get_logs(api_result))
 
-        # Put anything in the queue to unblock the consumer, since the
-        # consumer will not be able to do anything until an item is
-        # added to the queue
+            # Horribly messed up hostname was provided for duoclient host
+            except (gaierror, OSError) as error:
+                shutdown_reason = f"{self.log_type} producer: [{error}]"
+                Program.log('DuoLogSync: check that the duoclient host '
+                            'provided in the config file is correct')
+
+            # duo_client throws a RuntimeError if the ikey or skey is invalid
+            except RuntimeError as runtime_error:
+                shutdown_reason = f"{self.log_type} producer: [{runtime_error}]"
+                Program.log('DuoLogSync: check that the duoclient ikey and '
+                            'skey in the config file are correct')
+
+            # Shutdown hath been noticed and thus shutdown shall begin
+            except ProgramShutdownError:
+                break
+
+            if shutdown_reason:
+                Program.initiate_shutdown(shutdown_reason)
+
+        # Unblock consumer but putting anything in the shared queue
         await self.log_queue.put([])
         Program.log(f"{self.log_type} producer: shutting down", logging.INFO)
 
-    async def call_log_api_safely(self):
+    async def add_logs_to_queue(self, logs):
         """
-        Wrapper for the call_log_api function with error handling
+        If logs is not none, add them to this Writer's queue
+
+        @param logs The logs to be added
         """
 
-        shutdown_reason = None
+        if logs:
+            # Important for recovery in the event of a crash
+            self.log_offset = self.get_log_offset(logs[-1])
 
-        try:
-            api_result = await self.call_log_api()
+            Program.log(f"{self.log_type} producer: adding {len(logs)} "
+                        "logs to the queue", logging.INFO)
+            await self.log_queue.put(logs)
+            Program.log(f"{self.log_type} producer: added {len(logs)} "
+                        "logs to the queue", logging.INFO)
 
-        # gai_error thrown for invalid hostnames
-        except gaierror as gai_error:
-            shutdown_reason = (
-                f"{self.log_type} producer: ran into the "
-                f"following error [{gai_error}]"
-            )
-
-            # Error with the Socket using the hostname provided
-            if gai_error.errno is not None and gai_error.errno == 8:
-                Program.log('DuoLogSync: check that the duoclient host provided'
-                            ' in the config file is correct')
-
-        # OSError will be thrown if a horribly messed up hostname is given
-        except OSError as os_error:
-            shutdown_reason = (
-                f"{self.log_type} producer: ran into the "
-                f"following error [{os_error}]"
-            )
-
-            # No route to host, issue with hostname given
-            if os_error.errno is not None and os_error.errno == 65:
-                Program.log('DuoLogSync: check that the duoclient host provided'
-                            ' in the config file is correct')
-
-        # duo_client will throw a RuntimeError if the integration key or
-        # secret key is invalid
-        except RuntimeError as runtime_error:
-            shutdown_reason = (
-                f"{self.log_type} producer: ran into the "
-                f"following error [{runtime_error}]"
-            )
-
-            Program.log('DuoLogSync: check that the duoclient ikey and skey '
-                        'in the config file are correct')
-
-        # If no error occurred, go ahead and return the api_result
         else:
-            return api_result
-
-        # Can only reach this point if an error occurred, time to shutdown
-        Program.initiate_shutdown(shutdown_reason)
-        return {}
+            Program.log(f"{self.log_type} producer: no new logs available",
+                        logging.INFO)
 
     async def call_log_api(self):
         """
