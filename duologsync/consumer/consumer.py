@@ -18,7 +18,11 @@ class Consumer():
     progress if a crash occurs.
     """
 
-    def __init__(self, log_queue, log_type, writer):
+    def __init__(self, keys_to_labels, log_queue, log_type, writer):
+        # Tuple of keys to access the value wanted, and the desired label for
+        # the value. If the desired label has 'True' then it is a custom label
+        # and must be generated
+        self.keys_to_labels = keys_to_labels
         self.log_queue = log_queue
         self.log_type = log_type
         self.writer = writer
