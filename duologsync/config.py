@@ -24,6 +24,7 @@ class Config:
     DEFAULT_DIRECTORY = '/tmp'
     DEFAULT_LOG_PATH = DEFAULT_DIRECTORY + '/duologsync.log'
     DEFAULT_DAYS_IN_PAST = 180
+    DEFAULT_LOG_FORMAT = 'JSON'
 
     # How many seconds to wait between API requests
     MINIMUM_POLLING_DURATION = 120
@@ -68,7 +69,8 @@ class Config:
                     'daysinpast': {'type': 'integer', 'min': 0}
                 }
             },
-            'checkpointDir': {'type': 'string', 'empty': False}
+            'checkpointDir': {'type': 'string', 'empty': False},
+            'log_format': {'type': 'string', 'empty': False}
         }
     }
 
@@ -235,6 +237,14 @@ class Config:
         return cls.get_value(['logs', 'logFilepath'])
 
     @classmethod
+    def get_log_format(cls):
+        """
+        @return the format that logs should take on before being written
+        """
+
+        return cls.get_value(['logs', 'log_format'])
+
+    @classmethod
     def create_config(cls, config_filepath):
         """
         Attemp to read the file at config_filepath and generate a config
@@ -353,6 +363,13 @@ class Config:
             Program.log(default_msg % ('recoverFromCheckpoint.enabled', False),
                         logging.INFO)
             config['recoverFromCheckpoint']['enabled'] = False
+
+        if config.get('logs').get('log_format') is None:
+            Program.log(default_msg % ('logs.log_format',
+                                       cls.DEFAULT_LOG_FORMAT),
+                        logging.INFO)
+            config['logs']['log_format'] = cls.DEFAULT_LOG_FORMAT
+
 
         # Add a default offset from which to fetch logs
         # The maximum amount of days in the past that a log may be fetched from

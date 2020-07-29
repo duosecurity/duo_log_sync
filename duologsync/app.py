@@ -94,6 +94,9 @@ def create_consumer_producer_tasks(enabled_endpoints):
     # Object for writing data / logs across a network, used by Consumers
     writer = Writer(Config.get_value(['transport']))
 
+    # The format a log should have before being consumed and sent
+    log_format = Config.get_log_format()
+
     # List of Consumer / Writer tasks to be run in the Asyncio event loop
     tasks = []
 
@@ -109,14 +112,14 @@ def create_consumer_producer_tasks(enabled_endpoints):
         # Create the right pair of Producer-Consumer objects based on endpoint
         if endpoint == 'auth':
             producer = AuthlogProducer(admin.get_authentication_log, log_queue)
-            consumer = AuthlogConsumer(log_queue, writer)
+            consumer = AuthlogConsumer(log_format, log_queue, writer)
         elif endpoint == 'telephony':
             producer = TelephonyProducer(admin.get_telephony_log, log_queue)
-            consumer = TelephonyConsumer(log_queue, writer)
+            consumer = TelephonyConsumer(log_format, log_queue, writer)
         elif endpoint == 'adminaction':
             producer = AdminactionProducer(admin.get_administrator_log,
                                            log_queue)
-            consumer = AdminactionConsumer(log_queue, writer)
+            consumer = AdminactionConsumer(log_format, log_queue, writer)
         else:
             Program.log(f"{endpoint} is not a recognized endpoint",
                         logging.WARNING)

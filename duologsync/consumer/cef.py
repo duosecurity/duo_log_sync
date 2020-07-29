@@ -56,14 +56,14 @@ def _construct_extension(log, keys_to_labels):
     # Keep track of the number for the custom string being created
     custom_string = 1
 
-    for keys, label in keys_to_labels:
+    for keys, label in keys_to_labels.items():
         value = _get_value_from_fields(log, keys)
         label_name = label['name']
 
         # Need to generate a custom label
         if label['is_custom']:
             custom_label = f"cs{custom_string}"
-            custom_extension = custom_label + 'Label' + '=' + custom_label
+            custom_extension = custom_label + 'Label' + '=' + label_name
             extensions.append(custom_extension)
             custom_string += 1
             label_name = custom_label

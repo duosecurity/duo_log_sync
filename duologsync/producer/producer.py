@@ -141,6 +141,6 @@ class Producer():
 
         if txid:
             timestamp *= 1000
-            return [timestamp, txid]
+            return [str(timestamp), txid]
 
         return timestamp + 1

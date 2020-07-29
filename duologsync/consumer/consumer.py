@@ -8,6 +8,7 @@ import logging
 from duologsync.config import Config
 from duologsync.program import Program
 from duologsync.producer.producer import Producer
+from duologsync.consumer.cef import log_to_cef
 
 class Consumer():
     """
@@ -18,13 +19,11 @@ class Consumer():
     progress if a crash occurs.
     """
 
-    def __init__(self, keys_to_labels, log_queue, log_type, writer):
-        # Tuple of keys to access the value wanted, and the desired label for
-        # the value. If the desired label has 'True' then it is a custom label
-        # and must be generated
-        self.keys_to_labels = keys_to_labels
+    def __init__(self, log_format, log_queue, writer):
+        self.keys_to_labels = {}
+        self.log_format = log_format
+        self.log_type = 'default'
         self.log_queue = log_queue
-        self.log_type = log_type
         self.writer = writer
         self.log_offset = None
 
@@ -58,7 +57,7 @@ class Consumer():
                 Program.log(f"{self.log_type} consumer: writing logs",
                             logging.INFO)
                 for log in logs:
-                    await self.writer.write(json.dumps(log).encode() + b'\n')
+                    await self.writer.write(self.format_log(log))
                     last_log_written = log
 
                 # All the logs were written successfully
@@ -84,6 +83,24 @@ class Consumer():
                 self.update_log_checkpoint(self.log_type, self.log_offset)
 
         Program.log(f"{self.log_type} consumer: shutting down", logging.INFO)
+
+    def format_log(self, log):
+        """
+        Format the given log in a certain way depending on self.message_type
+
+        @param log  The log to be formatted
+
+        @return the formatted version of log
+        """
+
+        formatted_log = None
+
+        if self.log_format == 'CEF':
+            formatted_log = log_to_cef(log, self.keys_to_labels)
+        else:
+            formatted_log = json.dumps(log)
+
+        return formatted_log.encode() + b'\n'
 
     @staticmethod
     def update_log_checkpoint(log_type, log_offset):
