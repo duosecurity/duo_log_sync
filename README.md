@@ -25,15 +25,15 @@ Duologsync is a utility written by Duo Security to enable fetching logs from dif
 
 ##### Features
 
-- Current version supports fetching logs from auth, telephony and admin endpoints over TCP/TCP Encrypted over SSL
+- Current version supports fetching logs from auth, telephony and admin endpoints over TCP, TCP Encrypted over SSL, and UDP
 - Ability to recover data by reading from last known offset through checkpointing files
 - Enabling only certain endpoints through config file
+- Choosing how logs are formatted (JSON, CEF)
 
 ---
 
 ##### Work in progress
 
-- Support for UDP
 - More logging and exception handling
 - Support for WINDOWS
 
@@ -61,6 +61,7 @@ logs:
     duration: 5
     daysinpast: 180
   checkpointDir: "/tmp"
+  log_format: "JSON"
 
 transport:
   protocol: "TCP"
@@ -88,9 +89,10 @@ recoverFromCheckpoint:
   polling:
     duration: 5
     daysinpast: 180
-  checkpointDir: "/tmp"`
+  checkpointDir: "/tmp"
+  log_format: "JSON"`
 
-- Choose whether to receive data on TCP/TCPSSL/UDP. In case of TCPSSL, you will also need to provide filepath of the cert file. For normal TCP, it can be left blank.
+- Choose whether to receive data on TCP/TCPSSL/UDP. In case of TCPSSL, you will also need to provide filepath of the cert file. For normal TCP or UDP it can be left blank.
 
 `transport:
   protocol: "TCP"
