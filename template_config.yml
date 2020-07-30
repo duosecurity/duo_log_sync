@@ -1,0 +1,64 @@
+# Important credentials needed for DLS to access your Duo logs
+duoclient:
+  
+  # Private key, keep this safe!
+  skey: ""
+
+  # Integration key
+  ikey: ""
+
+  # Address of server that is hosting your logs
+  host: ""
+
+logs:
+
+  # File where DuoLogSync program logs (messages) should be saved
+  # Default: '/tmp/duologsync.log'
+  logFilepath: ""
+
+  # Choose what endpoints for which DuoLogSync should retrieve logs
+  # Options: adminaction, auth, telephony
+  endpoints:
+    enabled: []
+
+  polling:
+    # How long to wait (in seconds) between API calls (to fetch logs)
+    # Minimum: 120 seconds (2 minutes)
+    # (2 minutes)
+    duration: 120
+
+    # How many days in the past logs may be polled from
+    # Maximum: 180
+    daysinpast: 180
+
+  # Directory where log checkpoint files are stored. Used to save offsets in
+  # the case that DuoLogSync crashes. Allows DuoLogSync to pick back up from
+  # where it crashed
+  checkpointDir: ""
+
+  # How logs should be formatted
+  # Options: CEF, JSON
+  # Default: JSON
+  log_format: ""
+
+# Defines location of server and how logs will be sent
+transport:
+  # Transport protocol used to send logs
+  # Options: TCP, TCPSSL, UDP
+  protocol: ""
+  
+  # Address of server that logs will be sent to
+  host: ""
+
+  # Port of server that logs will be sent to.
+  # Range: 0 - 65535
+  port: 8888
+
+  # Location of your certificate file, required for TCPSSL protocol
+  certFilepath: ""
+
+recoverFromCheckpoint:
+
+  # Whether DuoLogSync should use checkpoint files when starting up in order
+  # to pick up where it left off if a crash occurred
+  enabled: False

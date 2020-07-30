@@ -47,6 +47,8 @@ Duologsync is a utility written by Duo Security to enable fetching logs from dif
 
 ##### Example configuration
 
+- Check `template_config.py` as well for value options and restrictions
+
 ```
 duoclient:
   skey: ""
