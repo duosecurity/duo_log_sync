@@ -137,6 +137,7 @@ class TestConfig(TestCase):
                     'daysinpast': 180
                 },
                 'checkpointDir': '/tmp',
+                'log_format': 'JSON',
                 'offset': None
             },
             'transport': {

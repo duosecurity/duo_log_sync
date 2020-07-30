@@ -30,6 +30,16 @@ class Config:
     MINIMUM_POLLING_DURATION = 120
     VALID_ENDPOINTS = ['adminaction', 'auth', 'telephony']
 
+
+    PATHS_TO_DEFAULTS = {
+        ('logs', 'polling', 'duration'): MINIMUM_POLLING_DURATION,
+        ('logs', 'logFilepath'): DEFAULT_LOG_PATH,
+        ('logs', 'polling', 'daysinpast'): DEFAULT_DAYS_IN_PAST,
+        ('logs', 'checkpointDir'): DEFAULT_DIRECTORY,
+        ('logs', 'log_format'): DEFAULT_LOG_FORMAT,
+        ('recoverFromCheckpoint', 'enabled'): False
+    }
+
     # Duo credentials used to access a client's logs
     DUOCLIENT = {
         'type': 'dict',
@@ -320,7 +330,7 @@ class Config:
 
         # Message format for informing a user that an optional field in their
         # config file was not set and thus a default value is being used
-        default_msg = "Config: No value given for %s, using default value of %s"
+        template = "Config: No value given for %s, using default value of %s"
 
         if config.get('logs').get('polling') is None:
             config['logs']['polling'] = {}
@@ -328,48 +338,20 @@ class Config:
         if config.get('recoverFromCheckpoint') is None:
             config['recoverFromCheckpoint'] = {}
 
-        if config.get('logs').get('logFilepath') is None:
-            Program.log(default_msg %
-                        ('logs.logFilepath', cls.DEFAULT_LOG_PATH),
-                        logging.INFO)
-            config['logs']['logFilepath'] = cls.DEFAULT_LOG_PATH
+        for keys, default in cls.PATHS_TO_DEFAULTS.items():
+            value = Config.get_value_from_keys(config, keys)
+
+            if value is None:
+                # Let the user know that a default value is being set
+                Program.log(template % ('.'.join(keys), default), logging.INFO)
+                config = Config.set_value_from_keys(config, keys, default)
 
         polling_duration = config.get('logs').get('polling').get('duration')
-        if polling_duration is None:
-            Program.log(default_msg % ('logs.polling.duration',
-                                       cls.MINIMUM_POLLING_DURATION),
-                        logging.INFO)
-            config['logs']['polling']['duration'] = cls.MINIMUM_POLLING_DURATION
-
-        elif polling_duration < cls.MINIMUM_POLLING_DURATION:
+        if polling_duration < cls.MINIMUM_POLLING_DURATION:
             Program.log("Config: Value given for logs.polling.duration was too "
                         "low. Set to %s" % cls.MINIMUM_POLLING_DURATION,
                         logging.INFO)
             config['logs']['polling']['duration'] = cls.MINIMUM_POLLING_DURATION
-
-        if config.get('logs').get('polling').get('daysinpast') is None:
-            Program.log(default_msg %
-                        ('logs.polling.daysinpast', cls.DEFAULT_DAYS_IN_PAST),
-                        logging.INFO)
-            config['logs']['polling']['daysinpast'] = cls.DEFAULT_DAYS_IN_PAST
-
-        if config.get('logs').get('checkpointDir') is None:
-            Program.log(default_msg %
-                        ('logs.checkpointDir', cls.DEFAULT_DIRECTORY),
-                        logging.INFO)
-            config['logs']['checkpointDir'] = cls.DEFAULT_DIRECTORY
-
-        if config.get('recoverFromCheckpoint').get('enabled') is None:
-            Program.log(default_msg % ('recoverFromCheckpoint.enabled', False),
-                        logging.INFO)
-            config['recoverFromCheckpoint']['enabled'] = False
-
-        if config.get('logs').get('log_format') is None:
-            Program.log(default_msg % ('logs.log_format',
-                                       cls.DEFAULT_LOG_FORMAT),
-                        logging.INFO)
-            config['logs']['log_format'] = cls.DEFAULT_LOG_FORMAT
-
 
         # Add a default offset from which to fetch logs
         # The maximum amount of days in the past that a log may be fetched from
@@ -378,3 +360,43 @@ class Config:
         # Create a timestamp for screening logs that are too old
         default_log_offset = datetime.utcnow() - timedelta(days=days_in_past)
         config['logs']['offset'] = int(default_log_offset.timestamp())
+
+    @staticmethod
+    def get_value_from_keys(dictionary, keys):
+        """
+        Drill down into dictionary to retrieve a value given a list of keys
+
+        @param dictionary   dict to retrieve a value from
+        @param fields       List of fields to follow to retrieve a value
+
+        @return value from the log found after following the list of keys given
+        """
+
+        value = dictionary
+
+        for key in keys:
+            value = value.get(key)
+
+            if value is None:
+                break
+
+        return value
+
+    @staticmethod
+    def set_value_from_keys(dictionary, keys, value):
+        """
+        Drill down into dictionary to set a value given a list of keys
+
+        @param dictionary   dict for which to set a value
+        @param fields       List of fields to follow in order to set a value
+
+        @return dictionary with the value set
+        """
+
+        entry = dictionary
+
+        for key in keys[:-1]:
+            entry = entry.get(key)
+
+        entry[keys[-1]] = value
+        return dictionary

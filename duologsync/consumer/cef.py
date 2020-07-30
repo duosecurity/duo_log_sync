@@ -2,6 +2,7 @@
 Definition of functions for creating CEF-type logs
 """
 
+from duologsync.config import Config
 from duologsync.__version__ import __version__
 
 # What follows are required prefix fields for every CEF message
@@ -57,7 +58,7 @@ def _construct_extension(log, keys_to_labels):
     custom_string = 1
 
     for keys, label in keys_to_labels.items():
-        value = _get_value_from_fields(log, keys)
+        value = Config.get_value_from_keys(log, keys)
         label_name = label['name']
 
         # Need to generate a custom label
@@ -73,23 +74,3 @@ def _construct_extension(log, keys_to_labels):
 
     extensions = ' '.join(extensions)
     return extensions
-
-def _get_value_from_fields(log, keys):
-    """
-    Drill down into the given log to retrieve a value given a hierarchy of keys
-
-    @param log      Log to retrieve a value from
-    @param fields   Hierarchy of fields to follow in order to retrieve a value
-
-    @return value from the log found after following the list of keys given
-    """
-
-    value = log
-
-    for key in keys:
-        value = value.get(key)
-
-        if value is None:
-            break
-
-    return value
