@@ -119,6 +119,14 @@ class TestConfig(TestCase):
 
         self.assertEqual(log_filepath, '/tmp/duologsync.log')
 
+    def test_get_log_format(self):
+        config = {'logs': {'log_format': 'CEF'}}
+
+        Config.set_config(config)
+        log_format = Config.get_log_format()
+
+        self.assertEqual(log_format, 'CEF')
+
     def test_create_config_normal(self):
         config_filepath = 'tests/resources/config_files/standard.yml'
         correct_config = {
@@ -189,6 +197,7 @@ class TestConfig(TestCase):
         self.assertNotEqual(config['logs']['polling']['duration'], None)
         self.assertNotEqual(config['logs']['polling']['daysinpast'], None)
         self.assertNotEqual(config['logs']['checkpointDir'], None)
+        self.assertNotEqual(config['logs']['log_format'], None)
         self.assertNotEqual(config['recoverFromCheckpoint']['enabled'], None)
 
     def test_create_config_with_polling_too_low(self):
@@ -199,3 +208,43 @@ class TestConfig(TestCase):
         print(config)
 
         self.assertEqual(config['logs']['polling']['duration'], 120)
+
+
+    def test_get_value_from_keys_normal(self):
+        dictionary = {'level_one': '2FA',
+                      'access_device': {'ip': '192.168.0.1'}}
+
+        value_one = Config.get_value_from_keys(dictionary, ('level_one',))
+        value_two = Config.get_value_from_keys(dictionary,
+                                               ('access_device', 'ip'))
+
+        self.assertEqual(value_one, '2FA')
+        self.assertEqual(value_two, '192.168.0.1')
+
+    def test_get_value_from_keys_bad_keys(self):
+        dictionary = {'house': {'bedrooms': 2}}
+
+        value_one = Config.get_value_from_keys(dictionary, ('hoose'))
+        value_two = Config.get_value_from_keys(dictionary,
+                                               ('house', 'badrooms'))
+
+        self.assertEqual(value_one, None)
+        self.assertEqual(value_two, None)
+
+    def test_set_value_from_keys(self):
+        dictionary = {'Computer Science': {'Fun?': False}}
+
+        dictionary = Config.set_value_from_keys(dictionary,
+                                                ('Computer Science', 'Fun?'),
+                                                True)
+
+        self.assertEqual(dictionary['Computer Science']['Fun?'], True)
+
+    def test_set_value_from_keys_bad_keys(self):
+        dictionary = {'Ice Cream': {'Favorite': 'Birthday Cake'}}
+
+        dictionary = Config.set_value_from_keys(dictionary,
+                                                ('Ice Cream', 'Favourite'),
+                                                'Coffee')
+
+        self.assertEqual(dictionary['Ice Cream']['Favorite'], 'Birthday Cake')
