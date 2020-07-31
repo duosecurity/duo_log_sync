@@ -10,9 +10,6 @@ from duologsync.program import Program
 from duologsync.producer.producer import Producer
 from duologsync.consumer.cef import log_to_cef
 
-JSON = 'JSON'
-CEF = 'CEF'
-
 class Consumer():
     """
     Read logs from a queue shared with a producer object and write those logs
@@ -98,9 +95,9 @@ class Consumer():
 
         formatted_log = None
 
-        if self.log_format == CEF:
+        if self.log_format == Config.CEF:
             formatted_log = log_to_cef(log, self.keys_to_labels)
-        elif self.log_format == JSON:
+        elif self.log_format == Config.JSON:
             formatted_log = json.dumps(log)
         else:
             raise ValueError(f"{self.log_format} is not a supported log format")

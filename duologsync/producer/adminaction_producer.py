@@ -2,6 +2,7 @@
 Definition of the AdminactionProducer class
 """
 
+from duologsync.config import Config
 from duologsync.producer.producer import Producer
 
 class AdminactionProducer(Producer):
@@ -11,4 +12,4 @@ class AdminactionProducer(Producer):
     """
 
     def __init__(self, api_call, log_queue):
-        super().__init__(api_call, log_queue, 'adminaction')
+        super().__init__(api_call, log_queue, Config.ADMIN)

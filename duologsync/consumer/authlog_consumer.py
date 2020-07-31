@@ -2,6 +2,7 @@
 Definition of the AuthlogConsumer class
 """
 
+from duologsync.config import Config
 from duologsync.consumer.consumer import Consumer
 
 AUTHLOG_KEYS_TO_LABELS = {
@@ -23,4 +24,4 @@ class AuthlogConsumer(Consumer):
     def __init__(self, log_format, log_queue, writer):
         super().__init__(log_format, log_queue, writer)
         self.keys_to_labels = AUTHLOG_KEYS_TO_LABELS
-        self.log_type = 'auth'
+        self.log_type = Config.AUTH

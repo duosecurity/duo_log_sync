@@ -72,7 +72,7 @@ def get_log_offset(log_type, recover_log_offset, checkpoint_directory):
     log_offset = Config.get_value(['logs', 'offset'])
 
     # Auth must have timestamp represented in milliseconds, not seconds
-    if log_type == 'auth':
+    if log_type == Config.AUTH:
         log_offset *= milliseconds_per_second
 
     # In this case, look for a checkpoint file from which to read the log offset

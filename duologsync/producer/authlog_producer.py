@@ -3,8 +3,9 @@ Definition of the Authlog Producer class
 """
 
 import functools
-from duologsync.producer.producer import Producer
+from duologsync.config import Config
 from duologsync.util import run_in_executor
+from duologsync.producer.producer import Producer
 
 class AuthlogProducer(Producer):
     """
@@ -13,7 +14,7 @@ class AuthlogProducer(Producer):
     """
 
     def __init__(self, api_call, log_queue):
-        super().__init__(api_call, log_queue, 'auth')
+        super().__init__(api_call, log_queue, Config.AUTH)
         self.mintime = None
 
         # log_offset for Auth can be an int or a tuple, depending on if there

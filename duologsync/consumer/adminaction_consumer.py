@@ -2,6 +2,7 @@
 Definition of the AdminactionConsumer class
 """
 
+from duologsync.config import Config
 from duologsync.consumer.consumer import Consumer
 
 ADMINACTION_KEYS_TO_LABELS = {
@@ -22,4 +23,4 @@ class AdminactionConsumer(Consumer):
     def __init__(self, log_format, log_queue, writer):
         super().__init__(log_format, log_queue, writer)
         self.keys_to_labels = ADMINACTION_KEYS_TO_LABELS
-        self.log_type = 'adminaction'
+        self.log_type = Config.ADMIN

@@ -21,15 +21,22 @@ class Config:
     are not given values.
     """
 
+    # Format type constants
+    CEF = 'CEF'
+    JSON = 'JSON'
+
+    # Log type constants
+    ADMIN = 'adminaction'
+    AUTH = 'auth'
+    TELEPHONY = 'telephony'
+
     DEFAULT_DIRECTORY = '/tmp'
     DEFAULT_LOG_PATH = DEFAULT_DIRECTORY + '/duologsync.log'
     DEFAULT_DAYS_IN_PAST = 180
-    DEFAULT_LOG_FORMAT = 'JSON'
+    DEFAULT_LOG_FORMAT = JSON
 
     # How many seconds to wait between API requests
     MINIMUM_POLLING_DURATION = 120
-    VALID_ENDPOINTS = ['adminaction', 'auth', 'telephony']
-    VALID_LOG_FORMATS = ['JSON', 'CEF']
 
     PATHS_TO_DEFAULTS = {
         ('logs', 'polling', 'duration'): MINIMUM_POLLING_DURATION,
@@ -66,7 +73,7 @@ class Config:
                         'type': ['string', 'list'],
                         'required': True,
                         'empty': False,
-                        'allowed': VALID_ENDPOINTS,
+                        'allowed': [ADMIN, AUTH, TELEPHONY],
                     }
                 }
             },
@@ -83,7 +90,7 @@ class Config:
             'log_format': {
                 'type': 'string',
                 'empty': False,
-                'allowed': VALID_LOG_FORMATS
+                'allowed': [CEF, JSON]
             }
         }
     }

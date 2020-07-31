@@ -60,9 +60,8 @@ def main():
     asyncio.get_event_loop().close()
 
     if Program.is_logging_set():
-        Program.log(f"DuoLogSync: shutdown successfully. Check "
-                    f"{Config.get_log_filepath()} for program logs",
-                    logging.INFO)
+        print(f"DuoLogSync: shutdown successfully. Check "
+              f"{Config.get_log_filepath()} for program logs")
 
 def sigint_handler(signal_number, stack_frame):
     """
@@ -110,13 +109,13 @@ def create_consumer_producer_tasks(enabled_endpoints):
         producer = consumer = None
 
         # Create the right pair of Producer-Consumer objects based on endpoint
-        if endpoint == 'auth':
+        if endpoint == Config.AUTH:
             producer = AuthlogProducer(admin.get_authentication_log, log_queue)
             consumer = AuthlogConsumer(log_format, log_queue, writer)
-        elif endpoint == 'telephony':
+        elif endpoint == Config.TELEPHONY:
             producer = TelephonyProducer(admin.get_telephony_log, log_queue)
             consumer = TelephonyConsumer(log_format, log_queue, writer)
-        elif endpoint == 'adminaction':
+        elif endpoint == Config.ADMIN:
             producer = AdminactionProducer(admin.get_administrator_log,
                                            log_queue)
             consumer = AdminactionConsumer(log_format, log_queue, writer)
