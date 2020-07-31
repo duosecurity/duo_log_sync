@@ -29,7 +29,7 @@ class Config:
     # How many seconds to wait between API requests
     MINIMUM_POLLING_DURATION = 120
     VALID_ENDPOINTS = ['adminaction', 'auth', 'telephony']
-
+    VALID_LOG_FORMATS = ['JSON', 'CEF']
 
     PATHS_TO_DEFAULTS = {
         ('logs', 'polling', 'duration'): MINIMUM_POLLING_DURATION,
@@ -80,7 +80,11 @@ class Config:
                 }
             },
             'checkpointDir': {'type': 'string', 'empty': False},
-            'log_format': {'type': 'string', 'empty': False}
+            'log_format': {
+                'type': 'string',
+                'empty': False,
+                'allowed': VALID_LOG_FORMATS
+            }
         }
     }
 
