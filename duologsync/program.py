@@ -83,7 +83,7 @@ class Program:
             return
 
         cls._logging_set = True
-        cls.log('Starting DuoLogSync')
+        cls.log('Starting DuoLogSync', logging.INFO)
 
     @classmethod
     def log(cls, message, level=logging.ERROR):
