@@ -1,3 +1,4 @@
+# IMPORTANT!: Use single quotes (''), NOT double quotes ("")!
 # All fields must have a value. If a field does not have a value, the config
 # will be considered invalid. Fields which have a default value (specified in
 # each field description) may be excluded if you do not have a preference for
@@ -6,18 +7,19 @@
 
 # Version of the config file. Do not change! Automatically updated for each
 # config file change
-version: "1.0.0"
+version: '1.0.0'
 
+# Fields for changing the functionality of DuoLogSync (DLS)
 dls_settings:
     
-  # File where DuoLogSync (DLS) program messages / logs should be saved
+  # File where DLS program messages / logs should be saved
   # DEFAULT: "/tmp/duologsync.log"
-  log_filepath: "/tmp/duologsync.log"
+  log_filepath: '/tmp/duologsync.log'
 
   # How Duo logs should be formatted before being sent to a server
   # OPTIONS: CEF, JSON
   # DEFAULT: JSON
-  log_format: "JSON"
+  log_format: 'JSON'
 
   # Setting related to API calls for Duo logs
   api:
@@ -46,7 +48,7 @@ dls_settings:
 
     # Directory where checkpoint files should be stored.
     # REQUIRED: if enabled is True
-    checkpoint_dir: "/tmp/dls_checkpoints"
+    checkpoint_dir: '/tmp/dls_checkpoints'
 
 # List of servers and how DLS will communicate with them
 servers:
@@ -56,23 +58,23 @@ servers:
 
       # Address of server to which Duo logs will be sent
       # REQUIRED
-      hostname: ""
+      hostname: ''
 
       # Port of server to which logs will be sent
       # MINIMUM: 0
       # MAXIMUM: 65535
       # REQUIRED
-      port: ""
+      port: ''
 
       # Transport protocol used to communicate with the server
       # OPTIONS: TCP, TCPSSL, UDP
       # REQUIRED
-      protocol: ""
+      protocol: ''
 
       # Location of the certificate file used for encrypting communication for
       # TCPSSL
       # REQUIRED: Only if protocol is TCPSSL
-      cert_filepath: ""
+      cert_filepath: ''
 
 # To add another server, copy and paste the above, change the server name to
 # something unique and descriptive, and fill out the 3 (or 4) fields required
@@ -91,20 +93,20 @@ accounts:
   - Account_1:
       # Integration key
       # REQUIRED
-      ikey: ""
+      ikey: ''
 
       # Private key, keep this safe
       # REQUIRED
-      skey: ""
+      skey: ''
 
       # Address of the server hosting this account's logs
       # REQUIRED
-      hostname: ""
+      hostname: ''
     
       # Server to which logs from this account should be sent. Simply include the
       # names of one of the servers from the list further up in this config
       # REQUIRED
-      server: ""
+      server: ''
 
       # List of endpoints for which logs from this accounts should be requested
       # OPTIONS: admin, auth, telephony
