@@ -53,85 +53,89 @@ dls_settings:
 # List of servers and how DLS will communicate with them
 servers:
   
-  # Rename Server_1 to something more descriptive for your purposes
-  - Server_1:
+    # Descriptive name for your server
+    # REQUIRED
+  - id: ''
 
-      # Address of server to which Duo logs will be sent
-      # REQUIRED
-      hostname: ''
+    # Address of server to which Duo logs will be sent
+    # REQUIRED
+    hostname: ''
 
-      # Port of server to which logs will be sent
-      # MINIMUM: 0
-      # MAXIMUM: 65535
-      # REQUIRED
-      port: ''
+    # Port of server to which logs will be sent
+    # MINIMUM: 0
+    # MAXIMUM: 65535
+    # REQUIRED
+    port: ''
 
-      # Transport protocol used to communicate with the server
-      # OPTIONS: TCP, TCPSSL, UDP
-      # REQUIRED
-      protocol: ''
+    # Transport protocol used to communicate with the server
+    # OPTIONS: TCP, TCPSSL, UDP
+    # REQUIRED
+    protocol: ''
 
-      # Location of the certificate file used for encrypting communication for
-      # TCPSSL
-      # REQUIRED: Only if protocol is TCPSSL
-      cert_filepath: ''
+    # Location of the certificate file used for encrypting communication for
+    # TCPSSL
+    # REQUIRED: Only if protocol is TCPSSL
+    cert_filepath: ''
 
 # To add another server, copy and paste the above, change the server name to
 # something unique and descriptive, and fill out the 3 (or 4) fields required
 # like so...
-# - Server_2:
-    # hostname:
-    # port:
-    # protocol:
-    # cert_filepath:
+# - id:
+#   hostname:
+#   port:
+#   protocol:
+#   cert_filepath:
 
 # List of accounts which are used to access Duo logs and tell DLS which logs
-# to fetch
+# to fetch.
 accounts:
   
-  # Rename Account_1 to something more descriptive for your purposes
-  - Account_1:
-      # Integration key
-      # REQUIRED
-      ikey: ''
+    # Integration key
+    # REQUIRED
+  - ikey: ''
 
-      # Private key, keep this safe
-      # REQUIRED
-      skey: ''
+    # Private key, keep this safe
+    # REQUIRED
+    skey: ''
 
-      # Address of the server hosting this account's logs
-      # REQUIRED
-      hostname: ''
+    # Address of the server hosting this account's logs
+    # REQUIRED
+    hostname: ''
     
-      # Server to which logs from this account should be sent. Simply include the
-      # names of one of the servers from the list further up in this config
-      # REQUIRED
-      server: ''
+    # Here you define to what servers the logs of certain endpoints should go.
+    # This is done by creating a mapping (start with dash -) and then defining
+    # what endpoints the mapping is for (either a string for single endpoint
+    # or a list of multiple endpoints) and then what servers apply to those
+    # endpoints (either a string for a single server or a list of multiple
+    # servers.)
+    # ENDPOINTS OPTIONS: adminaction, auth, telephony
+    # SERVERS OPTIONS: any server id defined above in the list of servers
+    # REQUIRED
+    endpoint_server_mappings:
+      #- endpoints: ['adminaction', 'auth']
+      #  servers: ['Server_1', 'Server_2']
+      #- endpoints: 'telephony'
+      #  servers: 'Server_1'
 
-      # List of endpoints for which logs from this accounts should be requested
-      # OPTIONS: admin, auth, telephony
-      # REQUIRED
-      endpoints:
+    # Whether this account is a Duo MSP account with child accounts. If True,
+    # then all the child accounts will be accessed and logs will be pulled for
+    # each child account
+    # DEFAULT: False
+    is_msp: True
 
-      # Whether this account is a parent to a bunch of child accounts. If True,
-      # then all the child accounts will be accessed and logs will be pulled for
-      # each child account
-      # DEFAULT: False
-      parent: True
-
-      # The child accounts that should not be accessed in the case this account
-      # is a parent.
-      # REQUIRED: if parent is True
-      block_list: []
+    # The child accounts that should not be accessed in the case this account
+    # is an MSP account.
+    # Only required if is_msp is True and if you need to block accounts from
+    # being accessed. It is fine to not include this field
+    block_list: []
 
 # To add another account, uncomment the following, change the account name to
 # something descriptive and distinct from the other accounts and fill out the
 # required  fields
-# - Account_2:
-#     ikey:
-#     skey:
-#     hostname:
-#     server:
-#     endpoints:
-#     parent:
-#     block_list:
+# - ikey:
+#   skey:
+#   hostname:
+#   server:
+#   endpoints:
+#   parent:
+#   block_list:
