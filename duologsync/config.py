@@ -4,7 +4,7 @@ Definition of the Config class
 
 import logging
 from datetime import datetime, timedelta
-from cerberus import Validator
+from cerberus import Validator, schema_registry
 import yaml
 from yaml import YAMLError
 from duologsync.program import Program
@@ -30,6 +30,14 @@ class Config:
     AUTH = 'auth'
     TELEPHONY = 'telephony'
 
+    # default values
+    DIRECTORY_DEFAULT = '/tmp'
+    LOG_FILEPATH_DEFAULT = DIRECTORY_DEFAULT + '/duologsync.log'
+    LOG_FORMAT_DEFAULT = JSON
+    API_OFFSET_DEFAULT = 180
+    API_TIMEOUT_DEFAULT = 120
+    CHECKPOINTING_ENABLED_DEFAULT = False
+
     DEFAULT_DIRECTORY = '/tmp'
     DEFAULT_LOG_PATH = DEFAULT_DIRECTORY + '/duologsync.log'
     DEFAULT_DAYS_IN_PAST = 180
@@ -47,97 +55,129 @@ class Config:
         ('recoverFromCheckpoint', 'enabled'): False
     }
 
-    # Duo credentials used to access a client's logs
-    DUOCLIENT = {
-        'type': 'dict',
-        'required': True,
-        'schema': {
-            'skey': {'type': 'string', 'required': True, 'empty': False},
-            'ikey': {'type': 'string', 'required': True, 'empty': False},
-            'host': {'type': 'string', 'required': True, 'empty': False}
-        }
+    # Version of the config file
+    VERSION = {
+        'type': 'string',
+        'empty': False,
+        'required': True
     }
 
-    # What types of logs to fetch, how often to fetch, from what point in
-    # time logs should begin to be fetched
-    LOGS = {
+    # Fields for changing the functionality of DuoLogSync
+    DLS_SETTINGS = {
         'type': 'dict',
         'required': True,
         'schema': {
-            'logFilepath': {'type': 'string', 'empty': False},
-            'endpoints': {
-                'type': 'dict',
-                'required': True,
-                'schema': {
-                    'enabled': {
-                        'type': ['string', 'list'],
-                        'required': True,
-                        'empty': False,
-                        'allowed': [ADMIN, AUTH, TELEPHONY],
-                    }
-                }
-            },
-            'polling': {
-                'type': 'dict',
-                'schema': {
-                    'duration': {
-                        'type': 'number'
-                    },
-                    'daysinpast': {'type': 'integer', 'min': 0}
-                }
-            },
-            'checkpointDir': {'type': 'string', 'empty': False},
+            'log_filepath': {'type': 'string', 'empty': False},
             'log_format': {
                 'type': 'string',
                 'empty': False,
                 'allowed': [CEF, JSON]
+            },
+            'api': {
+                'type': 'dict',
+                'required': True,
+                'schema': {
+                    'offset': {'type': 'number', 'min': 0, 'max': 180},
+                    'timeout': {'type': 'number', 'min': 120}
+                }
+            },
+            'checkpointing': {
+                'type': 'dict',
+                'required': True,
+                'schema': {
+                    'enabled': {'type': 'boolean'},
+                    'checkpoint_dir': {'type': 'string', 'empty': False}
+                }
             }
         }
     }
 
-    # How and where fetched logs should be sent
-    TRANSPORT = {
-        'type': 'dict',
-        'required': True,
-        'schema': {
+    # Schema for a server inside of servers list
+    schema_registry.add(
+        'server',
+        {
+            'id': {'type': 'string', 'required': True, 'empty': False},
+            'hostname': {'type': 'string', 'required': True, 'empty': False},
+            'port': {
+                'type': 'integer',
+                'required': True,
+                'min': 0,
+                'max': 65535
+            },
             'protocol': {
                 'type': 'string',
                 'required': True,
                 'oneof': [
                     {
                         'allowed': ['TCPSSL'],
-                        'dependencies': ['certFilepath']
+                        'dependencies': ['cert_filepath']
                     },
                     {'allowed': ['TCP', 'UDP']}
                 ]
             },
-            'host': {'type': 'string', 'required': True, 'empty': False},
-            'port': {
-                'type': 'integer',
-                'min': 0,
-                'max': 65535,
-                'required': True
-            },
-            'certFilepath': {'type': 'string', 'empty': False}
-        }
+            'cert_filepath': {'type': 'string', 'empty': False}
+        })
+
+    # List of servers and how DLS will communicate with them
+    SERVERS = {
+        'type': 'list',
+        'required': True,
+        'minlength': 1,
+        'schema': {'type': 'dict', 'schema': 'server'}
     }
 
-    # Whether or not log-specific checkpoint files should be used in the
-    # case of an error or crash
-    RECOVER_FROM_CHECKPOINT = {
-        'type': 'dict',
-        'schema': {
-            'enabled': {'type': 'boolean'}
+    # Describe which servers the logs of certain endpoints should be sent to
+    schema_registry.add(
+        'endpoint_server_mapping',
+        {
+            'servers': {
+                'type': ['string', 'list'],
+                'empty': False,
+                'required': True
+            },
+            'endpoints': {
+                'type': ['string', 'list'],
+                'empty': False,
+                'required': True,
+                'allowed': [ADMIN, AUTH, TELEPHONY]
+            }
         }
+    )
+
+    # Account definition, which is used to access Duo logs and tell DLS which
+    # logs to fetch and to which servers those logs should be sent
+    schema_registry.add(
+        'account',
+        {
+            'skey': {'type': 'string', 'required': True, 'empty': False},
+            'ikey': {'type': 'string', 'required': True, 'empty': False},
+            'hostname': {'type': 'string', 'required': True, 'empty': False},
+            'endpoint_server_mappings': {
+                'type': 'list',
+                'empty': False,
+                'required': True,
+                'schema': {'type': 'dict', 'schema': 'endpoint_server_mapping'}
+            },
+            'is_msp': {'type': 'boolean'},
+            'block_list': {'type': 'list'}
+        }
+    )
+
+    # List of accounts
+    ACCOUNTS = {
+        'type': 'list',
+        'required': True,
+        'minlength': 1,
+        'schema': {'type': 'dict', 'schema': 'account'}
     }
 
     # Schema for validating the structure of a config dictionary generated from
     # a user-provided YAML file
     SCHEMA = {
-        'duoclient': DUOCLIENT,
-        'logs': LOGS,
-        'transport': TRANSPORT,
-        'recoverFromCheckpoint': RECOVER_FROM_CHECKPOINT
+        'version': VERSION,
+        'dls_settings': DLS_SETTINGS,
+        'servers': SERVERS,
+        'accounts': ACCOUNTS
     }
 
     # Generate a Validator object with the given schema
@@ -306,9 +346,6 @@ class Config:
 
         # No exception raised during the try block, return config
         else:
-            # For fields that are optional and not given a value, populate with
-            # default values
-            cls._set_config_defaults(config)
             return config
 
         # At this point, it is guaranteed that an exception was raised, which
