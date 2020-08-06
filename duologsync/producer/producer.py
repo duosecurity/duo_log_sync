@@ -23,8 +23,8 @@ class Producer():
         self.log_type = log_type
         self.log_offset = get_log_offset(
             self.log_type,
-            Config.get_recover_log_offset(),
-            Config.get_checkpoint_directory())
+            Config.get_checkpointing_enabled(),
+            Config.get_checkpoint_dir())
 
     async def produce(self):
         """
@@ -37,13 +37,13 @@ class Producer():
         while Program.is_running():
             shutdown_reason = None
             Program.log(f"{self.log_type} producer: begin polling for "
-                        f"{Config.get_polling_duration()} seconds",
+                        f"{Config.get_api_offset()} seconds",
                         logging.INFO)
 
             try:
-                # Sleep for polling_duration amount of time, but check for
-                # program shutdown every second
-                await restless_sleep(Config.get_polling_duration())
+                # Sleep for api_offset amount of time, but check for program
+                # shutdown every second
+                await restless_sleep(Config.get_api_offset())
                 Program.log(f"{self.log_type} producer: fetching logs",
                             logging.INFO)
                 api_result = await self.call_log_api()
