@@ -1,18 +1,37 @@
-duoclient:
-  skey: "Shhh, this is a secret..."
-  ikey: "BUNCH OF RANDOM CHARACTERS ALL UPPER CASE"
-  host: "duosecurity.com"
-logs:
-  logFilepath: "/tmp/duologsync.log"
-  endpoints:
-    enabled: ["auth", "adminaction", "telephony"]
-  polling:
-    duration: 2 
-    daysinpast: 180
-  checkpointDir: "/tmp"
-transport:
-  protocol: "TCP"
-  host: "localhost"
-  port: 8888
-recoverFromCheckpoint:
-  enabled: False 
+version: '1.0.0'
+dls_settings:
+  log_filepath: '/tmp/duologsync.log'
+  log_format: 'JSON'
+  api:
+    offset: 180
+    timeout: 120
+  checkpointing:
+    enabled: False
+    checkpoint_dir: '/tmp/dls_checkpoints'
+servers:
+  - id: 'main server'
+    hostname: 'mysiem.com'
+    port: 8888
+    protocol: 'TCPSSL'
+    cert_filepath: 'cert.crt'
+  - id: 'backup'
+    hostname: 'safesiem.org'
+    port: 13031
+    protocol: 'UDP'
+accounts:
+  - ikey: 'AAA101020K12K1K23'
+    skey: 'jyJKYAGJKAYGDKJgyJygFUg9F9gyFuo9'
+    hostname: 'api-test.first.duosecurity.com'
+    endpoint_server_mappings:
+      - endpoints: ['adminaction', 'auth']
+        servers: ['main server', 'backup']
+      - endpoints: 'telephony'
+        servers: 'backup'
+    is_msp: True
+    block_list: []
+  - ikey: 'DLFKSJFKJLALFK4444'
+    skey: 'jln;89NO89898*(P'
+    hostname: 'second.duosecurity.com'
+    endpoint_server_mappings:
+      - endpoints: 'auth'
+        servers: 'backup' 
