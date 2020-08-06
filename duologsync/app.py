@@ -79,7 +79,7 @@ def sigint_handler(signal_number, stack_frame):
                     logging.INFO)
 
 def create_tasks(accounts, server_to_writer):
-   """
+    """
     Create a pair of Producer-Consumer objects for each endpoint enabled within
     each account in the accounts list and return a list containing the asyncio
     tasks for running those objects.
@@ -104,10 +104,11 @@ def create_tasks(accounts, server_to_writer):
 
         for mapping in account['endpoint_server_mappings']:
             # Get list of writers to be used for this set of endpoints
-            writers = [server_to_writer[server] for server in mapping['servers']]
-            new_tasks = METHOD_NAME(endpoints, writers, admin)
+            writers = [server_to_writer[name] for name in mapping['servers']]
+            new_tasks = create_consumer_producer_pairs(mapping['endpoints'],
+                                                       writers, admin)
 
-            # Add the new_tasks to the ever growing list of tasks
+            # Add the tasks in result to the ever growing list of tasks
             tasks.append(new_tasks)
 
     return tasks
