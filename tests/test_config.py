@@ -145,8 +145,8 @@ class TestConfig(TestCase):
                             'servers': ['main server', 'backup']
                         },
                         {
-                            'endpoints': 'telephony',
-                            'servers': 'backup'
+                            'endpoints': ['telephony'],
+                            'servers': ['backup']
                         }
                     ],
                     'is_msp': True,
@@ -158,8 +158,8 @@ class TestConfig(TestCase):
                     'hostname': 'second.duosecurity.com',
                     'endpoint_server_mappings': [
                         {
-                            'endpoints': 'auth',
-                            'servers': 'backup'
+                            'endpoints': ['auth'],
+                            'servers': ['backup']
                         }
                     ]
                 }

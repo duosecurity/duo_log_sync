@@ -25,13 +25,13 @@ accounts:
     endpoint_server_mappings:
       - endpoints: ['adminaction', 'auth']
         servers: ['main server', 'backup']
-      - endpoints: 'telephony'
-        servers: 'backup'
+      - endpoints: ['telephony']
+        servers: ['backup']
     is_msp: True
     block_list: []
   - ikey: 'DLFKSJFKJLALFK4444'
     skey: 'jln;89NO89898*(P'
     hostname: 'second.duosecurity.com'
     endpoint_server_mappings:
-      - endpoints: 'auth'
-        servers: 'backup' 
+      - endpoints: ['auth']
+        servers: ['backup']
