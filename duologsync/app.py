@@ -78,8 +78,8 @@ def sigint_handler(signal_number, stack_frame):
         Program.log(f"DuoLogSync: stack frame from Ctrl-C is {stack_frame}",
                     logging.INFO)
 
-def create_tasks(accounts, writers):
-    """
+def create_tasks(accounts, server_to_writer):
+   """
     Create a pair of Producer-Consumer objects for each endpoint enabled within
     each account in the accounts list and return a list containing the asyncio
     tasks for running those objects.
@@ -90,13 +90,39 @@ def create_tasks(accounts, writers):
 
     @return list of asyncio tasks for running the Producer and Consumer objects
     """
+    tasks = []
 
-    # Object with functions needed to utilize log API calls
-    admin = create_admin(Config.get_ikey(), Config.get_skey(),
-                         Config.get_host())
+    for account in accounts:
+        # If account['is_msp'], retrieve and iterate all child accounts,
+        # future Accounts API change! Stay Tuned!!
+        # Do a set comparison between child accounts received and the blocklist
+        # AKA children NAND blocklist == working_set
 
-    # Object for writing data / logs across a network, used by Consumers
-    writer = Writer(Config.get_value(['transport']))
+        # Object with functions needed to utilize log API calls
+        admin = create_admin(account['ikey'], account['skey'],
+                             account['hostname'])
+
+        for mapping in account['endpoint_server_mappings']:
+            # Get list of writers to be used for this set of endpoints
+            writers = [server_to_writer[server] for server in mapping['servers']]
+            new_tasks = METHOD_NAME(endpoints, writers, admin)
+
+            # Add the new_tasks to the ever growing list of tasks
+            tasks.append(new_tasks)
+
+    return tasks
+
+def create_consumer_producer_pairs(endpoints, writers, admin):
+    """
+    Create a pair of Producer-Consumer objects for each endpoint and return a
+    list containing the asyncio tasks for running those objects.
+
+    @param endpoints    List of endpoints to create producers/consumers for
+    @param writers      List of writers to pass on to a consumer object
+    @param admin        Object from whcih to get the correct API endpoints
+
+    @return list of asyncio tasks for running the Producer and Consumer objects
+    """
 
     # The format a log should have before being consumed and sent
     log_format = Config.get_log_format()
@@ -104,26 +130,22 @@ def create_tasks(accounts, writers):
     # List of Consumer / Writer tasks to be run in the Asyncio event loop
     tasks = []
 
-    # Check if an error from creating the writer caused a program shutdown
-    if not Program.is_running():
-        return tasks
-
     # Enable endpoints based on user selection
-    for endpoint in enabled_endpoints:
+    for endpoint in endpoints:
         log_queue = asyncio.Queue()
         producer = consumer = None
 
         # Create the right pair of Producer-Consumer objects based on endpoint
         if endpoint == Config.AUTH:
             producer = AuthlogProducer(admin.get_authentication_log, log_queue)
-            consumer = AuthlogConsumer(log_format, log_queue, writer)
+            consumer = AuthlogConsumer(log_format, log_queue, writers)
         elif endpoint == Config.TELEPHONY:
             producer = TelephonyProducer(admin.get_telephony_log, log_queue)
-            consumer = TelephonyConsumer(log_format, log_queue, writer)
+            consumer = TelephonyConsumer(log_format, log_queue, writers)
         elif endpoint == Config.ADMIN:
             producer = AdminactionProducer(admin.get_administrator_log,
                                            log_queue)
-            consumer = AdminactionConsumer(log_format, log_queue, writer)
+            consumer = AdminactionConsumer(log_format, log_queue, writers)
         else:
             Program.log(f"{endpoint} is not a recognized endpoint",
                         logging.WARNING)
