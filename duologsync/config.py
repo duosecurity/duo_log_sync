@@ -129,12 +129,12 @@ class Config:
         'endpoint_server_mapping',
         {
             'servers': {
-                'type': ['string', 'list'],
+                'type': 'list',
                 'empty': False,
                 'required': True
             },
             'endpoints': {
-                'type': ['string', 'list'],
+                'type': 'list',
                 'empty': False,
                 'required': True,
                 'allowed': [ADMIN, AUTH, TELEPHONY]

@@ -37,13 +37,13 @@ class Producer():
         while Program.is_running():
             shutdown_reason = None
             Program.log(f"{self.log_type} producer: begin polling for "
-                        f"{Config.get_api_offset()} seconds",
+                        f"{Config.get_api_timeout()} seconds",
                         logging.INFO)
 
             try:
-                # Sleep for api_offset amount of time, but check for program
+                # Sleep for api_timeout amount of time, but check for program
                 # shutdown every second
-                await restless_sleep(Config.get_api_offset())
+                await restless_sleep(Config.get_api_timeout())
                 Program.log(f"{self.log_type} producer: fetching logs",
                             logging.INFO)
                 api_result = await self.call_log_api()

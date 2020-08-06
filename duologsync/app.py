@@ -109,7 +109,7 @@ def create_tasks(accounts, server_to_writer):
                                                        writers, admin)
 
             # Add the tasks in result to the ever growing list of tasks
-            tasks.append(new_tasks)
+            tasks.extend(new_tasks)
 
     return tasks
 

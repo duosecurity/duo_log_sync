@@ -80,7 +80,7 @@ class Writer:
         return writers
 
     @staticmethod
-    def write_all(writers, data):
+    async def write_all(writers, data):
         """
         Given a list of writers, for each writer call the write function and
         pass the given data to be written by that writer.
@@ -90,7 +90,7 @@ class Writer:
         """
 
         for writer in writers:
-            writer.write(data)
+            await writer.write(data)
 
     async def write(self, data):
         """

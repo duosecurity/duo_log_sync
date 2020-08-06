@@ -41,7 +41,7 @@ dls_settings:
 
     # Directory where checkpoint files should be stored.
     # REQUIRED: if enabled is True
-    checkpoint_dir: '/tmp/dls_checkpoints'
+    checkpoint_dir: '/tmp'
 
 # List of servers and how DLS will communicate with them
 servers:
@@ -97,18 +97,16 @@ accounts:
     
     # Here you define to what servers the logs of certain endpoints should go.
     # This is done by creating a mapping (start with dash -) and then defining
-    # what endpoints the mapping is for (either a string for single endpoint
-    # or a list of multiple endpoints) and then what servers apply to those
-    # endpoints (either a string for a single server or a list of multiple
-    # servers.)
+    # what endpoints the mapping is for as a list and the what servers apply to
+    # those endpoints as a list.
     # ENDPOINTS OPTIONS: adminaction, auth, telephony
     # SERVERS OPTIONS: any server id defined above in the list of servers
     # REQUIRED
     endpoint_server_mappings:
       #- endpoints: ['adminaction', 'auth']
       #  servers: ['Server_1', 'Server_2']
-      #- endpoints: 'telephony'
-      #  servers: 'Server_1'
+      #- endpoints: ['telephony']
+      #  servers: ['Server_1']
 
     # Whether this account is a Duo MSP account with child accounts. If True,
     # then all the child accounts will be accessed and logs will be pulled for
