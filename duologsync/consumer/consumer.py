@@ -9,22 +9,23 @@ from duologsync.config import Config
 from duologsync.program import Program
 from duologsync.producer.producer import Producer
 from duologsync.consumer.cef import log_to_cef
+from duologsync.writer import Writer
 
 class Consumer():
     """
     Read logs from a queue shared with a producer object and write those logs
-    somewhere using the write object passed. Additionally, once logs have been
+    somewhere using the write objects passed. Additionally, once logs have been
     written successfully, take the latest log_offset - also shared with the
     Producer pair - and save it to a checkpointing file in order to recover
     progress if a crash occurs.
     """
 
-    def __init__(self, log_format, log_queue, writer):
+    def __init__(self, log_format, log_queue, writers):
         self.keys_to_labels = {}
         self.log_format = log_format
         self.log_type = 'default'
         self.log_queue = log_queue
-        self.writer = writer
+        self.writers = writers
         self.log_offset = None
 
     async def consume(self):
@@ -57,7 +58,7 @@ class Consumer():
                 Program.log(f"{self.log_type} consumer: writing logs",
                             logging.INFO)
                 for log in logs:
-                    await self.writer.write(self.format_log(log))
+                    await Writer.write_all(self.writers, self.format_log(log))
                     last_log_written = log
 
                 # All the logs were written successfully
@@ -117,7 +118,7 @@ class Consumer():
                     "checkpointing file", logging.INFO)
 
         checkpoint_filename = os.path.join(
-            Config.get_checkpoint_directory(),
+            Config.get_checkpoint_dir(),
             f"{log_type}_checkpoint_data.txt")
 
         # Open file checkpoint_filename in writing mode only
