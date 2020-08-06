@@ -29,13 +29,14 @@ Duologsync is a utility written by Duo Security to enable fetching logs from dif
 - Ability to recover data by reading from last known offset through checkpointing files
 - Enabling only certain endpoints through config file
 - Choosing how logs are formatted (JSON, CEF)
+- Support for Linux, MacOS, Windows
 
 ---
 
 ##### Work in progress
 
-- More logging and exception handling
-- Support for WINDOWS
+- Adding more log endpoints
+- Encrypting skey within config file
 
 ---
 
@@ -45,63 +46,6 @@ Duologsync is a utility written by Duo Security to enable fetching logs from dif
 - Duologsync is officially supported only on UNIX systems.
 ---
 
-##### Example configuration
+##### Configuration
 
-- Check `template_config.py` as well for value options and restrictions
-
-```
-duoclient:
-  skey: ""
-  ikey: ""
-  host: ""
-
-logs:
-  logFilepath: "/tmp/duologsync.log"
-  endpoints:
-    enabled: ["auth", "telephony", "adminaction"]
-  polling:
-    duration: 5
-    daysinpast: 180
-  checkpointDir: "/tmp"
-  log_format: "JSON"
-
-transport:
-  protocol: "TCP"
-  host: "localhost"
-  port: 8888
-  certFilepath: "/tmp/selfsigned.cert"
-
-recoverFromCheckpoint:
-  enabled: False
-```
-
-- Credentials to connect to duo adminapi integration
-
-`duoclient:
-  skey: ""
-  ikey: ""
-  host: ""`
-
-- Choose which endpoints data should be fetched from. Polling duration is recommended to be kept 5 minutes. Choose how far in past to start fetching data from using daysinpast parameter. Configuration to store log and checkpoint files
-
-`logs:
-  logFilepath: "/tmp/duologsync.log"
-  endpoints:
-    enabled: ["auth", "telephony", "adminaction"]
-  polling:
-    duration: 5
-    daysinpast: 180
-  checkpointDir: "/tmp"
-  log_format: "JSON"`
-
-- Choose whether to receive data on TCP/TCPSSL/UDP. In case of TCPSSL, you will also need to provide filepath of the cert file. For normal TCP or UDP it can be left blank.
-
-`transport:
-  protocol: "TCP"
-  host: "localhost"
-  port: 8888`
-
-- Incase of application crash or network interruption, this value can be set to True to read from last known checkpoint. If application is started for the first time, keep this value as False
-
-`recoverFromCheckpoint:
-  enabled: False`
+- Check `template_config.py` for an example and extensive config explanation
