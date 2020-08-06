@@ -52,8 +52,11 @@ def main():
 
     Program.setup_logging(Config.get_log_filepath())
 
+    # Dict of writers (server id: writer) to be used for consumer tasks
+    writers = Writer.create_writers(Config.get_servers())
+
     # List of Producer/Consumer objects as asyncio tasks to be run
-    tasks = create_consumer_producer_tasks(Config.get_enabled_endpoints())
+    tasks = create_tasks(Config.get_accounts(), writers)
 
     # Run the Producers and Consumers
     asyncio.get_event_loop().run_until_complete(asyncio.gather(*tasks))
@@ -75,13 +78,15 @@ def sigint_handler(signal_number, stack_frame):
         Program.log(f"DuoLogSync: stack frame from Ctrl-C is {stack_frame}",
                     logging.INFO)
 
-def create_consumer_producer_tasks(enabled_endpoints):
+def create_tasks(accounts, writers):
     """
-    Create a pair of Producer-Consumer objects for each enabled endpoint, and
-    return a list containing asyncio tasks for running those objects.
+    Create a pair of Producer-Consumer objects for each endpoint enabled within
+    each account in the accounts list and return a list containing the asyncio
+    tasks for running those objects.
 
-    @param enabled_endpoints    List of endpoints for which to create Producer
-                                / Consumer objects
+    @param accounts List of accounts for which Producer / Consumer objects
+                    shall be created
+    @param writer   Dictionary mapping server ids to writer objects
 
     @return list of asyncio tasks for running the Producer and Consumer objects
     """

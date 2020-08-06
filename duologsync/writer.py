@@ -46,18 +46,38 @@ class Writer:
     and open_connections objects for sending data over UDP, TCP and TCPSSL.
     """
 
-    def __init__(self, transport_settings):
+    def __init__(self, server):
         # Needed to determine what type of writer to create and how to use it
-        self.protocol = transport_settings['protocol']
+        self.protocol = server['protocol']
 
         # Create the actual writer
         self.writer = asyncio.get_event_loop().run_until_complete(
             self.create_writer(
-                transport_settings['host'],
-                transport_settings['port'],
-                transport_settings.get('certFilepath')
+                server['hostname'],
+                server['port'],
+                server.get('cert_filepath')
             )
         )
+
+    @staticmethod
+    def create_writers(servers):
+        """
+        For each server, create a writer object and add a dictionary entry mapping
+        the server name to the writer object. Return the resulting dictionary.
+
+        @param servers  List of servers for which to create writer objects
+
+        @return a dictionary mapping server name to writer object
+        """
+        
+        writers = {}
+
+        for server in servers:
+            server_id = server['id']
+            writer = Writer(server)
+            writers[server_id] = writer
+
+        return writers
 
     async def write(self, data):
         """
