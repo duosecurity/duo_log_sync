@@ -79,6 +79,19 @@ class Writer:
 
         return writers
 
+    @staticmethod
+    def write_all(writers, data):
+        """
+        Given a list of writers, for each writer call the write function and
+        pass the given data to be written by that writer.
+
+        @param writers  List of writers to write the same data
+        @param data     The data to be written by the list of writers
+        """
+
+        for writer in writers:
+            writer.write(data)
+
     async def write(self, data):
         """
         Wrapper for writer functions. Makes it easy for parts of a program that
