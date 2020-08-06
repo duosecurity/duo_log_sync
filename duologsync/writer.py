@@ -69,7 +69,7 @@ class Writer:
 
         @return a dictionary mapping server name to writer object
         """
-        
+
         writers = {}
 
         for server in servers:
