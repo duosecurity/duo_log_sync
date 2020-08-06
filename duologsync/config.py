@@ -2,7 +2,6 @@
 Definition of the Config class
 """
 
-import logging
 from datetime import datetime, timedelta
 from cerberus import Validator, schema_registry
 import yaml
@@ -38,23 +37,6 @@ class Config:
     API_TIMEOUT_DEFAULT = 120
     CHECKPOINTING_ENABLED_DEFAULT = False
 
-    DEFAULT_DIRECTORY = '/tmp'
-    DEFAULT_LOG_PATH = DEFAULT_DIRECTORY + '/duologsync.log'
-    DEFAULT_DAYS_IN_PAST = 180
-    DEFAULT_LOG_FORMAT = JSON
-
-    # How many seconds to wait between API requests
-    MINIMUM_POLLING_DURATION = 120
-
-    PATHS_TO_DEFAULTS = {
-        ('logs', 'polling', 'duration'): MINIMUM_POLLING_DURATION,
-        ('logs', 'logFilepath'): DEFAULT_LOG_PATH,
-        ('logs', 'polling', 'daysinpast'): DEFAULT_DAYS_IN_PAST,
-        ('logs', 'checkpointDir'): DEFAULT_DIRECTORY,
-        ('logs', 'log_format'): DEFAULT_LOG_FORMAT,
-        ('recoverFromCheckpoint', 'enabled'): False
-    }
-
     # Version of the config file
     VERSION = {
         'type': 'string',
@@ -67,25 +49,48 @@ class Config:
         'type': 'dict',
         'required': True,
         'schema': {
-            'log_filepath': {'type': 'string', 'empty': False},
+            'log_filepath': {
+                'type': 'string',
+                'empty': False,
+                'default': LOG_FILEPATH_DEFAULT
+            },
             'log_format': {
                 'type': 'string',
                 'empty': False,
-                'allowed': [CEF, JSON]
+                'allowed': [CEF, JSON],
+                'default': LOG_FORMAT_DEFAULT
             },
             'api': {
                 'type': 'dict',
                 'required': True,
                 'schema': {
-                    'offset': {'type': 'number', 'min': 0, 'max': 180},
-                    'timeout': {'type': 'number', 'min': 120}
+                    'offset': {
+                        'type': 'number',
+                        'min': 0,
+                        'max': 180,
+                        'default': API_OFFSET_DEFAULT
+                    },
+                    'timeout': {
+                        'type': 'number',
+                        'min': 120,
+                        'default': API_TIMEOUT_DEFAULT
+                    }
                 }
             },
             'checkpointing': {
                 'type': 'dict',
-                'required': True,
                 'schema': {
-                    'enabled': {'type': 'boolean'},
+                    'enabled': {
+                        'type': 'boolean',
+                        'oneof': [
+                            {
+                                'allowed': [True],
+                                'dependencies': ['checkpoint_dir']
+                            },
+                            {'allowed': [False]}
+                        ],
+                        'default': CHECKPOINTING_ENABLED_DEFAULT
+                    },
                     'checkpoint_dir': {'type': 'string', 'empty': False}
                 }
             }
@@ -233,77 +238,45 @@ class Config:
         return curr_value
 
     @classmethod
-    def get_enabled_endpoints(cls):
-        """
-        @return the list of log_types for which logs should be fetched
-        """
-
-        return cls.get_value(['logs', 'endpoints', 'enabled'])
-
-    @classmethod
-    def get_polling_duration(cls):
-        """
-        @return the seconds to wait before fetching logs from an endpoint
-        """
-
-        return cls.get_value(['logs', 'polling', 'duration'])
-
-    @classmethod
-    def get_checkpoint_directory(cls):
-        """
-        @return the directory where log offset checkpoint files are saved
-        """
-
-        return cls.get_value(['logs', 'checkpointDir'])
-
-    @classmethod
-    def get_ikey(cls):
-        """
-        @return the ikey used by Duo to identify a customer
-        """
-
-        return cls.get_value(['duoclient', 'ikey'])
-
-    @classmethod
-    def get_skey(cls):
-        """
-        @return the skey used by Duo to authenticate access to a customer's logs
-        """
-
-        return cls.get_value(['duoclient', 'skey'])
-
-    @classmethod
-    def get_host(cls):
-        """
-        @return the host where a customer's logs are stored
-        """
-
-        return cls.get_value(['duoclient', 'host'])
-
-    @classmethod
-    def get_recover_log_offset(cls):
-        """
-        @return boolean indicating if checkpoint files should be used to
-                recover log offsets
-        """
-
-        return cls.get_value(['recoverFromCheckpoint', 'enabled'])
-
-    @classmethod
     def get_log_filepath(cls):
-        """
-        @return the directory where DuoLogSync's logs should be saved
-        """
-
-        return cls.get_value(['logs', 'logFilepath'])
+        """@return the filepath where DLS program messages should be saved"""
+        return cls.get_value(['dls_settings', 'log_filepath'])
 
     @classmethod
     def get_log_format(cls):
-        """
-        @return the format that logs should take on before being written
-        """
+        """@return how Duo logs should be formatted"""
+        return cls.get_value(['dls_settings', 'log_format'])
 
-        return cls.get_value(['logs', 'log_format'])
+    @classmethod
+    def get_api_offset(cls):
+        """@return the timestamp from which record retrieval should begin"""
+        return cls.get_value(['dls_settings', 'api', 'offset'])
+
+    @classmethod
+    def get_api_timeout(cls):
+        """@return the seconds to wait between API calls"""
+        return cls.get_value(['dls_settings', 'api', 'timeout'])
+
+    @classmethod
+    def get_checkpointing_enabled(cls):
+        """@return whether checkpoint files should be used to recover offsets"""
+        return cls.get_value(['dls_settings', 'checkpointing', 'enabled'])
+
+    @classmethod
+    def get_checkpoint_dir(cls):
+        """@return the directory where checkpoint files should be stored"""
+        return cls.get_value(
+            ['dls_settings', 'checkpointing', 'checkpoint_dir'])
+
+    @classmethod
+    def get_servers(cls):
+        """@return the list of servers to which Duo logs will be written"""
+        return cls.get_value(['servers'])
+
+    @classmethod
+    def get_accounts(cls):
+        """@return the list of accounts from which Duo logs will be fetched"""
+        return cls.get_value(['accounts'])
 
     @classmethod
     def create_config(cls, config_filepath):
@@ -346,6 +319,11 @@ class Config:
 
         # No exception raised during the try block, return config
         else:
+
+            # Calculate offset as a timestamp and rewrite its value in config
+            offset = config['dls_settings']['api']['offset']
+            offset = datetime.utcnow() - timedelta(days=offset)
+            config['dls_settings']['api']['offset'] = int(offset.timestamp())
             return config
 
         # At this point, it is guaranteed that an exception was raised, which
@@ -365,49 +343,6 @@ class Config:
         # Config is not a valid structure
         if not cls.SCHEMA_VALIDATOR.validate(config):
             raise ValueError
-
-    @classmethod
-    def _set_config_defaults(cls, config):
-        """
-        Check if optional fields within a config are empty. If they are empty
-        or if they have a bad value, set those values to a default and log a
-        message about the decision to set a default.
-
-        @param config   Config dict for which to set defaults
-        """
-
-        # Message format for informing a user that an optional field in their
-        # config file was not set and thus a default value is being used
-        template = "Config: No value given for %s, using default value of %s"
-
-        if config.get('logs').get('polling') is None:
-            config['logs']['polling'] = {}
-
-        if config.get('recoverFromCheckpoint') is None:
-            config['recoverFromCheckpoint'] = {}
-
-        for keys, default in cls.PATHS_TO_DEFAULTS.items():
-            value = Config.get_value_from_keys(config, keys)
-
-            if value is None:
-                # Let the user know that a default value is being set
-                Program.log(template % ('.'.join(keys), default), logging.INFO)
-                config = Config.set_value_from_keys(config, keys, default)
-
-        polling_duration = config.get('logs').get('polling').get('duration')
-        if polling_duration < cls.MINIMUM_POLLING_DURATION:
-            Program.log("Config: Value given for logs.polling.duration was too "
-                        "low. Set to %s" % cls.MINIMUM_POLLING_DURATION,
-                        logging.INFO)
-            config['logs']['polling']['duration'] = cls.MINIMUM_POLLING_DURATION
-
-        # Add a default offset from which to fetch logs
-        # The maximum amount of days in the past that a log may be fetched from
-        days_in_past = config['logs']['polling']['daysinpast']
-
-        # Create a timestamp for screening logs that are too old
-        default_log_offset = datetime.utcnow() - timedelta(days=days_in_past)
-        config['logs']['offset'] = int(default_log_offset.timestamp())
 
     @staticmethod
     def get_value_from_keys(dictionary, keys):
@@ -429,22 +364,3 @@ class Config:
                 break
 
         return value
-
-    @staticmethod
-    def set_value_from_keys(dictionary, keys, value):
-        """
-        Drill down into dictionary to set a value given a list of keys
-
-        @param dictionary   dict for which to set a value
-        @param fields       List of fields to follow in order to set a value
-
-        @return dictionary with the value set
-        """
-
-        entry = dictionary
-
-        for key in keys[:-1]:
-            entry = entry.get(key)
-
-        entry[keys[-1]] = value
-        return dictionary
