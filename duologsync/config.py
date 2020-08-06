@@ -29,14 +29,6 @@ class Config:
     AUTH = 'auth'
     TELEPHONY = 'telephony'
 
-    # default values
-    DIRECTORY_DEFAULT = '/tmp'
-    LOG_FILEPATH_DEFAULT = DIRECTORY_DEFAULT + '/duologsync.log'
-    LOG_FORMAT_DEFAULT = JSON
-    API_OFFSET_DEFAULT = 180
-    API_TIMEOUT_DEFAULT = 120
-    CHECKPOINTING_ENABLED_DEFAULT = False
-
     # Version of the config file
     VERSION = {
         'type': 'string',
@@ -51,14 +43,14 @@ class Config:
         'schema': {
             'log_filepath': {
                 'type': 'string',
-                'empty': False,
-                'default': LOG_FILEPATH_DEFAULT
+                'required': True,
+                'empty': False
             },
             'log_format': {
                 'type': 'string',
+                'required': True,
                 'empty': False,
-                'allowed': [CEF, JSON],
-                'default': LOG_FORMAT_DEFAULT
+                'allowed': [CEF, JSON]
             },
             'api': {
                 'type': 'dict',
@@ -66,30 +58,31 @@ class Config:
                 'schema': {
                     'offset': {
                         'type': 'number',
+                        'required': True,
                         'min': 0,
-                        'max': 180,
-                        'default': API_OFFSET_DEFAULT
+                        'max': 180
                     },
                     'timeout': {
                         'type': 'number',
-                        'min': 120,
-                        'default': API_TIMEOUT_DEFAULT
+                        'required': True,
+                        'min': 120
                     }
                 }
             },
             'checkpointing': {
                 'type': 'dict',
+                'required': True,
                 'schema': {
                     'enabled': {
                         'type': 'boolean',
+                        'required': True,
                         'oneof': [
                             {
                                 'allowed': [True],
                                 'dependencies': ['checkpoint_dir']
                             },
                             {'allowed': [False]}
-                        ],
-                        'default': CHECKPOINTING_ENABLED_DEFAULT
+                        ]
                     },
                     'checkpoint_dir': {'type': 'string', 'empty': False}
                 }
@@ -319,7 +312,6 @@ class Config:
 
         # No exception raised during the try block, return config
         else:
-
             # Calculate offset as a timestamp and rewrite its value in config
             offset = config['dls_settings']['api']['offset']
             offset = datetime.utcnow() - timedelta(days=offset)
