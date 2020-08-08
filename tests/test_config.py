@@ -95,13 +95,53 @@ class TestConfig(TestCase):
 
         self.assertEqual(servers, ['item1', 'item2'])
 
-    def test_get_accounts(self):
-        config = {'accounts': ['personal', 'private']}
+    def test_get_account_ikey(self):
+        config = {'account': {'ikey': 'ASDFF'}}
 
         Config.set_config(config)
-        accounts = Config.get_accounts()
+        ikey = Config.get_account_ikey()
 
-        self.assertEqual(accounts, ['personal', 'private'])
+        self.assertEqual(ikey, 'ASDFF')
+
+    def test_get_account_skey(self):
+        config = {'account': {'skey': 'PASSWORD'}}
+
+        Config.set_config(config)
+        skey = Config.get_account_skey()
+
+        self.assertEqual(skey, 'PASSWORD')
+
+    def test_get_account_hostname(self):
+        config = {'account': {'hostname': 'internet.com'}}
+
+        Config.set_config(config)
+        hostname = Config.get_account_hostname()
+
+        self.assertEqual(hostname, 'internet.com')
+
+    def test_get_account_endpoint_server_mappings(self):
+        config = {'account': {'endpoint_server_mappings': {'auth': 'ha.com'}}}
+
+        Config.set_config(config)
+        endpoint_server_mappings = Config.get_account_endpoint_server_mappings()
+
+        self.assertEqual(endpoint_server_mappings, {'auth': 'ha.com'})
+
+    def test_account_is_msp(self):
+        config = {'account': {'is_msp': False}}
+
+        Config.set_config(config)
+        is_msp = Config.account_is_msp()
+
+        self.assertEqual(is_msp, False)
+
+    def test_get_account_block_list(self):
+        config = {'account': {'block_list': ['thing1', 'blue fish']}}
+
+        Config.set_config(config)
+        block_list = Config.get_account_block_list()
+
+        self.assertEqual(block_list, ['thing1', 'blue fish'])
 
     def test_create_config_normal(self):
         config_filepath = 'tests/resources/config_files/standard.yml'
@@ -116,7 +156,7 @@ class TestConfig(TestCase):
                 },
                 'checkpointing': {
                     'enabled': False,
-                    'checkpoint_dir': '/tmp/dls_checkpoints'
+                    'directory': '/tmp/dls_checkpoints'
                 }
             },
             'servers': [
@@ -134,36 +174,23 @@ class TestConfig(TestCase):
                     'protocol': 'UDP'
                 }
             ],
-            'accounts': [
-                {
-                    'ikey': 'AAA101020K12K1K23',
-                    'skey': 'jyJKYAGJKAYGDKJgyJygFUg9F9gyFuo9',
-                    'hostname': 'api-test.first.duosecurity.com',
-                    'endpoint_server_mappings': [
-                        {
-                            'endpoints': ['adminaction', 'auth'],
-                            'servers': ['main server', 'backup']
-                        },
-                        {
-                            'endpoints': ['telephony'],
-                            'servers': ['backup']
-                        }
-                    ],
-                    'is_msp': True,
-                    'block_list': []
-                },
-                {
-                    'ikey': 'DLFKSJFKJLALFK4444',
-                    'skey': 'jln;89NO89898*(P',
-                    'hostname': 'second.duosecurity.com',
-                    'endpoint_server_mappings': [
-                        {
-                            'endpoints': ['auth'],
-                            'servers': ['backup']
-                        }
-                    ]
-                }
-            ]
+            'account': {
+                'ikey': 'AAA101020K12K1K23',
+                'skey': 'jyJKYAGJKAYGDKJgyJygFUg9F9gyFuo9',
+                'hostname': 'api-test.first.duosecurity.com',
+                'endpoint_server_mappings': [
+                    {
+                        'endpoints': ['adminaction', 'auth'],
+                        'servers': ['main server', 'backup']
+                    },
+                    {
+                        'endpoints': ['telephony'],
+                        'servers': ['backup']
+                    }
+                ],
+                'is_msp': True,
+                'block_list': []
+            }
         }
 
         config = Config.create_config(config_filepath)
@@ -198,12 +225,28 @@ class TestConfig(TestCase):
 
     @patch('duologsync.program.Program.initiate_shutdown',
            side_effect=running_is_false)
-    def test_create_config_with_polling_too_low(self, mock_initiate_shutdown):
-        config_filepath = 'tests/resources/config_files/polling_too_low.yml'
+    def test_create_config_with_bad_values(self, mock_initiate_shutdown):
+        config_filepath = 'tests/resources/config_files/bad_values.yml'
 
         config = Config.create_config(config_filepath)
 
         mock_initiate_shutdown.assert_called_once()
+
+    def test_create_config_with_no_defaults_set(self):
+        config_filepath = 'tests/resources/config_files/no_defaults_set.yml'
+
+        config = Config.create_config(config_filepath)
+
+        self.assertNotEqual(config['dls_settings']['log_filepath'], None)
+        self.assertNotEqual(config['dls_settings']['log_format'], None)
+        self.assertNotEqual(config['dls_settings']['api']['offset'], None)
+        self.assertNotEqual(config['dls_settings']['api']['timeout'], None)
+        self.assertNotEqual(
+            config['dls_settings']['checkpointing']['enabled'], None)
+        self.assertNotEqual(
+            config['dls_settings']['checkpointing']['directory'], None)
+        self.assertNotEqual(config['account']['is_msp'], None)
+        self.assertNotEqual(config['account']['block_list'], None)
 
     def test_get_value_from_keys_normal(self):
         dictionary = {'level_one': '2FA',

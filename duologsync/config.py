@@ -281,7 +281,7 @@ class Config:
     @classmethod
     def get_account_endpoint_server_mappings(cls):
         """@return the endpoint_server_mappings of the account in config"""
-        return cls.get_value(['account', 'ikey'])
+        return cls.get_value(['account', 'endpoint_server_mappings'])
 
     @classmethod
     def get_account_block_list(cls):

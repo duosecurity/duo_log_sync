@@ -9,7 +9,7 @@ servers:
     hostname: 'safesiem.org'
     port: 13031
     protocol: 'UDP'
-accounts:
+account:
   ikey: 'AAA101020K12K1K23'
   skey: 'jyJKYAGJKAYGDKJgyJygFUg9F9gyFuo9'
   hostname: 'api-test.first.duosecurity.com'
