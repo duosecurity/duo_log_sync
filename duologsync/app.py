@@ -53,10 +53,10 @@ def main():
     Program.setup_logging(Config.get_log_filepath())
 
     # Dict of writers (server id: writer) to be used for consumer tasks
-    writers = Writer.create_writers(Config.get_servers())
+    server_to_writer = Writer.create_writers(Config.get_servers())
 
     # List of Producer/Consumer objects as asyncio tasks to be run
-    tasks = create_tasks(Config.get_accounts(), writers)
+    tasks = create_tasks(server_to_writer)
 
     # Run the Producers and Consumers
     asyncio.get_event_loop().run_until_complete(asyncio.gather(*tasks))
@@ -78,38 +78,37 @@ def sigint_handler(signal_number, stack_frame):
         Program.log(f"DuoLogSync: stack frame from Ctrl-C is {stack_frame}",
                     logging.INFO)
 
-def create_tasks(accounts, server_to_writer):
+def create_tasks(server_to_writer):
     """
     Create a pair of Producer-Consumer objects for each endpoint enabled within
-    each account in the accounts list and return a list containing the asyncio
-    tasks for running those objects.
+    the account defined in config, or retrieve child accounts and do the same
+    if the account is MSP. Return a list containing the asyncio tasks for
+    running those objects.
 
-    @param accounts List of accounts for which Producer / Consumer objects
-                    shall be created
     @param writer   Dictionary mapping server ids to writer objects
 
     @return list of asyncio tasks for running the Producer and Consumer objects
     """
     tasks = []
 
-    for account in accounts:
-        # If account['is_msp'], retrieve and iterate all child accounts,
-        # future Accounts API change! Stay Tuned!!
-        # Do a set comparison between child accounts received and the blocklist
-        # AKA children NAND blocklist == working_set
+    # Object with functions needed to utilize log API calls
+    admin = create_admin(
+        Config.get_account_ikey(), Config.get_account_skey(),
+        Config.get_account_hostname())
 
-        # Object with functions needed to utilize log API calls
-        admin = create_admin(account['ikey'], account['skey'],
-                             account['hostname'])
+    # This is where functionality would be added to check if an account is MSP
+    # (Config.account_is_msp), and then retrieve child accounts (ignoring those
+    # in a blocklist) if the account is indeed MSP
 
-        for mapping in account['endpoint_server_mappings']:
-            # Get list of writers to be used for this set of endpoints
-            writers = [server_to_writer[name] for name in mapping['servers']]
-            new_tasks = create_consumer_producer_pairs(mapping['endpoints'],
-                                                       writers, admin)
+    for mapping in Config.get_account_endpoint_server_mappings():
+        # Get list of writers to be used for this set of endpoints
+        writers = [
+            server_to_writer[server] for server in mapping.get('servers')]
+        new_tasks = create_consumer_producer_pairs(
+            mapping.get('endpoints'), writers, admin)
 
-            # Add the tasks in result to the ever growing list of tasks
-            tasks.extend(new_tasks)
+        # Add the tasks in result to the ever growing list of tasks
+        tasks.extend(new_tasks)
 
     return tasks
 

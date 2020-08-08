@@ -264,9 +264,34 @@ class Config:
         return cls.get_value(['servers'])
 
     @classmethod
-    def get_account(cls):
-        """@return the list of accounts from which Duo logs will be fetched"""
-        return cls.get_value(['account'])
+    def get_account_ikey(cls):
+        """@return the ikey of the account in config"""
+        return cls.get_value(['account', 'ikey'])
+
+    @classmethod
+    def get_account_skey(cls):
+        """@return the skey of the account in config"""
+        return cls.get_value(['account', 'skey'])
+
+    @classmethod
+    def get_account_hostname(cls):
+        """@return the hostname of the account in config"""
+        return cls.get_value(['account', 'hostname'])
+
+    @classmethod
+    def get_account_endpoint_server_mappings(cls):
+        """@return the endpoint_server_mappings of the account in config"""
+        return cls.get_value(['account', 'ikey'])
+
+    @classmethod
+    def get_account_block_list(cls):
+        """@return the block_list of the account in config"""
+        return cls.get_value(['account', 'block_list'])
+
+    @classmethod
+    def account_is_msp(cls):
+        """@return whether the account in config is an MSP account"""
+        return cls.get_value(['account', 'is_msp'])
 
     @classmethod
     def create_config(cls, config_filepath):
