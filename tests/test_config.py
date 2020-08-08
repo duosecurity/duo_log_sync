@@ -80,7 +80,7 @@ class TestConfig(TestCase):
         self.assertEqual(checkpointing_enabled, False)
 
     def test_get_checkpoint_dir(self):
-        config = {'dls_settings': {'checkpointing': {'checkpoint_dir': '/tmp'}}}
+        config = {'dls_settings': {'checkpointing': {'directory': '/tmp'}}}
 
         Config.set_config(config)
         checkpoint_dir = Config.get_checkpoint_dir()
