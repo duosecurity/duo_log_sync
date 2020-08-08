@@ -29,6 +29,14 @@ class Config:
     AUTH = 'auth'
     TELEPHONY = 'telephony'
 
+    DIRECTORY_DEFAULT = '/tmp'
+    LOG_FILEPATH_DEFAULT = DIRECTORY_DEFAULT + '/' + 'duologsync.log'
+    LOG_FORMAT_DEFAULT = 'JSON'
+    API_OFFSET_DEFAULT = 180
+    API_TIMEOUT_DEFAULT = 120
+    CHECKPOINTING_ENABLED_DEFAULT = False
+    CHECKPOINTING_DIRECTORY_DEFAULT = DIRECTORY_DEFAULT
+
     # Version of the config file
     VERSION = {
         'type': 'string',
@@ -39,52 +47,48 @@ class Config:
     # Fields for changing the functionality of DuoLogSync
     DLS_SETTINGS = {
         'type': 'dict',
-        'required': True,
+        'default': {},
         'schema': {
             'log_filepath': {
                 'type': 'string',
-                'required': True,
-                'empty': False
+                'empty': False,
+                'default': LOG_FILEPATH_DEFAULT
             },
             'log_format': {
                 'type': 'string',
-                'required': True,
                 'empty': False,
-                'allowed': [CEF, JSON]
+                'allowed': [CEF, JSON],
+                'default': LOG_FORMAT_DEFAULT
             },
             'api': {
                 'type': 'dict',
-                'required': True,
+                'default': {},
                 'schema': {
                     'offset': {
                         'type': 'number',
-                        'required': True,
                         'min': 0,
-                        'max': 180
+                        'max': 180,
+                        'default': API_OFFSET_DEFAULT
                     },
                     'timeout': {
                         'type': 'number',
-                        'required': True,
-                        'min': 120
+                        'min': 120,
+                        'default': API_TIMEOUT_DEFAULT
                     }
                 }
             },
             'checkpointing': {
                 'type': 'dict',
-                'required': True,
+                'default': {},
                 'schema': {
                     'enabled': {
                         'type': 'boolean',
-                        'required': True,
-                        'oneof': [
-                            {
-                                'allowed': [True],
-                                'dependencies': ['checkpoint_dir']
-                            },
-                            {'allowed': [False]}
-                        ]
+                        'default': CHECKPOINTING_ENABLED_DEFAULT
                     },
-                    'checkpoint_dir': {'type': 'string', 'empty': False}
+                    'directory': {
+                        'type': 'string',
+                        'empty': False,
+                        'default': CHECKPOINTING_DIRECTORY_DEFAULT}
                 }
             }
         }
@@ -144,9 +148,10 @@ class Config:
 
     # Account definition, which is used to access Duo logs and tell DLS which
     # logs to fetch and to which servers those logs should be sent
-    schema_registry.add(
-        'account',
-        {
+    ACCOUNT = {
+        'type': 'dict',
+        'required': True,
+        'schema': {
             'skey': {'type': 'string', 'required': True, 'empty': False},
             'ikey': {'type': 'string', 'required': True, 'empty': False},
             'hostname': {'type': 'string', 'required': True, 'empty': False},
@@ -156,17 +161,9 @@ class Config:
                 'required': True,
                 'schema': {'type': 'dict', 'schema': 'endpoint_server_mapping'}
             },
-            'is_msp': {'type': 'boolean'},
+            'is_msp': {'type': 'boolean', 'default': False},
             'block_list': {'type': 'list'}
         }
-    )
-
-    # List of accounts
-    ACCOUNTS = {
-        'type': 'list',
-        'required': True,
-        'minlength': 1,
-        'schema': {'type': 'dict', 'schema': 'account'}
     }
 
     # Schema for validating the structure of a config dictionary generated from
@@ -175,7 +172,7 @@ class Config:
         'version': VERSION,
         'dls_settings': DLS_SETTINGS,
         'servers': SERVERS,
-        'accounts': ACCOUNTS
+        'account': ACCOUNT
     }
 
     # Generate a Validator object with the given schema
@@ -267,9 +264,9 @@ class Config:
         return cls.get_value(['servers'])
 
     @classmethod
-    def get_accounts(cls):
+    def get_account(cls):
         """@return the list of accounts from which Duo logs will be fetched"""
-        return cls.get_value(['accounts'])
+        return cls.get_value(['account'])
 
     @classmethod
     def create_config(cls, config_filepath):
@@ -290,7 +287,7 @@ class Config:
 
                 # Check config against a schema to ensure all the needed fields
                 # and values are defined
-                cls._validate_config(config)
+                config = cls._validate_and_normalize_config(config)
 
         # Will occur when given a bad filepath or a bad file
         except OSError as os_error:
@@ -324,7 +321,7 @@ class Config:
         return None
 
     @classmethod
-    def _validate_config(cls, config):
+    def _validate_and_normalize_config(cls, config):
         """
         Use a schema and the cerberus library to validate that the given config
         dictionary has a valid structure
@@ -335,6 +332,9 @@ class Config:
         # Config is not a valid structure
         if not cls.SCHEMA_VALIDATOR.validate(config):
             raise ValueError
+
+        config = cls.SCHEMA_VALIDATOR.normalized(config)
+        return config
 
     @staticmethod
     def get_value_from_keys(dictionary, keys):
