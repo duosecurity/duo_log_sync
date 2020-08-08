@@ -1,18 +1,18 @@
 version: '1.0.0'
 dls_settings:
   log_filepath: '/tmp/duologsync.log'
-  log_format: 'JSON'
+  log_format: 'JASON'
   api:
-    offset: 180
-    timeout: 120
+    offset: 190
+    timeout: 17
   checkpointing:
     enabled: False
     directory: '/tmp/dls_checkpoints'
 servers:
   - id: 'main server'
     hostname: 'mysiem.com'
-    port: 8888
-    protocol: 'TCPSSL'
+    port: 88889
+    protocol: 'TCPSSLA'
     cert_filepath: 'cert.crt'
   - id: 'backup'
     hostname: 'safesiem.org'
@@ -25,7 +25,7 @@ accounts:
   endpoint_server_mappings:
     - endpoints: ['adminaction', 'auth']
       servers: ['main server', 'backup']
-    - endpoints: ['telephony']
+    - endpoints: ['telephonya']
       servers: ['backup']
   is_msp: True
   block_list: []

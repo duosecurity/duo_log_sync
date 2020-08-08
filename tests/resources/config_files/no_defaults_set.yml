@@ -1,13 +1,4 @@
 version: '1.0.0'
-dls_settings:
-  log_filepath: '/tmp/duologsync.log'
-  log_format: 'JSON'
-  api:
-    offset: 180
-    timeout: 120
-  checkpointing:
-    enabled: False
-    directory: '/tmp/dls_checkpoints'
 servers:
   - id: 'main server'
     hostname: 'mysiem.com'
@@ -27,5 +18,3 @@ accounts:
       servers: ['main server', 'backup']
     - endpoints: ['telephony']
       servers: ['backup']
-  is_msp: True
-  block_list: []

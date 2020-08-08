@@ -162,7 +162,7 @@ class Config:
                 'schema': {'type': 'dict', 'schema': 'endpoint_server_mapping'}
             },
             'is_msp': {'type': 'boolean', 'default': False},
-            'block_list': {'type': 'list'}
+            'block_list': {'type': 'list', 'default': []}
         }
     }
 

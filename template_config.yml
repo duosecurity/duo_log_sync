@@ -113,12 +113,9 @@ account:
 
   # Whether this account is a Duo MSP account with child accounts. If True,
   # then all the child accounts will be accessed and logs will be pulled for
-  # each child account
-  # DEFAULT: False
+  # each child account. Not required.
   is_msp: False
 
   # The child accounts that should not be accessed in the case this account
-  # is an MSP account.
-  # Only required if is_msp is True and if you need to block accounts from
-  # being accessed. It is fine to not include this field
+  # is an MSP account. Not required.
   block_list: []
