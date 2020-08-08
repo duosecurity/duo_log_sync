@@ -256,7 +256,7 @@ class Config:
     def get_checkpoint_dir(cls):
         """@return the directory where checkpoint files should be stored"""
         return cls.get_value(
-            ['dls_settings', 'checkpointing', 'checkpoint_dir'])
+            ['dls_settings', 'checkpointing', 'directory'])
 
     @classmethod
     def get_servers(cls):
@@ -335,7 +335,7 @@ class Config:
         # No exception raised during the try block, return config
         else:
             # Calculate offset as a timestamp and rewrite its value in config
-            offset = config['dls_settings']['api']['offset']
+            offset = config.get('dls_settings').get('api').get('offset')
             offset = datetime.utcnow() - timedelta(days=offset)
             config['dls_settings']['api']['offset'] = int(offset.timestamp())
             return config
