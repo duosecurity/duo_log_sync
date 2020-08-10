@@ -102,3 +102,5 @@ recoverFromCheckpoint:
 
 `recoverFromCheckpoint:
   enabled: False`
+
+- DLS also has a export script now that can be used for fetching authlog data and dumping it to local storage in json format. Customers can use these downloaded files to upload data to SIEMs that support it. 
