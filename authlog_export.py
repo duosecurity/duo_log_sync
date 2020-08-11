@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 from __future__ import print_function
 from __future__ import absolute_import
-import sys
+import argparse
 
 import duo_client
 import json
@@ -9,12 +9,26 @@ import logging
 from six.moves import input
 import time
 
-argv_iter = iter(sys.argv[1:])
+
 def get_next_arg(prompt):
-    try:
-        return next(argv_iter)
-    except StopIteration:
-        return input(prompt)
+    return input(prompt)
+
+
+def get_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--splunk",
+        help="Exported data will be in a Duo Splunk Connector format",
+        action='store_true'
+    )
+    parser.add_argument(
+        "--version",
+        help="Desired Authlog API version (1,2)",
+        choices=[1, 2],
+        default=1,
+        type=int
+    )
+    return parser.parse_args()
 
 
 def get_exported_logs(admin_api, from_date, to_date, file, splunk=False):
@@ -64,11 +78,24 @@ def get_exported_logs_v2(admin_api, from_date, to_date, file):
     while True:
         try:
             if next_offset:
-                authlogs = admin_api.get_authentication_log(api_version=2, mintime=mintime, maxtime=maxtime, limit=1000, next_offset=next_offset)
+                authlogs = admin_api.get_authentication_log(
+                    api_version=2,
+                    mintime=mintime,
+                    maxtime=maxtime,
+                    limit="1000",
+                    next_offset=next_offset,
+                    sort="ts:asc"
+                )
             else:
-                authlogs = admin_api.get_authentication_log(api_version=2, mintime=mintime, maxtime=maxtime, limit=1000)
+                authlogs = admin_api.get_authentication_log(
+                    api_version=2,
+                    mintime=mintime,
+                    maxtime=maxtime,
+                    limit="1000",
+                    sort="ts:asc"
+                )
             logging.info("Writing exported logs to authlog_data.json...")
-            for authlog in authlogs:
+            for authlog in authlogs['authlogs']:
                 exported_authlog_data.write(json.dumps(authlog, sort_keys=True) + '\n')
                 exported_authlog_data.flush()
 
@@ -83,6 +110,7 @@ if __name__ == '__main__':
     logging.basicConfig(filename="authlog_export.txt", level=logging.INFO)
 
     # Check args
+    args = get_args()
 
     # Configuration and information about objects to create.
     admin_api = duo_client.Admin(
@@ -91,13 +119,14 @@ if __name__ == '__main__':
         host=get_next_arg('API hostname ("api-....duosecurity.com"): '),
     )
 
-
     from_date = int(get_next_arg('Time in milliseconds to start fetching data from (UTC): '))
     to_date = int(get_next_arg('Time in milliseconds to fetch logs till (UTC): '))
     file_path_to_download_logs_to = get_next_arg('Path to download log file to: (/Users/Documents/data/)')
     file = file_path_to_download_logs_to + "authlog_data.json"
 
-    if version == 1:
-        get_exported_logs(admin_api, from_date, to_date, file, splunk=True)
-    elif version == 2:
+    if args.splunk:
+        get_exported_logs(admin_api, from_date, to_date, file, splunk=args.splunk)
+    elif args.version == 1:
+        get_exported_logs(admin_api, from_date, to_date, file, splunk=args.splunk)
+    elif args.version == 2:
         get_exported_logs_v2(admin_api, from_date, to_date, file)
