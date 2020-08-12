@@ -103,20 +103,19 @@ def create_tasks(server_to_writer):
     for mapping in Config.get_account_endpoint_server_mappings():
         # Get the writer to be used for this set of endpoints
         writer = server_to_writer[mapping.get('server')]
-        new_tasks = create_consumer_producer_pairs(
-            mapping.get('endpoints'), writer, admin)
 
-        # Add the tasks in result to the ever growing list of tasks
-        tasks.extend(new_tasks)
+        for endpoint in mapping.get('endpoints'):
+            new_tasks = create_consumer_producer_pair(endpoint, writer, admin)
+            tasks.extend(new_tasks)
 
     return tasks
 
-def create_consumer_producer_pairs(endpoints, writer, admin):
+def create_consumer_producer_pair(endpoint, writer, admin):
     """
     Create a pair of Producer-Consumer objects for each endpoint and return a
     list containing the asyncio tasks for running those objects.
 
-    @param endpoints    List of endpoints to create producers/consumers for
+    @param endpoint     Log type to create producer/consumer pair for
     @param writer       Object for writing logs to a server
     @param admin        Object from which to get the correct API endpoints
 
@@ -125,33 +124,25 @@ def create_consumer_producer_pairs(endpoints, writer, admin):
 
     # The format a log should have before being consumed and sent
     log_format = Config.get_log_format()
+    log_queue = asyncio.Queue()
+    producer = consumer = None
 
-    # List of Consumer / Writer tasks to be run in the Asyncio event loop
-    tasks = []
+    # Create the right pair of Producer-Consumer objects based on endpoint
+    if endpoint == Config.AUTH:
+        producer = AuthlogProducer(admin.get_authentication_log, log_queue)
+        consumer = AuthlogConsumer(log_format, log_queue, writer)
+    elif endpoint == Config.TELEPHONY:
+        producer = TelephonyProducer(admin.get_telephony_log, log_queue)
+        consumer = TelephonyConsumer(log_format, log_queue, writer)
+    elif endpoint == Config.ADMIN:
+        producer = AdminactionProducer(admin.get_administrator_log, log_queue)
+        consumer = AdminactionConsumer(log_format, log_queue, writer)
+    else:
+        Program.log(f"{endpoint} is not a recognized endpoint", logging.WARNING)
+        del log_queue
+        return []
 
-    # Enable endpoints based on user selection
-    for endpoint in endpoints:
-        log_queue = asyncio.Queue()
-        producer = consumer = None
-
-        # Create the right pair of Producer-Consumer objects based on endpoint
-        if endpoint == Config.AUTH:
-            producer = AuthlogProducer(admin.get_authentication_log, log_queue)
-            consumer = AuthlogConsumer(log_format, log_queue, writer)
-        elif endpoint == Config.TELEPHONY:
-            producer = TelephonyProducer(admin.get_telephony_log, log_queue)
-            consumer = TelephonyConsumer(log_format, log_queue, writer)
-        elif endpoint == Config.ADMIN:
-            producer = AdminactionProducer(admin.get_administrator_log,
-                                           log_queue)
-            consumer = AdminactionConsumer(log_format, log_queue, writer)
-        else:
-            Program.log(f"{endpoint} is not a recognized endpoint",
-                        logging.WARNING)
-            del log_queue
-            continue
-
-        tasks.append(asyncio.ensure_future(producer.produce()))
-        tasks.append(asyncio.ensure_future(consumer.consume()))
+    tasks = [asyncio.ensure_future(producer.produce()),
+             asyncio.ensure_future(consumer.consume())]
 
     return tasks
