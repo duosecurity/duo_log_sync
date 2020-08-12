@@ -21,7 +21,7 @@ class AuthlogConsumer(Consumer):
     An implementation of the Consumer class for auth logs
     """
 
-    def __init__(self, log_format, log_queue, writers):
-        super().__init__(log_format, log_queue, writers)
+    def __init__(self, log_format, log_queue, writer):
+        super().__init__(log_format, log_queue, writer)
         self.keys_to_labels = AUTHLOG_KEYS_TO_LABELS
         self.log_type = Config.AUTH

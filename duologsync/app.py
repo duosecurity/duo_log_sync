@@ -101,25 +101,24 @@ def create_tasks(server_to_writer):
     # in a blocklist) if the account is indeed MSP
 
     for mapping in Config.get_account_endpoint_server_mappings():
-        # Get list of writers to be used for this set of endpoints
-        writers = [
-            server_to_writer[server] for server in mapping.get('servers')]
+        # Get the writer to be used for this set of endpoints
+        writer = server_to_writer[mapping.get('server')]
         new_tasks = create_consumer_producer_pairs(
-            mapping.get('endpoints'), writers, admin)
+            mapping.get('endpoints'), writer, admin)
 
         # Add the tasks in result to the ever growing list of tasks
         tasks.extend(new_tasks)
 
     return tasks
 
-def create_consumer_producer_pairs(endpoints, writers, admin):
+def create_consumer_producer_pairs(endpoints, writer, admin):
     """
     Create a pair of Producer-Consumer objects for each endpoint and return a
     list containing the asyncio tasks for running those objects.
 
     @param endpoints    List of endpoints to create producers/consumers for
-    @param writers      List of writers to pass on to a consumer object
-    @param admin        Object from whcih to get the correct API endpoints
+    @param writer       Object for writing logs to a server
+    @param admin        Object from which to get the correct API endpoints
 
     @return list of asyncio tasks for running the Producer and Consumer objects
     """
@@ -138,14 +137,14 @@ def create_consumer_producer_pairs(endpoints, writers, admin):
         # Create the right pair of Producer-Consumer objects based on endpoint
         if endpoint == Config.AUTH:
             producer = AuthlogProducer(admin.get_authentication_log, log_queue)
-            consumer = AuthlogConsumer(log_format, log_queue, writers)
+            consumer = AuthlogConsumer(log_format, log_queue, writer)
         elif endpoint == Config.TELEPHONY:
             producer = TelephonyProducer(admin.get_telephony_log, log_queue)
-            consumer = TelephonyConsumer(log_format, log_queue, writers)
+            consumer = TelephonyConsumer(log_format, log_queue, writer)
         elif endpoint == Config.ADMIN:
             producer = AdminactionProducer(admin.get_administrator_log,
                                            log_queue)
-            consumer = AdminactionConsumer(log_format, log_queue, writers)
+            consumer = AdminactionConsumer(log_format, log_queue, writer)
         else:
             Program.log(f"{endpoint} is not a recognized endpoint",
                         logging.WARNING)

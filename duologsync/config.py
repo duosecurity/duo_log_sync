@@ -37,6 +37,9 @@ class Config:
     CHECKPOINTING_ENABLED_DEFAULT = False
     CHECKPOINTING_DIRECTORY_DEFAULT = DIRECTORY_DEFAULT
 
+    # To understand these schema definitions better, compare side-by-side to
+    # the template_config.yml file
+
     # Version of the config file
     VERSION = {
         'type': 'string',
@@ -133,7 +136,7 @@ class Config:
         'endpoint_server_mapping',
         {
             'servers': {
-                'type': 'list',
+                'type': 'string',
                 'empty': False,
                 'required': True
             },
