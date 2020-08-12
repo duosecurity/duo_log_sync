@@ -135,7 +135,7 @@ class Config:
     schema_registry.add(
         'endpoint_server_mapping',
         {
-            'servers': {
+            'server': {
                 'type': 'string',
                 'empty': False,
                 'required': True
