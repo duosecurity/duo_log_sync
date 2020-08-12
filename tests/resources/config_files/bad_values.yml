@@ -24,8 +24,8 @@ account:
   hostname: 'api-test.first.duosecurity.com'
   endpoint_server_mappings:
     - endpoints: ['adminaction', 'auth']
-      servers: ['main server', 'backup']
+      server: 'main server'
     - endpoints: ['telephonya']
-      servers: ['backup']
+      server: 'backup'
   is_msp: True
   block_list: []

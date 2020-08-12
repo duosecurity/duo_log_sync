@@ -15,6 +15,6 @@ account:
   hostname: 'api-test.first.duosecurity.com'
   endpoint_server_mappings:
     - endpoints: ['adminaction', 'auth']
-      servers: ['main server', 'backup']
+      server: 'main server'
     - endpoints: ['telephony']
-      servers: ['backup']
+      server: 'backup'

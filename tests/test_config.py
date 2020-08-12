@@ -181,11 +181,11 @@ class TestConfig(TestCase):
                 'endpoint_server_mappings': [
                     {
                         'endpoints': ['adminaction', 'auth'],
-                        'servers': ['main server', 'backup']
+                        'server': 'main server'
                     },
                     {
                         'endpoints': ['telephony'],
-                        'servers': ['backup']
+                        'server': 'backup'
                     }
                 ],
                 'is_msp': True,
