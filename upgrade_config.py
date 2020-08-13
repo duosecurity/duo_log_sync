@@ -11,10 +11,10 @@ DELETE = 'DELETE'
 # __version__.py? 
 CURRENT_CONFIG_VERSION = '1.0.0'
 
-# Patent pending, ingenius way to update config. Keep a list of changes between
-# config version, map the config version for the old config to the changes
-# needed to be made to upgrade an old config of that version to the newest
-# version. There are 4 types of changes that can be made:
+# 'Patent pending', ingenius way to update config. Keep a list of changes
+# between config version updates, map the config version for the old config to
+# the changes needed to be made to upgrade an old config of that version to the
+# config of the next version. There are 4 types of changes that can be made:
 #   1. ADD - add a new field to the config
 #   2. MOVE - move a value to a different field, getting rid of the old field
 #   3. EDIT - make a change to value of an old config
