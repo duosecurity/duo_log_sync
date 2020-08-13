@@ -5,6 +5,7 @@ Definition of the Writer class
 import asyncio
 import ssl
 import logging
+import socket
 from socket import gaierror
 from duologsync.program import Program
 
@@ -49,12 +50,14 @@ class Writer:
     def __init__(self, server):
         # Needed to determine what type of writer to create and how to use it
         self.protocol = server['protocol']
+        self.hostname = server['hostname']
+        self.port = server['port']
 
         # Create the actual writer
         self.writer = asyncio.get_event_loop().run_until_complete(
             self.create_writer(
-                server['hostname'],
-                server['port'],
+                self.hostname,
+                self.port,
                 server.get('cert_filepath')
             )
         )
@@ -88,7 +91,7 @@ class Writer:
         @param data The information to be written over a network connection
         """
         if self.protocol == 'UDP':
-            self.writer.sendto(data)
+            self.writer.sendto(data, (self.hostname, self.port))
         else:
             self.writer.write(data)
             await self.writer.drain()
@@ -115,7 +118,7 @@ class Writer:
 
         try:
             if self.protocol == 'UDP':
-                writer = await Writer.create_udp_writer(host, port)
+                writer = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
             elif self.protocol == 'TCPSSL':
                 ssl_context = ssl.create_default_context(
@@ -149,29 +152,6 @@ class Writer:
         Program.initiate_shutdown(shutdown_reason)
         Program.log(help_message, logging.ERROR)
         return None
-
-    @staticmethod
-    async def create_udp_writer(host, port):
-        """
-        Wrapper around the create_datagram_endpoint function for creating
-        UDP connections.
-
-        @param host Hostname of the network conneciton to establish
-        @param port Port of the network connection to establish
-
-        @return an asyncio object used to write data over a network connection
-                using UDP
-        """
-
-        writer, _ = await asyncio.wait_for(
-            asyncio.get_event_loop().create_datagram_endpoint(
-                lambda: DatagramProtocol(host, port),
-                remote_addr=(host, port)
-            ),
-            timeout=60
-        )
-
-        return writer
 
     @staticmethod
     async def create_tcp_writer(host, port, ssl_context=None):
