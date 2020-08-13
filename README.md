@@ -36,16 +36,26 @@ Duologsync is a utility written by Duo Security to enable fetching logs from dif
 ##### Work in progress
 
 - Adding more log endpoints
-- Encrypting skey within config file
+- Adding better skey security
+- Support for MSP accounts
 
 ---
 
 ##### Compatibility
 
 - Duologsync is compatible with python versions `3.6`, `3.7` and `3.8`.
-- Duologsync is officially supported only on UNIX systems.
+- Duologsync is officially supported on Linux, MacOS, and Windows systems.
+
 ---
 
 ##### Configuration
 
-- Check `template_config.py` for an example and extensive config explanation
+- Check `template_config.py` for an example and for extensive, in-depth config explanation
+
+---
+
+##### Upgrading Your Config File
+- From time to time new features and fields will be added to the config file. Updating of the config file will be mandatory if a config change is made. To make this easier on you, Duo has created a script called `upgrade_config.py` which will automatically update your old config for you.
+- To use the `upgrade_config.py` script, simply run the following command: `python3 upgrade_config.py <old_config> <new_config>` where `<old_config>` is the filepath or your old configuration file, and `<new_config>` is where you would like the new configuration file to be saved.
+- The `upgrade_config.py` script will not delete your old config file, it will be preserved.
+- This script is a new feature and has to extrapolate some information, some unexpected issues may occur. For most old configs the script will work just fine. You can check if the new config file works by running it with DLS.
