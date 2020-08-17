@@ -53,34 +53,38 @@ class Consumer():
             last_log_written = None
             successful_write = False
 
-            try:
-                Program.log(f"{self.log_type} consumer: writing logs",
-                            logging.INFO)
-                for log in logs:
-                    await self.writer.write(self.format_log(log))
-                    last_log_written = log
+            # If we are sending empty [] to unblock consumers, nothing should be written to file
+            if logs:
+                try:
+                    Program.log(f"{self.log_type} consumer: writing logs",
+                                logging.INFO)
+                    for log in logs:
+                        await self.writer.write(self.format_log(log))
+                        last_log_written = log
 
-                # All the logs were written successfully
-                successful_write = True
+                    # All the logs were written successfully
+                    successful_write = True
 
-            # Specifically watch out for errno 32 - Broken pipe. This means
-            # that the connect established by writer was reset or shutdown.
-            except BrokenPipeError as broken_pipe_error:
-                shutdown_reason = f"{broken_pipe_error}"
-                Program.initiate_shutdown(shutdown_reason)
-                Program.log("DuoLogSync: connection to server was reset",
-                            logging.WARNING)
+                # Specifically watch out for errno 32 - Broken pipe. This means
+                # that the connect established by writer was reset or shutdown.
+                except BrokenPipeError as broken_pipe_error:
+                    shutdown_reason = f"{broken_pipe_error}"
+                    Program.initiate_shutdown(shutdown_reason)
+                    Program.log("DuoLogSync: connection to server was reset",
+                                logging.WARNING)
 
-            finally:
-                if successful_write:
-                    Program.log(f"{self.log_type} consumer: successfully wrote "
-                                "all logs", logging.INFO)
-                else:
-                    Program.log(f"{self.log_type} consumer: failed to write "
-                                "some logs", logging.WARNING)
+                finally:
+                    if successful_write:
+                        Program.log(f"{self.log_type} consumer: successfully wrote "
+                                    "all logs", logging.INFO)
+                    else:
+                        Program.log(f"{self.log_type} consumer: failed to write "
+                                    "some logs", logging.WARNING)
 
-                self.log_offset = Producer.get_log_offset(last_log_written)
-                self.update_log_checkpoint(self.log_type, self.log_offset)
+                    self.log_offset = Producer.get_log_offset(last_log_written)
+                    self.update_log_checkpoint(self.log_type, self.log_offset)
+            else:
+                Program.log(f"{self.log_type} consumer: No logs to write", logging.INFO)
 
         Program.log(f"{self.log_type} consumer: shutting down", logging.INFO)
 
@@ -122,7 +126,7 @@ class Consumer():
 
         # Open file checkpoint_filename in writing mode only
         checkpoint_file = open(checkpoint_filename, 'w')
-        checkpoint_file.write(json.dumps(log_offset))
+        checkpoint_file.write(json.dumps(log_offset) + '\n')
 
         # According to Python docs, closing a file also flushes the file
         checkpoint_file.close()

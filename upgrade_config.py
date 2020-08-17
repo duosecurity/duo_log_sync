@@ -100,6 +100,14 @@ def upgrade_config(old_config_path):
         config_file_data = config_file.read()
         config = yaml.full_load(config_file_data)
 
+        # Both cert related parameters are optional in old config and may not exist. Initializing
+        # those to '' so that upgrade script can work properly
+        if not config.get('transport').get('certFileDir'):
+            config['transport']['certFileDir'] = ''
+
+        if not config.get('transport').get('certFileName'):
+            config['transport']['certFileName'] = ''
+
         # Check if the config has a version, if it doesn't then it is the
         # oldest config, and give it a version of '0.0.0'
         if not config.get('version', False):
@@ -140,7 +148,7 @@ def apply_changeset(config):
     config = apply_add_changeset(config, changeset.get(ADD))
     config = apply_move_changeset(config, changeset.get(MOVE))
     config = apply_edit_changeset(config, changeset.get(EDIT))
-    config = apply_delete_changeset(config,changeset.get(DELETE))
+    config = apply_delete_changeset(config, changeset.get(DELETE))
     return config
 
 def apply_hard_coded_changes(config, version):

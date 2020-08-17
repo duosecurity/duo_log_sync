@@ -4,7 +4,9 @@ Definition of the Producer class
 
 import logging
 import functools
+import datetime
 from socket import gaierror
+import six
 from duologsync.util import get_log_offset, run_in_executor, restless_sleep
 from duologsync.config import Config
 from duologsync.program import Program, ProgramShutdownError
@@ -47,7 +49,11 @@ class Producer():
                 Program.log(f"{self.log_type} producer: fetching logs",
                             logging.INFO)
                 api_result = await self.call_log_api()
-                await self.add_logs_to_queue(self.get_logs(api_result))
+                if api_result:
+                    await self.add_logs_to_queue(self.get_logs(api_result))
+                else:
+                    Program.log(f"{self.log_type} producer: no new logs available",
+                                logging.INFO)
 
             # Horribly messed up hostname was provided for duoclient host
             except (gaierror, OSError) as error:
@@ -79,19 +85,19 @@ class Producer():
         @param logs The logs to be added
         """
 
-        if logs:
-            # Important for recovery in the event of a crash
-            self.log_offset = Producer.get_log_offset(logs[-1])
+        # Important for recovery in the event of a crash
+        self.log_offset = Producer.get_log_offset(logs)
 
-            Program.log(f"{self.log_type} producer: adding {len(logs)} "
-                        "logs to the queue", logging.INFO)
-            await self.log_queue.put(logs)
-            Program.log(f"{self.log_type} producer: added {len(logs)} "
-                        "logs to the queue", logging.INFO)
+        # Authlogs v2 endpoint returns dict response
+        if isinstance(logs, dict):
+            logs = logs['authlogs']
 
-        else:
-            Program.log(f"{self.log_type} producer: no new logs available",
-                        logging.INFO)
+        Program.log(f"{self.log_type} producer: adding {len(logs)} "
+                    "logs to the queue", logging.INFO)
+
+        await self.log_queue.put(logs)
+        Program.log(f"{self.log_type} producer: added {len(logs)} "
+                    "logs to the queue", logging.INFO)
 
     async def call_log_api(self):
         """
@@ -136,11 +142,26 @@ class Producer():
         @return the offset of the log
         """
 
-        timestamp = log['timestamp']
-        txid = log.get('txid')
+        # In case of authlogs, dict is returned as response. So we check for that and record
+        # information from metadata field. This is applicable for producer log offset
+        # Elif loops are considered when offset is calculated for checkpointing. Here logs will be
+        # of type dict. Authlog will have txid field in addition to timestamp field which can be
+        # used for identification. Direct timestamp field cannot be used since it loses precision.
+        # Hence calculating timestamp from isotimestamp field.
+        if isinstance(log, dict):
+            if log.get('authlogs') and log.get('metadata').get('next_offset') is not None:
+                return log.get('metadata').get('next_offset')
 
-        if txid:
-            timestamp *= 1000
-            return [str(timestamp), txid]
+            if log.get('isotimestamp') and log.get('txid'):
+                value = int((datetime.datetime.strptime
+                             (six.ensure_str(log.get('isotimestamp')),
+                              "%Y-%m-%dT%H:%M:%S.%f+00:00") - datetime.datetime(1970, 1, 1)).
+                            total_seconds() * 1000)
+                return [six.ensure_str(str(value)), log.get('txid')]
 
-        return timestamp + 1
+            if log.get('timestamp'):
+                return log.get('timestamp') + 1
+
+        else:
+            timestamp = log[-1]['timestamp']
+            return timestamp + 1

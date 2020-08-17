@@ -59,4 +59,4 @@ class AuthlogProducer(Producer):
                 authentication log endpoint
         """
 
-        return api_result.get('authlogs')
+        return api_result
