@@ -1,0 +1,20 @@
+[MASTER]
+# needed for -E
+persistent=no
+
+
+[MESSAGES CONTROL]
+# XXX: ignoring E0203 since decorators add class members.
+# XXX: ignoring E1002 since pylint gets confused about parent/super class things
+# XXX: ignoring E1137 since pylint gets doesn't like variables initialized as `None`.
+# disable=W,C,R, I used for -E options
+disable=E0203,E1002,E1103,E1137,W,C,R,I
+enable=W0102
+
+
+[REPORTS]
+output-format=colorized
+msg-template='{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}'
+# needed for -E
+reports=no
+score=no

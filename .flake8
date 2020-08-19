@@ -1,0 +1,16 @@
+[flake8]
+ignore =
+        W503,  # line break before binary operator
+        E203,  # whitespace before :
+        E261,  # two spaces before inline comment
+        E262,  # space between # and inline comment text
+        E265,  # space between # and block comment text
+        E266,  # There Can Be Only One (# preceding a comment)
+        E302,  # two blank lines between functions and classes
+        E303,  # two blank lines between functions and classes; one between methods 
+        E305,  # two blank lines after functions and classes
+        E501,  # line too long
+        F821,  # undefined name
+        F841,  # local variable `name` is assigned to but never used
+        F401,  # imported but unused
+        F403,  # unable to detect undefined names

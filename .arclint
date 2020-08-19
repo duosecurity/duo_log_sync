@@ -1,0 +1,12 @@
+{
+  "linters": {
+    "flake8": {
+      "type": "flake8",
+      "include": "(\\.py$)"
+    },
+    "pylint": {
+      "type": "pylint",
+      "include": "(\\.py$)"
+    }
+  }
+}
