@@ -86,7 +86,7 @@ class Producer():
         """
 
         # Important for recovery in the event of a crash
-        self.log_offset = Producer.get_log_offset(logs)
+        self.log_offset = Producer.get_log_offset(logs, current_log_offset=self.log_offset)
 
         # Authlogs v2 endpoint returns dict response
         if isinstance(logs, dict):
@@ -133,7 +133,7 @@ class Producer():
         return api_result
 
     @staticmethod
-    def get_log_offset(log):
+    def get_log_offset(log, current_log_offset=None):
         """
         Get offset information given an individual log.
 
@@ -161,6 +161,8 @@ class Producer():
 
             if log.get('timestamp'):
                 return log.get('timestamp') + 1
+
+            return current_log_offset
 
         else:
             timestamp = log[-1]['timestamp']

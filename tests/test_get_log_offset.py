@@ -40,3 +40,9 @@ class TestGetLogOffset(TestCase):
         telephony_current_offset = telephony_response[0]['timestamp'] + 1
         telephony_offset_to_set = Producer.get_log_offset(telephony_response[0])
         self.assertEqual(telephony_current_offset, telephony_offset_to_set)
+
+    def test_offset_is_retained_when_no_logs(self):
+        sample_authlog_response = {'authlogs': [], 'metadata': {'next_offset': None, 'total_objects': 94}}
+        current_log_offset = ['1596815692352', 'aecef809-a026-464f-9ba6-cc88920cd55d']
+        new_log_offset = Producer.get_log_offset(sample_authlog_response, current_log_offset)
+        self.assertEqual(current_log_offset, new_log_offset)
