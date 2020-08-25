@@ -11,8 +11,10 @@ import duo_client
 from duologsync.config import Config
 from duologsync.program import Program, ProgramShutdownError
 from duologsync.__version__ import __version__
+import six
 
 EXECUTOR = ThreadPoolExecutor(3)
+
 
 async def restless_sleep(duration):
     """
@@ -36,6 +38,7 @@ async def restless_sleep(duration):
         # Otherwise, program is done running, raise an exception to be caught
         raise ProgramShutdownError
 
+
 async def run_in_executor(function_obj):
     """
     The function represented by function_obj is a high latency call which will
@@ -55,7 +58,8 @@ async def run_in_executor(function_obj):
 
     return result
 
-def get_log_offset(log_type, recover_log_offset, checkpoint_directory):
+
+def get_log_offset(log_type, recover_log_offset, checkpoint_directory, child_account_id=None):
     """
     Retrieve the offset from which logs of log_type should be fetched either by
     using the default offset or by using a timestamp saved in a checkpoint file
@@ -78,11 +82,15 @@ def get_log_offset(log_type, recover_log_offset, checkpoint_directory):
     # In this case, look for a checkpoint file from which to read the log offset
     if recover_log_offset:
         try:
-            # Open the checkpoint file, 'with' statement automatically closes it
-            with open(os.path.join(
-                    checkpoint_directory,
-                    f"{log_type}_checkpoint_data.txt")) as checkpoint:
+            checkpoint_file_path = os.path.join(
+                checkpoint_directory,
+                f"{log_type}_checkpoint_data_" + child_account_id + ".txt")\
+                if child_account_id else os.path.join(
+                checkpoint_directory,
+                f"{log_type}_checkpoint_data.txt")
 
+            # Open the checkpoint file, 'with' statement automatically closes it
+            with open(checkpoint_file_path) as checkpoint:
                 # Set log_offset equal to the contents of the checkpoint file
                 log_offset = json.loads(checkpoint.read())
 
@@ -93,7 +101,8 @@ def get_log_offset(log_type, recover_log_offset, checkpoint_directory):
 
     return log_offset
 
-def create_admin(ikey, skey, host):
+
+def create_admin(ikey, skey, host, is_msp=False):
     """
     Create an Admin object (from the duo_client library) with the given values.
     The Admin object has many functions for using Duo APIs and retrieving logs.
@@ -101,17 +110,49 @@ def create_admin(ikey, skey, host):
     @param ikey Duo Client ID (Integration Key)
     @param skey Duo Client Secret for proving identity / access (Secrey Key)
     @param host URI where data / logs will be fetched from
+    @param is_msp Indicates where we are using MSP account for logs retrieval
 
     @return a newly created Admin object
     """
 
-    admin = duo_client.Admin(
-        ikey=ikey,
-        skey=skey,
-        host=host,
-        user_agent=f"Duo Log Sync/{__version__}"
-    )
+    if is_msp:
+        admin = duo_client.Accounts(
+            ikey=ikey,
+            skey=skey,
+            host=host,
+            user_agent=f"Duo Log Sync/{__version__}"
+        )
+        Program.log(f"duo_client Account_Admin initialized for ikey: {ikey}, host: {host}",
+                    logging.INFO)
+    else:
+        admin = duo_client.Admin(
+            ikey=ikey,
+            skey=skey,
+            host=host,
+            user_agent=f"Duo Log Sync/{__version__}"
+        )
+        Program.log(f"duo_client Admin initialized for ikey: {ikey}, host: {host}",
+                    logging.INFO)
 
-    Program.log(f"duo_client Admin initialized for ikey: {ikey}, host: {host}",
-                logging.INFO)
     return admin
+
+
+def normalize_params(params):
+    """
+    Return copy of params with strings listified
+    and unicode strings utf-8 encoded.
+    """
+    # urllib cannot handle unicode strings properly. quote() excepts,
+    # and urlencode() replaces them with '?'.
+    def encode(value):
+        if isinstance(value, six.text_type):
+            return value.encode("utf-8")
+        return value
+
+    def to_list(value):
+        if value is None or isinstance(value, six.string_types):
+            return [value]
+        return value
+    return dict(
+        (encode(key), [encode(v) for v in to_list(value)])
+        for (key, value) in list(params.items()))

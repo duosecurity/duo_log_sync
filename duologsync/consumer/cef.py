@@ -2,6 +2,8 @@
 Definition of functions for creating CEF-type logs
 """
 
+import socket
+from datetime import datetime
 from duologsync.config import Config
 from duologsync.__version__ import __version__
 
@@ -25,9 +27,18 @@ def log_to_cef(log, keys_to_labels):
     @return a CEF-type log created from the given log
     """
 
+    # Every cef formatted log should start with current date time and host from which logs
+    # are sent
+    syslog_date = datetime.now()
+    syslog_date_time = syslog_date.strftime("%b %d %H:%M:%S")
+    syslog_header = ' '.join([syslog_date_time, socket.gethostname()])
+
     # Additional required prefix fields
-    signature_id = log['eventtype']
-    name = log['eventtype']
+    signature_id = log.get('eventtype', '')
+    if signature_id == 'administrator':
+        name = log.get('action', '')
+    else:
+        name = log.get('eventtype', '')
 
     # Construct the beginning of the CEF message
     header = '|'.join([
@@ -36,7 +47,8 @@ def log_to_cef(log, keys_to_labels):
     ])
 
     extension = _construct_extension(log, keys_to_labels)
-    cef_log = header + '|' + extension
+    msg = header + '|' + extension
+    cef_log = ' '.join([syslog_header, msg])
 
     return cef_log
 

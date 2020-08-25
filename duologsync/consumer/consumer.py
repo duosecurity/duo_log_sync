@@ -10,6 +10,7 @@ from duologsync.program import Program
 from duologsync.producer.producer import Producer
 from duologsync.consumer.cef import log_to_cef
 
+
 class Consumer():
     """
     Read logs from a queue shared with a producer object and write those logs
@@ -19,13 +20,14 @@ class Consumer():
     progress if a crash occurs.
     """
 
-    def __init__(self, log_format, log_queue, writer):
+    def __init__(self, log_format, log_queue, writer, child_account_id=None):
         self.keys_to_labels = {}
         self.log_format = log_format
         self.log_type = 'default'
         self.log_queue = log_queue
         self.writer = writer
         self.log_offset = None
+        self.child_account_id = child_account_id
 
     async def consume(self):
         """
@@ -59,6 +61,8 @@ class Consumer():
                     Program.log(f"{self.log_type} consumer: writing logs",
                                 logging.INFO)
                     for log in logs:
+                        if self.child_account_id:
+                            log['child_account_id'] = self.child_account_id
                         await self.writer.write(self.format_log(log))
                         last_log_written = log
 
@@ -82,9 +86,11 @@ class Consumer():
                                     "some logs", logging.WARNING)
 
                     self.log_offset = Producer.get_log_offset(last_log_written)
-                    self.update_log_checkpoint(self.log_type, self.log_offset)
+                    self.update_log_checkpoint(
+                        self.log_type, self.log_offset, self.child_account_id)
             else:
-                Program.log(f"{self.log_type} consumer: No logs to write", logging.INFO)
+                Program.log(
+                    f"{self.log_type} consumer: No logs to write", logging.INFO)
 
         Program.log(f"{self.log_type} consumer: shutting down", logging.INFO)
 
@@ -104,12 +110,13 @@ class Consumer():
         elif self.log_format == Config.JSON:
             formatted_log = json.dumps(log)
         else:
-            raise ValueError(f"{self.log_format} is not a supported log format")
+            raise ValueError(
+                f"{self.log_format} is not a supported log format")
 
         return formatted_log.encode() + b'\n'
 
     @staticmethod
-    def update_log_checkpoint(log_type, log_offset):
+    def update_log_checkpoint(log_type, log_offset, child_account_id):
         """
         Save log_offset to the checkpoint file for log_type.
 
@@ -120,9 +127,14 @@ class Consumer():
         Program.log(f"{log_type} consumer: saving latest log offset to a "
                     "checkpointing file", logging.INFO)
 
-        checkpoint_filename = os.path.join(
+        file_path = os.path.join(
             Config.get_checkpoint_dir(),
-            f"{log_type}_checkpoint_data.txt")
+            f"{log_type}_checkpoint_data_" + child_account_id + ".txt")\
+            if child_account_id else os.path.join(
+                Config.get_checkpoint_dir(),
+                f"{log_type}_checkpoint_data.txt")
+
+        checkpoint_filename = file_path
 
         # Open file checkpoint_filename in writing mode only
         checkpoint_file = open(checkpoint_filename, 'w')

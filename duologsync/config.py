@@ -75,7 +75,6 @@ class Config:
                     },
                     'timeout': {
                         'type': 'number',
-                        'min': 120,
                         'default': API_TIMEOUT_DEFAULT
                     }
                 }
@@ -316,6 +315,9 @@ class Config:
                 # Check config against a schema to ensure all the needed fields
                 # and values are defined
                 config = cls._validate_and_normalize_config(config)
+                if config.get('dls_settings').get('api').get('timeout') < cls.API_TIMEOUT_DEFAULT:
+                    config['dls_settings']['api']['timeout'] = cls.API_TIMEOUT_DEFAULT
+                    Program.log('DuoLogSync: Setting default api timeout to 120 seconds.')
 
         # Will occur when given a bad filepath or a bad file
         except OSError as os_error:

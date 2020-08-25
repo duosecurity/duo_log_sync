@@ -94,23 +94,37 @@ def create_tasks(server_to_writer):
     # Object with functions needed to utilize log API calls
     admin = create_admin(
         Config.get_account_ikey(), Config.get_account_skey(),
-        Config.get_account_hostname())
+        Config.get_account_hostname(), is_msp=Config.account_is_msp())
 
     # This is where functionality would be added to check if an account is MSP
     # (Config.account_is_msp), and then retrieve child accounts (ignoring those
     # in a blocklist) if the account is indeed MSP
+    # TODO: Implement blocklist
+    if Config.account_is_msp():
+        child_account = admin.get_child_accounts()
+        child_accounts_id = [account['account_id'] for account in child_account]
 
-    for mapping in Config.get_account_endpoint_server_mappings():
-        # Get the writer to be used for this set of endpoints
-        writer = server_to_writer[mapping.get('server')]
+        for account in child_accounts_id:
+            # TODO: This can be made into a separate function
+            for mapping in Config.get_account_endpoint_server_mappings():
+                # Get the writer to be used for this set of endpoints
+                writer = server_to_writer[mapping.get('server')]
 
-        for endpoint in mapping.get('endpoints'):
-            new_tasks = create_consumer_producer_pair(endpoint, writer, admin)
-            tasks.extend(new_tasks)
+                for endpoint in mapping.get('endpoints'):
+                    new_tasks = create_consumer_producer_pair(endpoint, writer, admin, account)
+                    tasks.extend(new_tasks)
+    else:
+        for mapping in Config.get_account_endpoint_server_mappings():
+            # Get the writer to be used for this set of endpoints
+            writer = server_to_writer[mapping.get('server')]
+
+            for endpoint in mapping.get('endpoints'):
+                new_tasks = create_consumer_producer_pair(endpoint, writer, admin)
+                tasks.extend(new_tasks)
 
     return tasks
 
-def create_consumer_producer_pair(endpoint, writer, admin):
+def create_consumer_producer_pair(endpoint, writer, admin, child_account=None):
     """
     Create a pair of Producer-Consumer objects for each endpoint and return a
     list containing the asyncio tasks for running those objects.
@@ -118,6 +132,7 @@ def create_consumer_producer_pair(endpoint, writer, admin):
     @param endpoint     Log type to create producer/consumer pair for
     @param writer       Object for writing logs to a server
     @param admin        Object from which to get the correct API endpoints
+    @param child_account If present, this is being used by MSP and pass appropriate account id
 
     @return list of asyncio tasks for running the Producer and Consumer objects
     """
@@ -129,14 +144,29 @@ def create_consumer_producer_pair(endpoint, writer, admin):
 
     # Create the right pair of Producer-Consumer objects based on endpoint
     if endpoint == Config.AUTH:
-        producer = AuthlogProducer(admin.get_authentication_log, log_queue)
-        consumer = AuthlogConsumer(log_format, log_queue, writer)
+        if Config.account_is_msp():
+            producer = AuthlogProducer(admin.json_api_call, log_queue,
+                                       child_account_id=child_account,
+                                       url_path="/admin/v2/logs/authentication")
+        else:
+            producer = AuthlogProducer(admin.get_authentication_log, log_queue)
+        consumer = AuthlogConsumer(log_format, log_queue, writer, child_account)
     elif endpoint == Config.TELEPHONY:
-        producer = TelephonyProducer(admin.get_telephony_log, log_queue)
-        consumer = TelephonyConsumer(log_format, log_queue, writer)
+        if Config.account_is_msp():
+            producer = TelephonyProducer(admin.json_api_call, log_queue,
+                                         child_account_id=child_account,
+                                         url_path='/admin/v1/logs/telephony')
+        else:
+            producer = TelephonyProducer(admin.get_telephony_log, log_queue)
+        consumer = TelephonyConsumer(log_format, log_queue, writer, child_account)
     elif endpoint == Config.ADMIN:
-        producer = AdminactionProducer(admin.get_administrator_log, log_queue)
-        consumer = AdminactionConsumer(log_format, log_queue, writer)
+        if Config.account_is_msp():
+            producer = AdminactionProducer(admin.json_api_call, log_queue,
+                                           child_account_id=child_account,
+                                           url_path='/admin/v1/logs/administrator')
+        else:
+            producer = AdminactionProducer(admin.get_administrator_log, log_queue)
+        consumer = AdminactionConsumer(log_format, log_queue, writer, child_account)
     else:
         Program.log(f"{endpoint} is not a recognized endpoint", logging.WARNING)
         del log_queue

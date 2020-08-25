@@ -5,9 +5,9 @@ Definition of the Producer class
 import logging
 import functools
 import datetime
-from socket import gaierror
 import six
-from duologsync.util import get_log_offset, run_in_executor, restless_sleep
+from socket import gaierror
+from duologsync.util import get_log_offset, run_in_executor, restless_sleep, normalize_params
 from duologsync.config import Config
 from duologsync.program import Program, ProgramShutdownError
 
@@ -19,14 +19,17 @@ class Producer():
     recorded to allow checkpointing and recovery from a crash.
     """
 
-    def __init__(self, api_call, log_queue, log_type):
+    def __init__(self, api_call, log_queue, log_type, account_id=None, url_path=None):
         self.api_call = api_call
         self.log_queue = log_queue
         self.log_type = log_type
+        self.account_id = account_id
         self.log_offset = get_log_offset(
             self.log_type,
             Config.get_checkpointing_enabled(),
-            Config.get_checkpoint_dir())
+            Config.get_checkpoint_dir(),
+            self.account_id)
+        self.url_path = url_path
 
     async def produce(self):
         """
@@ -38,7 +41,7 @@ class Producer():
         # Exit when DuoLogSync is shutting down (due to error or Ctrl-C)
         while Program.is_running():
             shutdown_reason = None
-            Program.log(f"{self.log_type} producer: begin polling for "
+            Program.log(f"{self.log_type} producer: fetching next logs after "
                         f"{Config.get_api_timeout()} seconds",
                         logging.INFO)
 
@@ -108,12 +111,26 @@ class Producer():
         @return the result of the API call
         """
 
-        api_result = await run_in_executor(
-            functools.partial(
-                self.api_call,
-                mintime=self.log_offset
+        if Config.account_is_msp():
+            # Make an API call to retrieve authlog logs for MSP accounts
+            parameters = {"mintime": six.ensure_str(str(self.log_offset)),
+                          "account_id": six.ensure_str(self.account_id)}
+
+            api_result = await run_in_executor(
+                functools.partial(
+                    self.api_call,
+                    method="GET",
+                    path=self.url_path,
+                    params=parameters
+                )
             )
-        )
+        else:
+            api_result = await run_in_executor(
+                functools.partial(
+                    self.api_call,
+                    mintime=self.log_offset
+                )
+            )
 
         return api_result
 

@@ -1,21 +1,23 @@
 from unittest import TestCase
 from unittest.mock import patch, call
-from duologsync.app import *
+from duologsync.app import Program, create_tasks
 from duologsync.config import Config
+import duo_client
 
 def running_is_false(msg):
     Program._running = False
+
 
 class TestApp(TestCase):
     def tearDown(self):
         Config._config = None
         Config._config_is_set = False
         Program._running = True
-    
+
     @patch('duologsync.app.create_admin', return_value='duo_admin')
     @patch('duologsync.app.create_consumer_producer_pair')
     def test_create_tasks_one_server_multiple_endpoints(self, mock, _):
-        
+
         server_to_writer = {'Main': 'writer_1'}
         config = {
             'account': {
@@ -25,7 +27,8 @@ class TestApp(TestCase):
                         'endpoints': ['adminaction', 'auth', 'telephony'],
                         'server': 'Main'
                     }
-                ]
+                ],
+                'is_msp': False
             }
         }
         Config.set_config(config)
@@ -39,6 +42,42 @@ class TestApp(TestCase):
         ]
 
         self.assertEquals(mock.call_count, 3)
+        mock.assert_has_calls(calls, any_order=True)
+
+    @patch('duologsync.app.create_admin', return_value=duo_client.Accounts)
+    @patch('duo_client.Accounts.get_child_accounts', return_value=[{'account_id': '12345'},
+                                                                   {'account_id': '56789'}])
+    @patch('duologsync.app.create_consumer_producer_pair')
+    def test_create_tasks_one_server_multiple_endpoints_msp(self, mock, mock_childaccount,
+                                                            mock_createadmin):
+        server_to_writer = {'Main': 'writer_1'}
+        config = {
+            'account': {
+                'ikey': 'a', 'skey': 'a', 'hostname': 'a',
+                'endpoint_server_mappings': [
+                    {
+                        'endpoints': ['adminaction', 'auth', 'telephony'],
+                        'server': 'Main'
+                    }
+                ],
+                'is_msp': True
+            }
+        }
+        Config.set_config(config)
+
+        create_tasks(server_to_writer)
+
+        calls = [
+            call('adminaction', 'writer_1', duo_client.Accounts, '12345'),
+            call('auth', 'writer_1', duo_client.Accounts, '12345'),
+            call('telephony', 'writer_1', duo_client.Accounts, '12345'),
+            call('adminaction', 'writer_1', duo_client.Accounts, '56789'),
+            call('auth', 'writer_1', duo_client.Accounts, '56789'),
+            call('telephony', 'writer_1', duo_client.Accounts, '56789')
+        ]
+
+        self.assertEqual(mock_childaccount.call_count, 1)
+        self.assertEqual(mock.call_count, 6)
         mock.assert_has_calls(calls, any_order=True)
 
     @patch('duologsync.app.create_admin', return_value='duo_admin')
@@ -57,7 +96,8 @@ class TestApp(TestCase):
                         'endpoints': ['adminaction'],
                         'server': 'Backup'
                     }
-                ]
+                ],
+                'is_msp': False
             }
         }
         Config.set_config(config)
@@ -95,7 +135,8 @@ class TestApp(TestCase):
                         'endpoints': ['telephony'],
                         'server': 'TelephonyServer'
                     }
-                ]
+                ],
+                'is_msp': False
             }
         }
         Config.set_config(config)

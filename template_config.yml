@@ -13,35 +13,37 @@ version: '1.0.0'
 # them.
 #dls_settings:
     
-  # File where DLS program messages / logs should be saved
+  # File where DLS program messages / system messages will be written
+  # This is only for monitoring/debugging purpose and wont have actual logs written to this file
   #log_filepath: '/tmp/duologsync.log'
 
-  # How Duo logs should be formatted before being sent to a server
-  # OPTIONS: CEF, JSON
+  # How Duo logs should be formatted before being sent to a server/siem. Valid options are CEF, JSON
+  # If this section is left commented, default will be JSON
   #log_format: 'JSON'
 
   # Setting related to API calls for Duo logs
   #api:
 
     # Days in the past from which record retrieval should begin.
-    # MINIMUM: 0
-    # MAXIMUM: 180
+    # Maximum logs that can be fetched is 180 days in past
     #offset: 180
 
     # Seconds to wait between API calls (for fetching Duo logs)
-    # MINIMUM: 120
+    # If timeout is less than 120 seconds, DLS will default it to 120 seconds to be in accordance
+    # with Duo API rate limits
     #timeout: 120
 
   # Settings related to saving API call offset information into files for use
-  # when DLS crashes so that DLS can pickup where it left off. Useful for
-  # reducing the chance of consuming duplicate logs when a crash occurs.
+  # when DLS crashes so that DLS can pickup where it left off.
+  # By default, entire section is commented out. DLS will still create checkpoint files in the
+  # default directory which is /tmp/. Uncomment sections to give custom path
   #checkpointing:
 
     # Whether checkpoint files should be created to save offset information
     # about API calls. If true, the value set for directory (or the default of
     # '/tmp') is where DLS will look for checkpoint files to recover offset
     # information from.
-    # OPTIONS: False, True
+    # Valid options are False, True
     #enabled: False
 
     # Directory where checkpoint files should be stored.
@@ -54,7 +56,8 @@ servers:
     # REQUIRED
   - id: ''
 
-    # Address of server to which Duo logs will be sent
+    # Address of server to which Duo logs will be sent. If there is nothing that consumes these
+    # logs, they will be lost, since writing to local storage is not supported
     # REQUIRED
     hostname: ''
 
@@ -62,7 +65,7 @@ servers:
     # MINIMUM: 0
     # MAXIMUM: 65535
     # REQUIRED
-    port: ''
+    port:
 
     # Transport protocol used to communicate with the server
     # OPTIONS: TCP, TCPSSL, UDP
@@ -70,8 +73,9 @@ servers:
     protocol: ''
 
     # Location of the certificate file used for encrypting communication for
-    # TCPSSL
-    # REQUIRED: Only if protocol is TCPSSL
+    # TCPSSL. TCPSSL expects that there are .key and .cert files that store keys. For configuration,
+    # give path of .cert/.pem file that has keys
+    # REQUIRED only if protocol is TCPSSL
     cert_filepath: ''
 
 # To add another server, copy and paste the above, change the server name to
@@ -84,6 +88,8 @@ servers:
 #   cert_filepath:
 
 # Account which is used to access Duo logs and tell DLS which logs to fetch.
+# For MSP accounts, this should have details for the Accounts API integration.
+# All child account logs will be fetched
 account:
   
   # Integration key
@@ -94,7 +100,7 @@ account:
   # REQUIRED
   skey: ''
 
-  # Address of the server hosting this account's logs
+  # api-hostname of the server hosting this account's logs shown on duo admin panel
   # REQUIRED
   hostname: ''
     
@@ -115,7 +121,3 @@ account:
   # then all the child accounts will be accessed and logs will be pulled for
   # each child account. Not required.
   is_msp: False
-
-  # The child accounts that should not be accessed in the case this account
-  # is an MSP account. Not required.
-  block_list: []

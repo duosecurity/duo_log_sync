@@ -3,9 +3,12 @@ Definition of the Authlog Producer class
 """
 
 import functools
+import six
+import time
 from duologsync.config import Config
-from duologsync.util import run_in_executor
+from duologsync.util import run_in_executor, normalize_params
 from duologsync.producer.producer import Producer
+
 
 class AuthlogProducer(Producer):
     """
@@ -13,8 +16,9 @@ class AuthlogProducer(Producer):
     and placement into a queue of Authentication logs
     """
 
-    def __init__(self, api_call, log_queue):
-        super().__init__(api_call, log_queue, Config.AUTH)
+    def __init__(self, api_call, log_queue, child_account_id=None, url_path=None):
+        super().__init__(api_call, log_queue, Config.AUTH, account_id=child_account_id,
+                         url_path=url_path)
         self.mintime = None
 
         # log_offset for Auth can be an int or a tuple, depending on if there
@@ -32,17 +36,43 @@ class AuthlogProducer(Producer):
         @return the result of a call to the authentication log API endpoint
         """
 
-        # Make an API call to retrieve authlog logs
-        authlog_api_result = await run_in_executor(
-            functools.partial(
-                self.api_call,
-                api_version=2,
-                mintime=self.mintime,
-                next_offset=self.log_offset,
-                sort='ts:asc',
-                limit='1000'
+        if Config.account_is_msp():
+            # In case of recovering from checkpoint, self.mintime is None since its not init
+            # anywhere. When duo_client is directly used, client will initialize self.mintime to
+            # time.time() - 86400 (1 day in past). We will have to do similar thing when directly
+            # calling logs endpoint for MSP accounts. Mintime is never used when next offset is
+            # present
+            if not self.mintime:
+                self.mintime = (int(time.time()) - 86400) * 1000
+
+            # Make an API call to retrieve authlog logs for MSP accounts
+            parameters = normalize_params({"mintime": six.ensure_str(str(self.mintime)), "maxtime": six.ensure_str(str(int(time.time()) * 1000)),
+                                           "limit": six.ensure_str('1000'),
+                                           "account_id": six.ensure_str(self.account_id), "sort": six.ensure_str('ts:asc')})
+
+            if self.log_offset is not None:
+                parameters["next_offset"] = self.log_offset
+
+            authlog_api_result = await run_in_executor(
+                functools.partial(
+                    self.api_call,
+                    method="GET",
+                    path=self.url_path,
+                    params=parameters
+                )
             )
-        )
+        else:
+            # Make an API call to retrieve authlog logs
+            authlog_api_result = await run_in_executor(
+                functools.partial(
+                    self.api_call,
+                    api_version=2,
+                    mintime=self.mintime,
+                    next_offset=self.log_offset,
+                    sort='ts:asc',
+                    limit='1000'
+                )
+            )
 
         return authlog_api_result
 
