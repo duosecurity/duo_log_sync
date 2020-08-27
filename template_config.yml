@@ -62,7 +62,8 @@ servers:
     # MINIMUM: 0
     # MAXIMUM: 65535
     # REQUIRED
-    port: ''
+    # Omit single quotes for integer value
+    port: 
 
     # Transport protocol used to communicate with the server
     # OPTIONS: TCP, TCPSSL, UDP
