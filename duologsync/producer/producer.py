@@ -58,10 +58,11 @@ class Producer():
                     Program.log(f"{self.log_type} producer: no new logs available",
                                 logging.INFO)
 
-            # Horribly messed up hostname was provided for duoclient host
+            # Incorrect api_hostname or proxy_server was provided
+            # duo_client throws the same error if either the api_hostname or proxy_server is incorrect
             except (gaierror, OSError) as error:
                 shutdown_reason = f"{self.log_type} producer: [{error}]"
-                Program.log('DuoLogSync: check that the duoclient host '
+                Program.log('DuoLogSync: check that the duoclient host and/or proxy_server '
                             'provided in the config file is correct')
 
             # duo_client throws a RuntimeError if the ikey or skey is invalid

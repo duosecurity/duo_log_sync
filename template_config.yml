@@ -49,6 +49,15 @@ version: '1.0.0'
     # Directory where checkpoint files should be stored.
     #directory: '/tmp'
 
+  # Setting related to Http Proxy to proxy Duo requests
+  #proxy:
+
+    # Host/IP for Http Proxy
+    #proxy_server: 'example.proxy.com'
+
+    # Port for Http Proxy
+    #proxy_port: 8080
+
 # List of servers and how DLS will communicate with them
 servers:
   

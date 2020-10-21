@@ -94,7 +94,8 @@ def create_tasks(server_to_writer):
     # Object with functions needed to utilize log API calls
     admin = create_admin(
         Config.get_account_ikey(), Config.get_account_skey(),
-        Config.get_account_hostname(), is_msp=Config.account_is_msp())
+        Config.get_account_hostname(), is_msp=Config.account_is_msp(),
+        proxy_server=Config.get_proxy_server(), proxy_port=Config.get_proxy_port())
 
     # This is where functionality would be added to check if an account is MSP
     # (Config.account_is_msp), and then retrieve child accounts (ignoring those
