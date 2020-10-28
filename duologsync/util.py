@@ -102,16 +102,17 @@ def get_log_offset(log_type, recover_log_offset, checkpoint_directory, child_acc
     return log_offset
 
 
-def create_admin(ikey, skey, host, is_msp=False):
+def create_admin(ikey, skey, host, is_msp=False, proxy_server=None, proxy_port=None):
     """
     Create an Admin object (from the duo_client library) with the given values.
     The Admin object has many functions for using Duo APIs and retrieving logs.
 
     @param ikey Duo Client ID (Integration Key)
-    @param skey Duo Client Secret for proving identity / access (Secrey Key)
+    @param skey Duo Client Secret for proving identity / access (Secret Key)
     @param host URI where data / logs will be fetched from
     @param is_msp Indicates where we are using MSP account for logs retrieval
-
+    @param proxy_server Host/IP of Http Proxy if in use or None
+    @param proxy_port Port of Http Proxy if in use or None
     @return a newly created Admin object
     """
 
@@ -133,6 +134,11 @@ def create_admin(ikey, skey, host, is_msp=False):
         )
         Program.log(f"duo_client Admin initialized for ikey: {ikey}, host: {host}",
                     logging.INFO)
+
+    if proxy_server and proxy_port:
+        admin.set_proxy(host=proxy_server, port=proxy_port)
+        Program.log(f"duo_client Proxy configured: {proxy_server}:{proxy_port}", logging.INFO)
+
 
     return admin
 

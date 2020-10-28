@@ -36,6 +36,8 @@ class Config:
     API_TIMEOUT_DEFAULT = 120
     CHECKPOINTING_ENABLED_DEFAULT = False
     CHECKPOINTING_DIRECTORY_DEFAULT = DIRECTORY_DEFAULT
+    PROXY_SERVER_DEFAULT = ''
+    PROXY_PORT_DEFAULT = 0
 
     # To understand these schema definitions better, compare side-by-side to
     # the template_config.yml file
@@ -91,6 +93,21 @@ class Config:
                         'type': 'string',
                         'empty': False,
                         'default': CHECKPOINTING_DIRECTORY_DEFAULT}
+                }
+            },
+            'proxy': {
+                'type': 'dict',
+                'default': {},
+                'schema': {
+                    'proxy_server': {
+                        'type': 'string',
+                        'default': PROXY_SERVER_DEFAULT
+                    },
+                    'proxy_port': {
+                        'type': 'number',
+                        'default': PROXY_PORT_DEFAULT
+
+                    }
                 }
             }
         }
@@ -294,6 +311,16 @@ class Config:
     def account_is_msp(cls):
         """@return whether the account in config is an MSP account"""
         return cls.get_value(['account', 'is_msp'])
+
+    @classmethod
+    def get_proxy_server(cls):
+        """@return the proxy_server in config"""
+        return cls.get_value(['dls_settings', 'proxy', 'proxy_server'])
+
+    @classmethod
+    def get_proxy_port(cls):
+        """@return the proxy_port in config"""
+        return cls.get_value(['dls_settings', 'proxy', 'proxy_port'])
 
     @classmethod
     def create_config(cls, config_filepath):
