@@ -52,6 +52,7 @@ class Producer():
                 Program.log(f"{self.log_type} producer: fetching logs",
                             logging.INFO)
                 api_result = await self.call_log_api()
+
                 if api_result:
                     await self.add_logs_to_queue(self.get_logs(api_result))
                 else:
@@ -92,9 +93,13 @@ class Producer():
         # Important for recovery in the event of a crash
         self.log_offset = Producer.get_log_offset(logs, current_log_offset=self.log_offset)
 
-        # Authlogs v2 endpoint returns dict response
+        # Authlogs v2 and Trust Monitor endpoint returns dict response
         if isinstance(logs, dict):
-            logs = logs['authlogs']
+            if logs.get('authlogs', None) is not None:
+                logs = logs['authlogs']
+
+            elif logs.get('events', None) is not None:
+                logs = logs['events']
 
         Program.log(f"{self.log_type} producer: adding {len(logs)} "
                     "logs to the queue", logging.INFO)
@@ -175,13 +180,27 @@ class Producer():
                              (six.ensure_str(log.get('isotimestamp')),
                               "%Y-%m-%dT%H:%M:%S.%f+00:00") - datetime.datetime(1970, 1, 1)).
                             total_seconds() * 1000)
+
                 return [six.ensure_str(str(value)), log.get('txid')]
 
             if log.get('timestamp'):
                 return log.get('timestamp') + 1
+            
+            # Trust Monitor
+            if log.get('events') and log.get('metadata', {}).get('next_offset') is not None:
+                return int(log.get('metadata').get('next_offset'))
+
+            # For the Trust Monitor API, once DLS paginates through and 
+            # transports all events within the supplied mintime and maxtime window, 
+            # we need to keep track of the last event's timestamp and 
+            # supply that as the new mintime so that we can continue to poll
+            if log.get('events') and log.get('metadata', {}).get('next_offset') is None:
+                events = log.get('events')
+                last_event = events[len(events) - 1]
+                next_timestamp_to_poll_from = last_event.get('surfaced') or last_event.get('surfaced_timestamp')
+                return int(next_timestamp_to_poll_from) + 1
 
             return current_log_offset
-
         else:
             timestamp = log[-1]['timestamp']
             return timestamp + 1

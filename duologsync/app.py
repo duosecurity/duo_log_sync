@@ -19,13 +19,16 @@ import argparse
 import asyncio
 import logging
 import signal
+
 from duologsync.consumer.adminaction_consumer import AdminactionConsumer
 from duologsync.producer.adminaction_producer import AdminactionProducer
 from duologsync.consumer.authlog_consumer import AuthlogConsumer
 from duologsync.producer.authlog_producer import AuthlogProducer
 from duologsync.consumer.telephony_consumer import TelephonyConsumer
 from duologsync.producer.telephony_producer import TelephonyProducer
-from duologsync.util import create_admin
+from duologsync.consumer.trustmonitor_consumer import TrustMonitorConsumer
+from duologsync.producer.trustmonitor_producer import TrustMonitorProducer
+from duologsync.util import create_admin, check_for_specific_endpoint
 from duologsync.writer import Writer
 from duologsync.config import Config
 from duologsync.program import Program
@@ -49,6 +52,19 @@ def main():
     # Create a config Dictionary from a YAML file located at args.ConfigPath
     config = Config.create_config(args.ConfigPath)
     Config.set_config(config)
+
+    # Do extra checks for Trust Monitor support
+    is_dtm_in_config = check_for_specific_endpoint('trustmonitor', config)
+    log_format = Config.get_log_format()
+    is_msp = Config.account_is_msp()
+
+    if (is_dtm_in_config and log_format != 'JSON'):
+        Program.log(f"DuoLogSync: Trust Monitor endpoint only supports JSON", logging.WARNING)
+        return
+
+    if (is_dtm_in_config and is_msp):
+        Program.log(f"DuoLogSync: Trust Monitor endpoint only supports non-msp", logging.WARNING)
+        return
 
     Program.setup_logging(Config.get_log_filepath())
 
@@ -168,6 +184,9 @@ def create_consumer_producer_pair(endpoint, writer, admin, child_account=None):
         else:
             producer = AdminactionProducer(admin.get_administrator_log, log_queue)
         consumer = AdminactionConsumer(log_format, log_queue, writer, child_account)
+    elif endpoint == Config.TRUST_MONITOR:
+        producer = TrustMonitorProducer(admin.get_trust_monitor_events_by_offset, log_queue)
+        consumer = TrustMonitorConsumer(log_format, log_queue, writer, child_account)
     else:
         Program.log(f"{endpoint} is not a recognized endpoint", logging.WARNING)
         del log_queue

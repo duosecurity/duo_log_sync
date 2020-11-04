@@ -18,7 +18,7 @@ setup(
     license=__version__.__license__,
     packages=find_packages(exclude=['tests']),
     python_requires=">=3.6.2",
-    install_requires=["duo_client==4.2.3", "PyYAML==5.3.1", "Cerberus==1.3.2", "six==1.15.0"],
+    install_requires=["duo_client==4.3.0", "PyYAML==5.3.1", "Cerberus==1.3.2", "six==1.15.0"],
     entry_points={
         "console_scripts": ["duologsync = duologsync.app:main"],
     },

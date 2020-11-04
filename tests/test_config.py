@@ -153,10 +153,14 @@ class TestConfig(TestCase):
                 'api': {
                     'offset': 180,
                     'timeout': 120
-                },
+                },  
                 'checkpointing': {
                     'enabled': False,
                     'directory': '/tmp/dls_checkpoints'
+                },
+                'proxy': {
+                    'proxy_server': 'test.com',
+                    'proxy_port': 1234
                 }
             },
             'servers': [

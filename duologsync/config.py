@@ -28,6 +28,7 @@ class Config:
     ADMIN = 'adminaction'
     AUTH = 'auth'
     TELEPHONY = 'telephony'
+    TRUST_MONITOR = 'trustmonitor'
 
     DIRECTORY_DEFAULT = '/tmp'
     LOG_FILEPATH_DEFAULT = DIRECTORY_DEFAULT + '/' + 'duologsync.log'
@@ -160,7 +161,7 @@ class Config:
                 'type': 'list',
                 'empty': False,
                 'required': True,
-                'allowed': [ADMIN, AUTH, TELEPHONY]
+                'allowed': [ADMIN, AUTH, TELEPHONY, TRUST_MONITOR]
             }
         }
     )

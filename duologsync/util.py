@@ -75,8 +75,8 @@ def get_log_offset(log_type, recover_log_offset, checkpoint_directory, child_acc
     milliseconds_per_second = 1000
     log_offset = Config.get_api_offset()
 
-    # Auth must have timestamp represented in milliseconds, not seconds
-    if log_type == Config.AUTH:
+    # Auth or Trust Monitor must have timestamp represented in milliseconds, not seconds
+    if log_type == Config.AUTH or log_type == Config.TRUST_MONITOR:
         log_offset *= milliseconds_per_second
 
     # In this case, look for a checkpoint file from which to read the log offset
@@ -162,3 +162,21 @@ def normalize_params(params):
     return dict(
         (encode(key), [encode(v) for v in to_list(value)])
         for (key, value) in list(params.items()))
+
+
+def check_for_specific_endpoint(endpoint, config):
+    """
+    Returns True/False if a specific endpoint is in the config.
+
+    params:
+    endpoint (string): The endpoint to check [options: auth, telephony, adminactions, trustmonitor]
+    config: (dict): The dictionary representation of the config.yml
+    """    
+    endpoint_server_mappings = config['account']['endpoint_server_mappings']
+    endpoints_to_server = [e['endpoints'] for e in endpoint_server_mappings]
+
+    for endpoints in endpoints_to_server:
+        if endpoint in endpoints:
+            return True
+    
+    return False

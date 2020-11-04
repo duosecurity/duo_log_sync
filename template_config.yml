@@ -117,7 +117,7 @@ account:
   # This is done by creating a mapping (start with dash -) and then defining
   # what endpoints the mapping is for as a list and the what server apply to
   # those endpoints.
-  # ENDPOINTS OPTIONS: adminaction, auth, telephony
+  # ENDPOINTS OPTIONS: adminaction, auth, telephony, trustmonitor
   # SERVERS OPTIONS: any server id defined above in the list of servers
   # REQUIRED
   endpoint_server_mappings:

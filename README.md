@@ -28,7 +28,7 @@ Duologsync is a utility written by Duo Security to enable fetching logs from dif
 
 ##### Features
 
-- Current version supports fetching logs from auth, telephony and admin endpoints and send over TCP, TCP Encrypted over SSL, and UDP to consuming systems
+- Current version supports fetching logs from auth, telephony, admin, and trust monitor endpoints and send over TCP, TCP Encrypted over SSL, and UDP to consuming systems
 - Ability to recover data by reading from last known offset through checkpointing files
 - Enabling only certain endpoints through config file
 - Choosing how logs are formatted (JSON, CEF)
@@ -41,6 +41,7 @@ Duologsync is a utility written by Duo Security to enable fetching logs from dif
 
 - Adding more log endpoints
 - Adding better skey security
+- Adding CEF and MSP support for Trust Monitor endpoint
 
 ---
 
@@ -69,3 +70,6 @@ Duologsync is a utility written by Duo Security to enable fetching logs from dif
 #### Consideration before using Accounts API for MSP customers
 
 - Calling Admin API handlers with Accounts API is mutually exclusive with cross-deployment sub-accounts. Many customers with sub-accounts (especially MSPs) must use cross-deployment sub-accounts and therefore can't use Accounts API. 
+
+#### Trust Monitor Support
+- Currently, the Trust Monitor endpoint supports logging in JSON format. Furthermore, it does not support MSP. Calling this endpoint (in addition with any other endpoints) to use CEF format or MSP will not allow the program to execute.

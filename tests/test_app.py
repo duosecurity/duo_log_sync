@@ -20,11 +20,17 @@ class TestApp(TestCase):
 
         server_to_writer = {'Main': 'writer_1'}
         config = {
+            'dls_settings': {
+                'proxy': {
+                    'proxy_server': 'test.com',
+                    'proxy_port': 1234
+                }
+            },
             'account': {
                 'ikey': 'a', 'skey': 'a', 'hostname': 'a',
                 'endpoint_server_mappings': [
                     {
-                        'endpoints': ['adminaction', 'auth', 'telephony'],
+                        'endpoints': ['adminaction', 'auth', 'telephony', 'trustmonitor'],
                         'server': 'Main'
                     }
                 ],
@@ -38,10 +44,11 @@ class TestApp(TestCase):
         calls = [
             call('adminaction', 'writer_1', 'duo_admin'),
             call('auth', 'writer_1', 'duo_admin'),
-            call('telephony', 'writer_1', 'duo_admin')
+            call('telephony', 'writer_1', 'duo_admin'),
+            call('trustmonitor', 'writer_1', 'duo_admin')
         ]
 
-        self.assertEquals(mock.call_count, 3)
+        self.assertEquals(mock.call_count, 4)
         mock.assert_has_calls(calls, any_order=True)
 
     @patch('duologsync.app.create_admin', return_value=duo_client.Accounts)
@@ -52,6 +59,12 @@ class TestApp(TestCase):
                                                             mock_createadmin):
         server_to_writer = {'Main': 'writer_1'}
         config = {
+            'dls_settings': {
+                'proxy': {
+                    'proxy_server': 'test.com',
+                    'proxy_port': 1234
+                }
+            },
             'account': {
                 'ikey': 'a', 'skey': 'a', 'hostname': 'a',
                 'endpoint_server_mappings': [
@@ -85,6 +98,12 @@ class TestApp(TestCase):
     def test_create_tasks_multiple_servers_multiple_endpoints(self, mock, _):
         server_to_writer = {'Main': 'writer_1', 'Backup': 'writer_2'}
         config = {
+            'dls_settings': {
+                'proxy': {
+                    'proxy_server': 'test.com',
+                    'proxy_port': 1234
+                }
+            },
             'account': {
                 'ikey': 'a', 'skey': 'a', 'hostname': 'a',
                 'endpoint_server_mappings': [
@@ -93,7 +112,7 @@ class TestApp(TestCase):
                         'server': 'Main'
                     },
                     {
-                        'endpoints': ['adminaction'],
+                        'endpoints': ['adminaction', 'trustmonitor'],
                         'server': 'Backup'
                     }
                 ],
@@ -106,11 +125,12 @@ class TestApp(TestCase):
 
         calls = [
             call('adminaction', 'writer_2', 'duo_admin'),
+            call('trustmonitor', 'writer_2', 'duo_admin'),
             call('auth', 'writer_1', 'duo_admin'),
             call('telephony', 'writer_1', 'duo_admin')
         ]
 
-        self.assertEquals(mock.call_count, 3)
+        self.assertEquals(mock.call_count, 4)
         mock.assert_has_calls(calls, any_order=True)
 
     @patch('duologsync.app.create_admin', return_value='duo_admin')
@@ -118,8 +138,15 @@ class TestApp(TestCase):
     def test_create_tasks_one_server_per_endpoint(self, mock, _):
         server_to_writer = {'AuthServer': 'writer_1',
                             'AdminServer': 'writer_2',
-                            'TelephonyServer': 'writer_3'}
+                            'TelephonyServer': 'writer_3',
+                            'TrustMonitorServer': 'writer_4'}
         config = {
+            'dls_settings': {
+                'proxy': {
+                    'proxy_server': 'test.com',
+                    'proxy_port': 1234
+                }
+            },
             'account': {
                 'ikey': 'a', 'skey': 'a', 'hostname': 'a',
                 'endpoint_server_mappings': [
@@ -134,6 +161,10 @@ class TestApp(TestCase):
                     {
                         'endpoints': ['telephony'],
                         'server': 'TelephonyServer'
+                    },
+                    {
+                        'endpoints': ['trustmonitor'],
+                        'server': 'TrustMonitorServer'
                     }
                 ],
                 'is_msp': False
@@ -146,8 +177,9 @@ class TestApp(TestCase):
         calls = [
             call('adminaction', 'writer_2', 'duo_admin'),
             call('auth', 'writer_1', 'duo_admin'),
-            call('telephony', 'writer_3', 'duo_admin')
+            call('telephony', 'writer_3', 'duo_admin'),
+            call('trustmonitor', 'writer_4', 'duo_admin')
         ]
 
-        self.assertEquals(mock.call_count, 3)
+        self.assertEquals(mock.call_count, 4)
         mock.assert_has_calls(calls, any_order=True)
