@@ -134,6 +134,7 @@ dmypy.json
 
 # editors
 .vscode/
+.idea/
 
 # Pytest
 .pytest_cache/

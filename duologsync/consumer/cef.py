@@ -16,6 +16,7 @@ DEVICE_VERSION = __version__
 # Values allowed: 0 - 10 where 10 indicates the most important event
 SEVERITY = '5'
 
+
 def log_to_cef(log, keys_to_labels):
     """
     Create and return a CEF-type log given a Duo log.
@@ -52,6 +53,7 @@ def log_to_cef(log, keys_to_labels):
 
     return cef_log
 
+
 def _construct_extension(log, keys_to_labels):
     """
     Create the extension for a CEF message using the given log and dictionary.
@@ -72,6 +74,11 @@ def _construct_extension(log, keys_to_labels):
     for keys, label in keys_to_labels.items():
         value = Config.get_value_from_keys(log, keys)
         label_name = label['name']
+
+        # cef format expects timestamp to be in milliseconds and not seconds. if length is 10 the ts is in seconds.
+        # this value should be an integer as that is what the cef's expectation is for the `rt` field
+        if label_name == 'rt' and value and len(str(value)) == 10:
+            value = value * 1000
 
         # Need to generate a custom label
         if label['is_custom']:
