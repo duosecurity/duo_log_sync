@@ -9,9 +9,10 @@ import socket
 from socket import gaierror
 from duologsync.program import Program
 
+
 class DatagramProtocol(asyncio.DatagramProtocol):
     """
-    DLS implementation of Asyncio's abstact DatagramProtocol class. This is
+    DLS implementation of Asyncio's abstract DatagramProtocol class. This is
     required for creating a network connection over UDP.
     """
 
@@ -40,6 +41,7 @@ class DatagramProtocol(asyncio.DatagramProtocol):
             )
 
         Program.initiate_shutdown(shutdown_reason)
+
 
 class Writer:
     """
@@ -107,7 +109,7 @@ class Writer:
         @return a 'writer' object for writing data over the connection made
         """
 
-        Program.log(f"DuoLogSync: Opening connection to {host}:{port}",
+        Program.log(f"DuoLogSync: Opening connection to {host}:{port} with protocol {self.protocol}",
                     logging.INFO)
 
         # Message to be logged if an error occurs in this function
@@ -159,9 +161,9 @@ class Writer:
         Wrapper around the asyncio.open_connection function with exception
         handling for creating a network connection to host and port.
 
-        @param host     Hostname of the network connection to establish
-        @param port     Port of the network connection to establish
-        @ssl_context    Used for creating TCP over SSL connections
+        @param host           Hostname of the network connection to establish
+        @param port           Port of the network connection to establish
+        @param ssl_context    Used for creating TCP over SSL connections
 
         @return an asyncio object used to write data over a network connection
                 using TCP

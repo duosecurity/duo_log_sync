@@ -44,7 +44,7 @@ version: '1.0.0'
     # '/tmp') is where DLS will look for checkpoint files to recover offset
     # information from.
     # Valid options are False, True
-    #enabled: False
+    #enabled: True
 
     # Directory where checkpoint files should be stored.
     #directory: '/tmp'
@@ -117,7 +117,7 @@ account:
   # This is done by creating a mapping (start with dash -) and then defining
   # what endpoints the mapping is for as a list and the what server apply to
   # those endpoints.
-  # ENDPOINTS OPTIONS: adminaction, auth, telephony, trustmonitor
+  # ENDPOINTS OPTIONS: adminaction, auth, telephony, trustmonitor, activity
   # SERVERS OPTIONS: any server id defined above in the list of servers
   # REQUIRED
   endpoint_server_mappings:

@@ -29,13 +29,14 @@ class Config:
     AUTH = 'auth'
     TELEPHONY = 'telephony'
     TRUST_MONITOR = 'trustmonitor'
+    ACTIVITY = 'activity'
 
     DIRECTORY_DEFAULT = '/tmp'
     LOG_FILEPATH_DEFAULT = DIRECTORY_DEFAULT + '/' + 'duologsync.log'
     LOG_FORMAT_DEFAULT = 'JSON'
     API_OFFSET_DEFAULT = 180
     API_TIMEOUT_DEFAULT = 120
-    CHECKPOINTING_ENABLED_DEFAULT = False
+    CHECKPOINTING_ENABLED_DEFAULT = True
     CHECKPOINTING_DIRECTORY_DEFAULT = DIRECTORY_DEFAULT
     PROXY_SERVER_DEFAULT = ''
     PROXY_PORT_DEFAULT = 0
@@ -161,7 +162,7 @@ class Config:
                 'type': 'list',
                 'empty': False,
                 'required': True,
-                'allowed': [ADMIN, AUTH, TELEPHONY, TRUST_MONITOR]
+                'allowed': [ADMIN, AUTH, TELEPHONY, TRUST_MONITOR, ACTIVITY]
             }
         }
     )
@@ -239,11 +240,12 @@ class Config:
 
         cls._check_config_is_set()
         curr_value = cls._config
-        for key in keys:
-            curr_value = curr_value.get(key)
+        if curr_value:
+            for key in keys:
+                curr_value = curr_value.get(key)
 
-            if curr_value is None:
-                raise ValueError(f"{key} is an invalid key for this Config")
+                if curr_value is None:
+                    raise ValueError(f"{key} is an invalid key for this Config")
 
         return curr_value
 
@@ -326,7 +328,7 @@ class Config:
     @classmethod
     def create_config(cls, config_filepath):
         """
-        Attemp to read the file at config_filepath and generate a config
+        Attempt to read the file at config_filepath and generate a config
         Dictionary object based on a defined JSON schema
 
         @param config_filepath  File from which to generate a config object
@@ -345,7 +347,7 @@ class Config:
                 config = cls._validate_and_normalize_config(config)
                 if config.get('dls_settings').get('api').get('timeout') < cls.API_TIMEOUT_DEFAULT:
                     config['dls_settings']['api']['timeout'] = cls.API_TIMEOUT_DEFAULT
-                    Program.log('DuoLogSync: Setting default api timeout to 120 seconds.')
+                    Program.log(f'DuoLogSync: Setting default api timeout to {cls.API_TIMEOUT_DEFAULT} seconds.')
 
         # Will occur when given a bad filepath or a bad file
         except OSError as os_error:
@@ -400,7 +402,7 @@ class Config:
         Drill down into dictionary to retrieve a value given a list of keys
 
         @param dictionary   dict to retrieve a value from
-        @param fields       List of fields to follow to retrieve a value
+        @param keys         List of keys to follow to retrieve a value
 
         @return value from the log found after following the list of keys given
         """

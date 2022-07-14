@@ -28,10 +28,13 @@ from duologsync.consumer.telephony_consumer import TelephonyConsumer
 from duologsync.producer.telephony_producer import TelephonyProducer
 from duologsync.consumer.trustmonitor_consumer import TrustMonitorConsumer
 from duologsync.producer.trustmonitor_producer import TrustMonitorProducer
+from duologsync.consumer.activity_consumer import ActivityConsumer
+from duologsync.producer.activity_producer import ActivityProducer
 from duologsync.util import create_admin, check_for_specific_endpoint
 from duologsync.writer import Writer
 from duologsync.config import Config
 from duologsync.program import Program
+
 
 def main():
     """
@@ -40,30 +43,41 @@ def main():
     to the program.
     """
 
-    arg_parser = argparse.ArgumentParser(prog='duologsync',
-                                         description="Path to config file")
-    arg_parser.add_argument('ConfigPath', metavar='config-path', type=str,
-                            help='Config to start application')
+    arg_parser = argparse.ArgumentParser(
+        prog="duologsync", description="Path to config file"
+    )
+    arg_parser.add_argument(
+        "ConfigPath",
+        metavar="config-path",
+        type=str,
+        help="Config to start application",
+    )
     args = arg_parser.parse_args()
 
     # Handle shutting down the program via Ctrl-C
-    signal.signal(signal.SIGINT, sigint_handler)
+    signal.signal(signal.SIGINT, signal_handler)
+    # Handle shutting down the program via SIGTERM
+    signal.signal(signal.SIGTERM, signal_handler)
 
     # Create a config Dictionary from a YAML file located at args.ConfigPath
     config = Config.create_config(args.ConfigPath)
     Config.set_config(config)
 
     # Do extra checks for Trust Monitor support
-    is_dtm_in_config = check_for_specific_endpoint('trustmonitor', config)
+    is_dtm_in_config = check_for_specific_endpoint("trustmonitor", config)
     log_format = Config.get_log_format()
     is_msp = Config.account_is_msp()
 
-    if (is_dtm_in_config and log_format != 'JSON'):
-        Program.log(f"DuoLogSync: Trust Monitor endpoint only supports JSON", logging.WARNING)
+    if is_dtm_in_config and log_format != "JSON":
+        Program.log(
+            "DuoLogSync: Trust Monitor endpoint only supports JSON", logging.WARNING
+        )
         return
 
-    if (is_dtm_in_config and is_msp):
-        Program.log(f"DuoLogSync: Trust Monitor endpoint only supports non-msp", logging.WARNING)
+    if is_dtm_in_config and is_msp:
+        Program.log(
+            "DuoLogSync: Trust Monitor endpoint only supports non-msp", logging.WARNING
+        )
         return
 
     Program.setup_logging(Config.get_log_filepath())
@@ -79,20 +93,29 @@ def main():
     asyncio.get_event_loop().close()
 
     if Program.is_logging_set():
-        print(f"DuoLogSync: shutdown successfully. Check "
-              f"{Config.get_log_filepath()} for program logs")
+        print(
+            f"DuoLogSync: shutdown successfully. Check "
+            f"{Config.get_log_filepath()} for program logs"
+        )
 
-def sigint_handler(signal_number, stack_frame):
+
+def signal_handler(signal_number, stack_frame):
     """
-    Handler for SIGINT (Ctrl-C) to gracefully shutdown DuoLogSync
+    Handler for signals to gracefully shutdown DuoLogSync
     """
 
-    shutdown_reason = f"received signal {signal_number} (Ctrl-C)"
+    if signal_number == signal.SIGINT:
+        shutdown_reason = f"received signal {signal_number} (Ctrl-C)"
+    else:
+        shutdown_reason = f"received signal {signal.strsignal(signal_number)}"
+
     Program.initiate_shutdown(shutdown_reason)
 
     if stack_frame:
-        Program.log(f"DuoLogSync: stack frame from Ctrl-C is {stack_frame}",
-                    logging.INFO)
+        Program.log(
+            f"DuoLogSync: stack frame from signal is {stack_frame}", logging.INFO
+        )
+
 
 def create_tasks(server_to_writer):
     """
@@ -101,7 +124,7 @@ def create_tasks(server_to_writer):
     if the account is MSP. Return a list containing the asyncio tasks for
     running those objects.
 
-    @param writer   Dictionary mapping server ids to writer objects
+    @param server_to_writer   Dictionary mapping server ids to writer objects
 
     @return list of asyncio tasks for running the Producer and Consumer objects
     """
@@ -109,9 +132,13 @@ def create_tasks(server_to_writer):
 
     # Object with functions needed to utilize log API calls
     admin = create_admin(
-        Config.get_account_ikey(), Config.get_account_skey(),
-        Config.get_account_hostname(), is_msp=Config.account_is_msp(),
-        proxy_server=Config.get_proxy_server(), proxy_port=Config.get_proxy_port())
+        Config.get_account_ikey(),
+        Config.get_account_skey(),
+        Config.get_account_hostname(),
+        is_msp=Config.account_is_msp(),
+        proxy_server=Config.get_proxy_server(),
+        proxy_port=Config.get_proxy_port(),
+    )
 
     # This is where functionality would be added to check if an account is MSP
     # (Config.account_is_msp), and then retrieve child accounts (ignoring those
@@ -119,27 +146,30 @@ def create_tasks(server_to_writer):
     # TODO: Implement blocklist
     if Config.account_is_msp():
         child_account = admin.get_child_accounts()
-        child_accounts_id = [account['account_id'] for account in child_account]
+        child_accounts_id = [account["account_id"] for account in child_account]
 
         for account in child_accounts_id:
             # TODO: This can be made into a separate function
             for mapping in Config.get_account_endpoint_server_mappings():
                 # Get the writer to be used for this set of endpoints
-                writer = server_to_writer[mapping.get('server')]
+                writer = server_to_writer[mapping.get("server")]
 
-                for endpoint in mapping.get('endpoints'):
-                    new_tasks = create_consumer_producer_pair(endpoint, writer, admin, account)
+                for endpoint in mapping.get("endpoints"):
+                    new_tasks = create_consumer_producer_pair(
+                        endpoint, writer, admin, account
+                    )
                     tasks.extend(new_tasks)
     else:
         for mapping in Config.get_account_endpoint_server_mappings():
             # Get the writer to be used for this set of endpoints
-            writer = server_to_writer[mapping.get('server')]
+            writer = server_to_writer[mapping.get("server")]
 
-            for endpoint in mapping.get('endpoints'):
+            for endpoint in mapping.get("endpoints"):
                 new_tasks = create_consumer_producer_pair(endpoint, writer, admin)
                 tasks.extend(new_tasks)
 
     return tasks
+
 
 def create_consumer_producer_pair(endpoint, writer, admin, child_account=None):
     """
@@ -162,37 +192,57 @@ def create_consumer_producer_pair(endpoint, writer, admin, child_account=None):
     # Create the right pair of Producer-Consumer objects based on endpoint
     if endpoint == Config.AUTH:
         if Config.account_is_msp():
-            producer = AuthlogProducer(admin.json_api_call, log_queue,
-                                       child_account_id=child_account,
-                                       url_path="/admin/v2/logs/authentication")
+            producer = AuthlogProducer(
+                admin.json_api_call,
+                log_queue,
+                child_account_id=child_account,
+                url_path="/admin/v2/logs/authentication",
+            )
         else:
             producer = AuthlogProducer(admin.get_authentication_log, log_queue)
         consumer = AuthlogConsumer(log_format, log_queue, writer, child_account)
     elif endpoint == Config.TELEPHONY:
         if Config.account_is_msp():
-            producer = TelephonyProducer(admin.json_api_call, log_queue,
-                                         child_account_id=child_account,
-                                         url_path='/admin/v1/logs/telephony')
+            producer = TelephonyProducer(
+                admin.json_api_call,
+                log_queue,
+                child_account_id=child_account,
+                url_path="/admin/v1/logs/telephony",
+            )
         else:
             producer = TelephonyProducer(admin.get_telephony_log, log_queue)
         consumer = TelephonyConsumer(log_format, log_queue, writer, child_account)
     elif endpoint == Config.ADMIN:
         if Config.account_is_msp():
-            producer = AdminactionProducer(admin.json_api_call, log_queue,
-                                           child_account_id=child_account,
-                                           url_path='/admin/v1/logs/administrator')
+            producer = AdminactionProducer(
+                admin.json_api_call,
+                log_queue,
+                child_account_id=child_account,
+                url_path="/admin/v1/logs/administrator",
+            )
         else:
             producer = AdminactionProducer(admin.get_administrator_log, log_queue)
         consumer = AdminactionConsumer(log_format, log_queue, writer, child_account)
     elif endpoint == Config.TRUST_MONITOR:
-        producer = TrustMonitorProducer(admin.get_trust_monitor_events_by_offset, log_queue)
+        producer = TrustMonitorProducer(
+            admin.get_trust_monitor_events_by_offset, log_queue
+        )
         consumer = TrustMonitorConsumer(log_format, log_queue, writer, child_account)
+    elif endpoint == Config.ACTIVITY:
+        producer = ActivityProducer(
+            admin.json_api_call,
+            log_queue,
+            url_path="/admin/v2/logs/activity",
+        )
+        consumer = ActivityConsumer(log_format, log_queue, writer, child_account)
     else:
         Program.log(f"{endpoint} is not a recognized endpoint", logging.WARNING)
         del log_queue
         return []
 
-    tasks = [asyncio.ensure_future(producer.produce()),
-             asyncio.ensure_future(consumer.consume())]
+    tasks = [
+        asyncio.ensure_future(producer.produce()),
+        asyncio.ensure_future(consumer.consume()),
+    ]
 
     return tasks

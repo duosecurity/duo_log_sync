@@ -4,11 +4,13 @@ Definition of the Program class
 
 import logging
 
+
 class ProgramShutdownError(Exception):
     """
     Raise when the program is no longer running and a task needs to begin
     shutdown procedures. Definition is inherited from the Exception class
     """
+
 
 class Program:
     """
@@ -63,18 +65,19 @@ class Program:
 
         try:
             logging.basicConfig(
-                #Where to save logs
+                # Where to save logs
                 filename=log_filepath,
 
-                #How logs should be formatted
+                # How logs should be formatted
                 format='%(asctime)s %(levelname)-8s %(message)s',
 
-                #Minimum level required of a log in order to be seen / written
+                # Minimum level required of a log in order to be seen / written
                 level=logging.INFO,
 
                 # Date format to use with logs
                 datefmt='%Y-%m-%d %H:%M:%S'
             )
+            cls.log(f"Configured logging to write to file {log_filepath}.")
 
         except FileNotFoundError as file_not_found_error:
             cls.log(f"DuoLogSync: Could not follow the path {log_filepath}. "

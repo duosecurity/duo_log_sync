@@ -2,18 +2,21 @@
 Unrelated, but useful functions used in various places throughout DuoLogSync.
 """
 
-import os
-import json
 import asyncio
+import json
 import logging
+import os
 from concurrent.futures import ThreadPoolExecutor
+
 import duo_client
-from duologsync.config import Config
-from duologsync.program import Program, ProgramShutdownError
-from duologsync.__version__ import __version__
 import six
 
+from duologsync.__version__ import __version__
+from duologsync.config import Config
+from duologsync.program import Program, ProgramShutdownError
+
 EXECUTOR = ThreadPoolExecutor(3)
+MILLISECOND_BASED_LOG_TYPES = [Config.AUTH, Config.TRUST_MONITOR, Config.ACTIVITY]
 
 
 async def restless_sleep(duration):
@@ -51,15 +54,14 @@ async def run_in_executor(function_obj):
     @return the result of calling the function in function_obj
     """
 
-    result = await asyncio.get_event_loop().run_in_executor(
-        EXECUTOR,
-        function_obj
-    )
+    result = await asyncio.get_event_loop().run_in_executor(EXECUTOR, function_obj)
 
     return result
 
 
-def get_log_offset(log_type, recover_log_offset, checkpoint_directory, child_account_id=None):
+def get_log_offset(
+    log_type, recover_log_offset, checkpoint_directory, child_account_id=None
+):
     """
     Retrieve the offset from which logs of log_type should be fetched either by
     using the default offset or by using a timestamp saved in a checkpoint file
@@ -75,19 +77,24 @@ def get_log_offset(log_type, recover_log_offset, checkpoint_directory, child_acc
     milliseconds_per_second = 1000
     log_offset = Config.get_api_offset()
 
-    # Auth or Trust Monitor must have timestamp represented in milliseconds, not seconds
-    if log_type == Config.AUTH or log_type == Config.TRUST_MONITOR:
-        log_offset *= milliseconds_per_second
+    # Auth, Trust Monitor, Telephony, and Activity must have timestamp represented in milliseconds, not seconds
+    if log_type in MILLISECOND_BASED_LOG_TYPES:
+        log_offset *= milliseconds_per_second  # type: ignore
 
     # In this case, look for a checkpoint file from which to read the log offset
     if recover_log_offset:
         try:
-            checkpoint_file_path = os.path.join(
-                checkpoint_directory,
-                f"{log_type}_checkpoint_data_" + child_account_id + ".txt")\
-                if child_account_id else os.path.join(
-                checkpoint_directory,
-                f"{log_type}_checkpoint_data.txt")
+            checkpoint_file_path = (
+                os.path.join(
+                    checkpoint_directory,
+                    f"{log_type}_checkpoint_data_{child_account_id}.txt",
+                )
+                if child_account_id
+                else os.path.join(
+                    checkpoint_directory, f"{log_type}_checkpoint_data.txt"
+                )
+            )
+            Program.log(f"Recovering log offset from checkpoint file at {checkpoint_file_path}", logging.INFO)
 
             # Open the checkpoint file, 'with' statement automatically closes it
             with open(checkpoint_file_path) as checkpoint:
@@ -96,8 +103,10 @@ def get_log_offset(log_type, recover_log_offset, checkpoint_directory, child_acc
 
         # Most likely, the checkpoint file doesn't exist
         except OSError:
-            Program.log(f"Could not read checkpoint file for {log_type} logs, "
-                        "consuming logs from {log_offset} timestamp")
+            Program.log(
+                f"Could not read checkpoint file for {log_type} logs, consuming logs from {log_offset} timestamp",
+                logging.INFO
+            )
 
     return log_offset
 
@@ -118,27 +127,25 @@ def create_admin(ikey, skey, host, is_msp=False, proxy_server=None, proxy_port=N
 
     if is_msp:
         admin = duo_client.Accounts(
-            ikey=ikey,
-            skey=skey,
-            host=host,
-            user_agent=f"Duo Log Sync/{__version__}"
+            ikey=ikey, skey=skey, host=host, user_agent=f"Duo Log Sync/{__version__}"
         )
-        Program.log(f"duo_client Account_Admin initialized for ikey: {ikey}, host: {host}",
-                    logging.INFO)
+        Program.log(
+            f"duo_client Account_Admin initialized for ikey: {ikey}, host: {host}",
+            logging.INFO,
+        )
     else:
         admin = duo_client.Admin(
-            ikey=ikey,
-            skey=skey,
-            host=host,
-            user_agent=f"Duo Log Sync/{__version__}"
+            ikey=ikey, skey=skey, host=host, user_agent=f"Duo Log Sync/{__version__}"
         )
-        Program.log(f"duo_client Admin initialized for ikey: {ikey}, host: {host}",
-                    logging.INFO)
+        Program.log(
+            f"duo_client Admin initialized for ikey: {ikey}, host: {host}", logging.INFO
+        )
 
     if proxy_server and proxy_port:
         admin.set_proxy(host=proxy_server, port=proxy_port)
-        Program.log(f"duo_client Proxy configured: {proxy_server}:{proxy_port}", logging.INFO)
-
+        Program.log(
+            f"duo_client Proxy configured: {proxy_server}:{proxy_port}", logging.INFO
+        )
 
     return admin
 
@@ -159,9 +166,11 @@ def normalize_params(params):
         if value is None or isinstance(value, six.string_types):
             return [value]
         return value
+
     return dict(
         (encode(key), [encode(v) for v in to_list(value)])
-        for (key, value) in list(params.items()))
+        for (key, value) in list(params.items())
+    )
 
 
 def check_for_specific_endpoint(endpoint, config):
@@ -169,14 +178,16 @@ def check_for_specific_endpoint(endpoint, config):
     Returns True/False if a specific endpoint is in the config.
 
     params:
-    endpoint (string): The endpoint to check [options: auth, telephony, adminactions, trustmonitor]
+    endpoint (string): The endpoint to check [options: auth, telephony, adminaction, trustmonitor, useractivity]
     config: (dict): The dictionary representation of the config.yml
-    """    
-    endpoint_server_mappings = config['account']['endpoint_server_mappings']
-    endpoints_to_server = [e['endpoints'] for e in endpoint_server_mappings]
+    """
+    endpoint_server_mappings = config.get("account", {}).get(
+        "endpoint_server_mappings", {}
+    )
+    endpoints_to_server = [e["endpoints"] for e in endpoint_server_mappings]
 
     for endpoints in endpoints_to_server:
         if endpoint in endpoints:
             return True
-    
+
     return False

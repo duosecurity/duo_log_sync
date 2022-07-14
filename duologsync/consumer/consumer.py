@@ -11,7 +11,7 @@ from duologsync.producer.producer import Producer
 from duologsync.consumer.cef import log_to_cef
 
 
-class Consumer():
+class Consumer:
     """
     Read logs from a queue shared with a producer object and write those logs
     somewhere using the write objects passed. Additionally, once logs have been
@@ -23,7 +23,7 @@ class Consumer():
     def __init__(self, log_format, log_queue, writer, child_account_id=None):
         self.keys_to_labels = {}
         self.log_format = log_format
-        self.log_type = 'default'
+        self.log_type = "default"
         self.log_queue = log_queue
         self.writer = writer
         self.log_offset = None
@@ -37,8 +37,7 @@ class Consumer():
         """
 
         while Program.is_running():
-            Program.log(f"{self.log_type} consumer: waiting for logs",
-                        logging.INFO)
+            Program.log(f"{self.log_type} consumer: waiting for logs", logging.INFO)
 
             # Call unblocks only when there is an element in the queue to get
             logs = await self.log_queue.get()
@@ -47,8 +46,10 @@ class Consumer():
             if not Program.is_running():
                 continue
 
-            Program.log(f"{self.log_type} consumer: received {len(logs)} logs "
-                        "from producer", logging.INFO)
+            Program.log(
+                f"{self.log_type} consumer: received {len(logs)} logs from queue",
+                logging.INFO,
+            )
 
             # Keep track of the latest log written in the case that a problem
             # occurs in the middle of writing logs
@@ -58,11 +59,10 @@ class Consumer():
             # If we are sending empty [] to unblock consumers, nothing should be written to file
             if logs:
                 try:
-                    Program.log(f"{self.log_type} consumer: writing logs",
-                                logging.INFO)
+                    Program.log(f"{self.log_type} consumer: writing logs", logging.INFO)
                     for log in logs:
                         if self.child_account_id:
-                            log['child_account_id'] = self.child_account_id
+                            log["child_account_id"] = self.child_account_id
                         await self.writer.write(self.format_log(log))
                         last_log_written = log
 
@@ -74,23 +74,32 @@ class Consumer():
                 except BrokenPipeError as broken_pipe_error:
                     shutdown_reason = f"{broken_pipe_error}"
                     Program.initiate_shutdown(shutdown_reason)
-                    Program.log("DuoLogSync: connection to server was reset",
-                                logging.WARNING)
+                    Program.log(
+                        "DuoLogSync: connection to server was reset", logging.WARNING
+                    )
 
                 finally:
                     if successful_write:
-                        Program.log(f"{self.log_type} consumer: successfully wrote "
-                                    "all logs", logging.INFO)
+                        Program.log(
+                            f"{self.log_type} consumer: successfully wrote all logs",
+                            logging.INFO,
+                        )
                     else:
-                        Program.log(f"{self.log_type} consumer: failed to write "
-                                    "some logs", logging.WARNING)
+                        Program.log(
+                            f"{self.log_type} consumer: failed to write some logs",
+                            logging.WARNING,
+                        )
 
-                    self.log_offset = Producer.get_log_offset(last_log_written)
+                    self.log_offset = Producer.get_log_offset(
+                        last_log_written,
+                        current_log_offset=self.log_offset,
+                        log_type=self.log_type,
+                    )
                     self.update_log_checkpoint(
-                        self.log_type, self.log_offset, self.child_account_id)
+                        self.log_type, self.log_offset, self.child_account_id
+                    )
             else:
-                Program.log(
-                    f"{self.log_type} consumer: No logs to write", logging.INFO)
+                Program.log(f"{self.log_type} consumer: No logs to write", logging.INFO)
 
         Program.log(f"{self.log_type} consumer: shutting down", logging.INFO)
 
@@ -110,10 +119,9 @@ class Consumer():
         elif self.log_format == Config.JSON:
             formatted_log = json.dumps(log)
         else:
-            raise ValueError(
-                f"{self.log_format} is not a supported log format")
+            raise ValueError(f"{self.log_format} is not a supported log format")
 
-        return formatted_log.encode() + b'\n'
+        return formatted_log.encode() + b"\n"
 
     @staticmethod
     def update_log_checkpoint(log_type, log_offset, child_account_id):
@@ -124,21 +132,27 @@ class Consumer():
         @param log_offset   Information to save in the checkpoint file
         """
 
-        Program.log(f"{log_type} consumer: saving latest log offset to a "
-                    "checkpointing file", logging.INFO)
+        Program.log(
+            f"{log_type} consumer: saving latest log offset '{log_offset}' to a checkpointing file",
+            logging.INFO,
+        )
 
-        file_path = os.path.join(
-            Config.get_checkpoint_dir(),
-            f"{log_type}_checkpoint_data_" + child_account_id + ".txt")\
-            if child_account_id else os.path.join(
+        file_path = (
+            os.path.join(
                 Config.get_checkpoint_dir(),
-                f"{log_type}_checkpoint_data.txt")
+                f"{log_type}_checkpoint_data_" + child_account_id + ".txt",
+            )
+            if child_account_id
+            else os.path.join(
+                Config.get_checkpoint_dir(), f"{log_type}_checkpoint_data.txt"
+            )
+        )
 
         checkpoint_filename = file_path
 
         # Open file checkpoint_filename in writing mode only
-        checkpoint_file = open(checkpoint_filename, 'w')
-        checkpoint_file.write(json.dumps(log_offset) + '\n')
+        checkpoint_file = open(checkpoint_filename, "w")
+        checkpoint_file.write(json.dumps(log_offset) + "\n")
 
         # According to Python docs, closing a file also flushes the file
         checkpoint_file.close()

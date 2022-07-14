@@ -1,0 +1,30 @@
+version: "1.0.0"
+
+dls_settings:
+  log_filepath: "/tmp/duologsync.log"
+  log_format: "JSON"
+
+  api:
+    offset: 180
+    timeout: 120
+
+  checkpointing:
+    enabled: True
+    directory: "/tmp"
+
+servers:
+  - id: "test"
+    hostname: "127.0.0.1"
+    port: 8888
+    protocol: "TCP"
+
+account:
+  ikey: "admin-api-ikey"
+  skey: "admin-api-skey"
+  hostname: "host.name.com"
+
+  endpoint_server_mappings:
+    - endpoints:
+        ["adminaction", "auth", "telephony", "trustmonitor", "activity"]
+      server: "test"
+  is_msp: False
