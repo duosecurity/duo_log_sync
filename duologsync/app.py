@@ -47,7 +47,9 @@ def main():
     args = arg_parser.parse_args()
 
     # Handle shutting down the program via Ctrl-C
-    signal.signal(signal.SIGINT, sigint_handler)
+    signal.signal(signal.SIGINT, signal_handler)
+    # Handle shutting down the program via SIGTERM
+    signal.signal(signal.SIGTERM, signal_handler)
 
     # Create a config Dictionary from a YAML file located at args.ConfigPath
     config = Config.create_config(args.ConfigPath)
@@ -82,16 +84,20 @@ def main():
         print(f"DuoLogSync: shutdown successfully. Check "
               f"{Config.get_log_filepath()} for program logs")
 
-def sigint_handler(signal_number, stack_frame):
+def signal_handler(signal_number, stack_frame):
     """
-    Handler for SIGINT (Ctrl-C) to gracefully shutdown DuoLogSync
+    Handler for signals to gracefully shutdown DuoLogSync
     """
 
-    shutdown_reason = f"received signal {signal_number} (Ctrl-C)"
+    if signal_number == signal.SIGINT:
+        shutdown_reason = f"received signal {signal_number} (Ctrl-C)"
+    else:
+        shutdown_reason = f"received signal {signal.strsignal(signal_number)}"
+
     Program.initiate_shutdown(shutdown_reason)
 
     if stack_frame:
-        Program.log(f"DuoLogSync: stack frame from Ctrl-C is {stack_frame}",
+        Program.log(f"DuoLogSync: stack frame from signal is {stack_frame}",
                     logging.INFO)
 
 def create_tasks(server_to_writer):
