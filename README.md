@@ -10,6 +10,20 @@ Duo Log Sync (v2.1.0)
 `duologsync` (DLS) is a utility written by Duo Security that supports fetching logs from Duo endpoints and ingesting them to different SIEMs.
 
 ---
+## Prerequisite
+
+`duologsync` requires credentials for an Admin API application with the "Grant read log" API permission. Create this application before installation and configuration.
+
+To create the Admin API application:
+
+1. Log into the Duo Admin Panel as an administrator with the "Owner" role and navigate to **Applications**.
+2. Click **Protect an Application** and locate the entry for **Admin API** in the applications list.
+3. Click **Protect** to the far-right to configure the application and get your integration key, secret key, and API hostname. You'll need this information to update the `config.yml` file later.
+4. Scroll down to the "Permissions" section of the page and deselect all permission options other than **Grant read log**.
+5. Optionally specify which IP addresses or ranges are allowed to use this Admin API application in **Networks for API Access**. If you do not specify any IP addresses or ranges, this Admin API application may be accessed from any network.
+6. Click **Save**.
+
+MSP customers gathering logs from linked accounts should create an **Accounts API** Duo application and use that application's information in the `config.yml` file.
 
 ## Installation
 
