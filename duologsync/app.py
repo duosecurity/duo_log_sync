@@ -202,16 +202,12 @@ def create_consumer_producer_pair(endpoint, writer, admin, child_account=None):
             producer = AuthlogProducer(admin.get_authentication_log, log_queue)
         consumer = AuthlogConsumer(log_format, log_queue, writer, child_account)
     elif endpoint == Config.TELEPHONY:
-        if Config.account_is_msp():
-            producer = TelephonyProducer(
-                admin.json_api_call,
-                log_queue,
-                child_account_id=child_account,
-                url_path="/admin/v1/logs/telephony",
-            )
-        else:
-            producer = TelephonyProducer(admin.get_telephony_log, log_queue)
-        consumer = TelephonyConsumer(log_format, log_queue, writer, child_account)
+        producer = TelephonyProducer(
+            admin.json_api_call,
+            log_queue,
+            url_path="/admin/v2/logs/telephony",
+        )
+        consumer = TelephonyConsumer(log_format, log_queue, writer)
     elif endpoint == Config.ADMIN:
         if Config.account_is_msp():
             producer = AdminactionProducer(

@@ -3,10 +3,13 @@ Definition of the Config class
 """
 
 from datetime import datetime, timedelta
-from cerberus import Validator, schema_registry
+
 import yaml
+from cerberus import Validator, schema_registry  # type: ignore
 from yaml import YAMLError
+
 from duologsync.program import Program
+
 
 class Config:
     """

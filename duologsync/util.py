@@ -7,8 +7,9 @@ import json
 import logging
 import os
 from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime, timezone
 
-import duo_client
+import duo_client # type: ignore
 import six
 
 from duologsync.__version__ import __version__
@@ -16,7 +17,12 @@ from duologsync.config import Config
 from duologsync.program import Program, ProgramShutdownError
 
 EXECUTOR = ThreadPoolExecutor(3)
-MILLISECOND_BASED_LOG_TYPES = [Config.AUTH, Config.TRUST_MONITOR, Config.ACTIVITY]
+MILLISECOND_BASED_LOG_TYPES = [
+    Config.AUTH,
+    Config.TRUST_MONITOR,
+    Config.ACTIVITY,
+    Config.TELEPHONY,
+]
 
 
 async def restless_sleep(duration):
@@ -75,7 +81,7 @@ def get_log_offset(
     """
 
     milliseconds_per_second = 1000
-    log_offset = Config.get_api_offset()
+    log_offset = Config.get_api_offset() or 0
 
     # Auth, Trust Monitor, Telephony, and Activity must have timestamp represented in milliseconds, not seconds
     if log_type in MILLISECOND_BASED_LOG_TYPES:
@@ -94,7 +100,10 @@ def get_log_offset(
                     checkpoint_directory, f"{log_type}_checkpoint_data.txt"
                 )
             )
-            Program.log(f"Recovering log offset from checkpoint file at {checkpoint_file_path}", logging.INFO)
+            Program.log(
+                f"Recovering log offset from checkpoint file at {checkpoint_file_path}",
+                logging.INFO,
+            )
 
             # Open the checkpoint file, 'with' statement automatically closes it
             with open(checkpoint_file_path) as checkpoint:
@@ -103,9 +112,15 @@ def get_log_offset(
 
         # Most likely, the checkpoint file doesn't exist
         except OSError:
+            display_offset = log_offset
+            if log_type in MILLISECOND_BASED_LOG_TYPES:
+                display_offset /= milliseconds_per_second
+            iso_timestamp = datetime.fromtimestamp(
+                display_offset, tz=timezone.utc
+            ).isoformat()
             Program.log(
-                f"Could not read checkpoint file for {log_type} logs, consuming logs from {log_offset} timestamp",
-                logging.INFO
+                f"Could not read checkpoint file for {log_type} logs, consuming logs from {iso_timestamp} (UTC)",
+                logging.INFO,
             )
 
     return log_offset

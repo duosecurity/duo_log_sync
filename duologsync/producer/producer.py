@@ -2,13 +2,13 @@
 Definition of the Producer class
 """
 
-import datetime
 import functools
-import json
 import logging
+from datetime import datetime
 from socket import gaierror
 
 import six
+
 from duologsync.config import Config
 from duologsync.program import Program, ProgramShutdownError
 from duologsync.util import get_log_offset, restless_sleep, run_in_executor
@@ -108,7 +108,7 @@ class Producer:
             logs, current_log_offset=self.log_offset, log_type=self.log_type
         )
 
-        # Authlogs v2, Trust Monitor, and Activity endpoint returns dict response
+        # Authlogs v2, Trust Monitor, Telephony, and Activity endpoint returns dict response
         if isinstance(logs, dict):
             if logs.get("authlogs", None) is not None:
                 logs = logs["authlogs"]
@@ -117,16 +117,23 @@ class Producer:
             elif logs.get("items", None) is not None:
                 logs = logs["items"]
 
-        Program.log(
-            f"{self.log_type} producer: adding {len(logs)} logs to the queue",
-            logging.INFO,
-        )
+        if len(logs):
+            Program.log(
+                f"{self.log_type} producer: adding {len(logs)} logs to the queue",
+                logging.INFO,
+            )
 
-        await self.log_queue.put(logs)
-        Program.log(
-            f"{self.log_type} producer: successfully added logs to the queue",
-            logging.INFO,
-        )
+            await self.log_queue.put(logs)
+
+            Program.log(
+                f"{self.log_type} producer: successfully added logs to the queue",
+                logging.INFO,
+            )
+        else:
+            Program.log(
+                f"{self.log_type} producer: no new logs to add to the queue",
+                logging.INFO,
+            )
 
     async def call_log_api(self):
         """
@@ -195,23 +202,26 @@ class Producer:
                 ):
                     return log.get("metadata", {}).get("next_offset")
 
-            if log_type is not None and log_type == Config.ACTIVITY:
-                # Activity requires a comma separated string of `timestamp,id` for
+            if log_type is not None and log_type in [Config.ACTIVITY, Config.TELEPHONY]:
+                # Telephony and Activity require a comma separated string of `timestamp,id` for
                 # the next_offset parameter to the Admin API. Here we parse the
                 # next_offset from an individual log. Called from the consumer logic.
 
                 # Check if we're processing a response or an individual log
                 if log.get("items") is None:
                     next_timestamp_to_poll_from = (
-                        datetime.datetime.strptime(
-                            six.ensure_str(log.get("ts", "")),
+                        datetime.strptime(
+                            log.get("ts", ""),
                             "%Y-%m-%dT%H:%M:%S.%f+00:00",
                         ).timestamp()
                         * 1000
                     )
-                    activity_id = log.get("activity_id")
+                    id_field = "activity_id"
+                    if log_type == Config.TELEPHONY:
+                        id_field = "telephony_id"
+                    log_id = log.get(id_field)
                     next_timestamp = int(next_timestamp_to_poll_from) + 1
-                    return f"{next_timestamp},{activity_id}"
+                    return f"{next_timestamp},{log_id}"
                 else:
                     if log.get("metadata", {}).get("next_offset", None) is not None:
                         next_offset = log.get("metadata", {}).get("next_offset", None)
@@ -242,11 +252,11 @@ class Producer:
             if log.get("isotimestamp") and log.get("txid"):
                 value = int(
                     (
-                        datetime.datetime.strptime(
+                        datetime.strptime(
                             six.ensure_str(log.get("isotimestamp", "")),
                             "%Y-%m-%dT%H:%M:%S.%f+00:00",
                         )
-                        - datetime.datetime(1970, 1, 1)
+                        - datetime(1970, 1, 1)
                     ).total_seconds()
                     * 1000
                 )

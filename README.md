@@ -1,4 +1,4 @@
-Duo Log Sync (v2.1.0)
+Duo Log Sync (v2.2.0)
 ===================
 
 [![Issues](https://img.shields.io/github/issues/duosecurity/duo_log_sync)](https://github.com/duosecurity/duo_log_sync/issues)
@@ -66,6 +66,10 @@ MSP customers gathering logs from linked accounts should create an **Accounts AP
 - Adding CEF and MSP support for the Trust Monitor endpoint.
 
 ---
+
+## System Requirements
+
+- Duo Log Sync must be run a system set to the UTC/GMT Timezone
 
 ## Configuration
 

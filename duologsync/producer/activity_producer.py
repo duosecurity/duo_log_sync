@@ -4,12 +4,9 @@ Definition of the ActivityProducer class
 import datetime
 import functools
 import math
-import time
 
-import six
 from duologsync.config import Config
 from duologsync.producer.producer import Producer
-from duologsync.program import Program
 from duologsync.util import normalize_params, run_in_executor
 
 
@@ -47,7 +44,7 @@ class ActivityProducer(Producer):
         @return the result of a call to the Activity Log API endpoint
         """
         today = datetime.datetime.now(tz=datetime.timezone.utc)
-        maxtime = math.floor(today.timestamp() * 1000)
+        maxtime = math.floor(today.timestamp() * 1000) - 120
 
         parameters = normalize_params(
             {

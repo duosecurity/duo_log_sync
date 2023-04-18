@@ -1,8 +1,7 @@
-import datetime
+from datetime import datetime
 from unittest import TestCase
-from unittest.mock import patch
-from duologsync.config import Config
 
+from duologsync.config import Config
 from duologsync.producer.producer import Producer
 
 
@@ -162,42 +161,71 @@ class TestGetLogOffset(TestCase):
         self.assertEqual(adminaction_current_offset, adminaction_offset_to_set)
 
     def test_telephony_offset_value_producer(self):
-        telephony_response = [
-            {
-                "context": "authentication",
-                "credits": 2,
-                "isotimestamp": "2020-05-18T11:32:53+00:00",
-                "phone": "+13135105356",
-                "timestamp": 1589801573,
-                "type": "phone",
-                "eventtype": "telephony",
-                "host": "api-first.test.duosecurity.com",
-            }
-        ]
-        telephony_current_offset = telephony_response[-1]["timestamp"] + 1
-        telephony_offset_to_set = Producer.get_log_offset(
-            telephony_response, log_type=Config.TELEPHONY
+        sample_telephony_response = {
+            "items": [
+                {
+                    "context": "context1234",
+                    "credits": 3,
+                    "phone": "+11234567890",
+                    "telephony_id": "93a67857-365a-4ff3-a445-e389c2ab2df6",
+                    "ts": "2022-11-01T21:24:00.000000+00:00",
+                    "txid": "1bc858de-cef7-4337-b5b3-80eca311af01",
+                    "type": "sms",
+                },
+                {
+                    "context": "context1234",
+                    "credits": 3,
+                    "phone": "+11234567890",
+                    "telephony_id": "93a67857-365a-4ff3-a445-e389c2ab2df6",
+                    "ts": "2022-11-01T21:24:00.000000+00:00",
+                    "txid": "1bc858de-cef7-4337-b5b3-80eca311af02",
+                    "type": "sms",
+                },
+                {
+                    "context": "context1234",
+                    "credits": 3,
+                    "phone": "+11234567890",
+                    "telephony_id": "93a67857-365a-4ff3-a445-e389c2ab2df6",
+                    "ts": "2022-11-01T21:24:00.000000+00:00",
+                    "txid": "1bc858de-cef7-4337-b5b3-80eca311af03",
+                    "type": "sms",
+                },
+            ],
+            "metadata": {
+                "next_offset": "1664576469635,1c40324f-eb60-4e87-9ffb-656295fd235b",
+                "total_objects": 4000,
+            },
+        }
+        offset_in_metadata = sample_telephony_response["metadata"]["next_offset"]
+        producer_offset = Producer.get_log_offset(
+            sample_telephony_response, log_type=Config.TELEPHONY
         )
-        self.assertEqual(telephony_current_offset, telephony_offset_to_set)
+        self.assertEqual(offset_in_metadata, producer_offset)
 
     def test_telephony_offset_value_consumer(self):
-        telephony_response = [
-            {
-                "action": "admin_login",
-                "description": '{"ip_address": "72.35.40.116", "device": "248-971-9157", "primary_auth_method": "Password", "factor": "push"}',
-                "isotimestamp": "2020-02-10T14:41:22+00:00",
-                "object": None,
-                "timestamp": 1581345682,
-                "username": "CJ Na",
-                "eventtype": "administrator",
-                "host": "api-first.test.duosecurity.com",
-            }
-        ]
-        telephony_current_offset = telephony_response[0]["timestamp"] + 1
-        telephony_offset_to_set = Producer.get_log_offset(
-            telephony_response[0], log_type=Config.TELEPHONY
+        sample_telephony_response = {
+            "context": "context1234",
+            "credits": 3,
+            "phone": "+11234567890",
+            "telephony_id": "93a67857-365a-4ff3-a445-e389c2ab2df6",
+            "ts": "2022-11-01T21:24:00.000000+00:00",
+            "txid": "1bc858de-cef7-4337-b5b3-80eca311af03",
+            "type": "sms",
+        }
+        next_timestamp_to_poll_from = (
+            datetime.strptime(
+                sample_telephony_response.get("ts", ""),
+                "%Y-%m-%dT%H:%M:%S.%f+00:00",
+            ).timestamp()
+            * 1000
         )
-        self.assertEqual(telephony_current_offset, telephony_offset_to_set)
+        telephony_id = sample_telephony_response.get("telephony_id")
+        next_timestamp = int(next_timestamp_to_poll_from) + 1
+        next_offset = f"{next_timestamp},{telephony_id}"
+        consumer_offset = Producer.get_log_offset(
+            sample_telephony_response, log_type=Config.TELEPHONY
+        )
+        self.assertEqual(next_offset, consumer_offset)
 
     def test_trust_monitor_offset_value_producer(self):
         dtm_response = {
@@ -470,7 +498,7 @@ class TestGetLogOffset(TestCase):
             "ts": "2022-09-30T23:09:39.635000+00:00",
         }
         next_timestamp_to_poll_from = (
-            datetime.datetime.strptime(
+            datetime.strptime(
                 sample_activity_response.get("ts", ""),
                 "%Y-%m-%dT%H:%M:%S.%f+00:00",
             ).timestamp()
