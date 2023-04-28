@@ -1,0 +1,35 @@
+name: push-open-source-action
+env:
+  ssh_pem: ${{ secrets.open_source_pem }}
+run-name: ${{ github.actor }} is pushing the master branch to open source
+on: 
+  push:
+    branches:
+      - master
+jobs:
+  push-open-source:
+    runs-on: ubuntu-latest
+    permissions: 
+      contents: read
+      repository-projects: write
+    steps:
+      - uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c
+        with:
+          fetch-depth: 0
+      - name: Setup SSH for Github
+        env:
+          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+        run: |
+          mkdir -p /home/runner/.ssh
+          ssh-keyscan github.com >> /home/runner/.ssh/known_hosts
+          echo "$ssh_pem" > /home/runner/.ssh/github_actions
+          chmod 600 /home/runner/.ssh/github_actions
+          ssh-agent -a $SSH_AUTH_SOCK > /dev/null
+          ssh-add /home/runner/.ssh/github_actions
+      - name: Push To Public Repo
+        env:
+          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+        run: |
+          git config --unset-all http.https://github.com/.extraheader
+          git remote add public org-526376@github.com:duosecurity/duo_log_sync.git
+          git push --verbose --force public master
