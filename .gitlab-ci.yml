@@ -1,4 +1,11 @@
 ---
+include:
+  - project: mirrors/ZT-bnt-common
+    file: .gitlab/includes/certificate-cap-test-plan.yml
+
+"audit: certificate_cap_audit":
+  extends: .cert_search_tpl
+
 # Set an image to be used by all jobs described in this file. CI_REGISTRY_IMAGE
 # is a Gitlab predefined environment variable that returns the address of the
 # registry (location where containers are stored) tied to this specific
