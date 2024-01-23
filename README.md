@@ -1,4 +1,4 @@
-Duo Log Sync (v2.2.0)
+Duo Log Sync (v2.2.1)
 ===================
 
 [![Issues](https://img.shields.io/github/issues/duosecurity/duo_log_sync)](https://github.com/duosecurity/duo_log_sync/issues)

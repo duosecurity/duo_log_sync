@@ -1,5 +1,9 @@
 ## Change Log
 
+### 2.2.1
+
+Security Update: Updated PyYAML to 6.0.1
+
 ### 2.2.0
 
 - Updated the Telephony Producer to retrieve logs from the `/admin/v2/logs/telephony` endpoint
