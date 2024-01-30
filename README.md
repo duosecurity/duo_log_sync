@@ -30,6 +30,7 @@ MSP customers gathering logs from linked accounts should create an **Accounts AP
 - Make sure you are running Python 3+ with `python --version`.
 - Clone this GitHub repository and navigate to the `duo_log_sync` folder.
 - Ensure you have "setuptools" by running `pip3 install setuptools`.
+- Install required packages by running `pip/pip3 install -r requirements.txt`.
 - Install `duologsync` by running `python/python3 setup.py install`. 
 - Refer to the `Configuration` section below. You will need to create a `config.yml` file and fill out credentials for the adminapi in the duoclient section as well as other parameters if necessary.
 - Run the application using `duologsync <complete/path/to/config.yml>`.
