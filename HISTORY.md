@@ -1,13 +1,14 @@
 ## Change Log
 
 ### 2.2.2
-Security Update: Updated PyYAML in setup.py to 6.0.1, due to a [security
-vulnerability](https://nvd.nist.gov/vuln/detail/CVE-2020-14343).
+
+Security Update: Updated PyYAML in setup.py to 6.0.1, due to a [security vulnerability](https://nvd.nist.gov/vuln/detail/CVE-2020-14343).
+
 
 ### 2.2.1
 
-Security Update: Updated PyYAML to 6.0.1 in requirements.txt only, due to a [security
-  5 vulnerability](https://nvd.nist.gov/vuln/detail/CVE-2020-14343).
+Security Update: Updated PyYAML to 6.0.1 in requirements.txt only, due to a [security vulnerability](https://nvd.nist.gov/vuln/detail/CVE-2020-14343).
+
 
 ### 2.2.0
 
