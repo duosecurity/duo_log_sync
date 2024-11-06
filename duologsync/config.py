@@ -2,7 +2,8 @@
 Definition of the Config class
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+from http import HTTPStatus
 
 import yaml
 from cerberus import Validator, schema_registry  # type: ignore
@@ -43,6 +44,8 @@ class Config:
     CHECKPOINTING_DIRECTORY_DEFAULT = DIRECTORY_DEFAULT
     PROXY_SERVER_DEFAULT = ''
     PROXY_PORT_DEFAULT = 0
+
+    GRACEFUL_RETRY_STATUS_CODES = (HTTPStatus.TOO_MANY_REQUESTS.value,)
 
     # To understand these schema definitions better, compare side-by-side to
     # the template_config.yml file
@@ -374,7 +377,7 @@ class Config:
         else:
             # Calculate offset as a timestamp and rewrite its value in config
             offset = config.get('dls_settings').get('api').get('offset')
-            offset = datetime.utcnow() - timedelta(days=offset)
+            offset = datetime.now(timezone.utc) - timedelta(days=offset)
             config['dls_settings']['api']['offset'] = int(offset.timestamp())
             return config
 

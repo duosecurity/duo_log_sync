@@ -56,7 +56,7 @@ class Producer:
                 # shutdown every second
                 await restless_sleep(Config.get_api_timeout())
                 Program.log(
-                    f"{self.log_type} producer: fetching logs from offset {self.log_offset}",
+                    f"{self.log_type} producer: fetching logs from offset {self.log_offset or self.mintime}",
                     logging.INFO,
                 )
                 api_result = await self.call_log_api()
@@ -80,10 +80,7 @@ class Producer:
 
             # duo_client throws a RuntimeError if the ikey or skey is invalid
             except RuntimeError as runtime_error:
-                shutdown_reason = f"{self.log_type} producer: [{runtime_error}]"
-                Program.log(
-                    "DuoLogSync: check that the duoclient ikey and skey in the config file are correct"
-                )
+                shutdown_reason = self.handle_runtime_error_gracefully(runtime_error)
 
             # Shutdown hath been noticed and thus shutdown shall begin
             except ProgramShutdownError:
@@ -95,6 +92,39 @@ class Producer:
         # Unblock consumer but putting anything in the shared queue
         await self.log_queue.put([])
         Program.log(f"{self.log_type} producer: shutting down", logging.INFO)
+
+    def handle_runtime_error_gracefully(self, runtime_error: RuntimeError):
+        """
+        Handle a runtime error gracefully by checking if the error is eligible for a retry.
+        If it is, log the error and return None to indicate that the producer should retry.
+        If it is not, log the error and return a string to indicate that the producer should shut down.
+        """
+        if self.eligible_for_retry(runtime_error):
+            error_data = getattr(runtime_error, "data", None)
+            error_code = error_data['code'] if error_data else None
+            Program.log(
+                f"{self.log_type} producer: retrying due to error: {runtime_error} error_code: {error_code}",
+                logging.WARNING,
+            )
+
+            return None
+
+        return f"{self.log_type} producer: [{runtime_error}]"
+
+    @staticmethod
+    def eligible_for_retry(runtime_error: RuntimeError):
+        """
+        Check if the runtime error is eligible for a retry based on the status code.
+        See the Config.GRACEFUL_RETRY_STATUS_CODES for the list of status codes that is eligible for a retry.
+        """
+        http_error_code = getattr(runtime_error, "status", None)
+
+        if http_error_code:
+            for http_status_code in Config.GRACEFUL_RETRY_STATUS_CODES:
+                if http_error_code == http_status_code:
+                    return True
+
+        return False
 
     async def add_logs_to_queue(self, logs):
         """
@@ -223,7 +253,7 @@ class Producer:
                     next_timestamp = int(next_timestamp_to_poll_from) + 1
                     return f"{next_timestamp},{log_id}"
                 else:
-                    if log.get("metadata", {}).get("next_offset", None) is not None:
+                    if (log.get("metadata", {}) or {}).get("next_offset", None) is not None:
                         next_offset = log.get("metadata", {}).get("next_offset", None)
                         return next_offset
 

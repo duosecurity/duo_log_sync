@@ -52,7 +52,7 @@ class Program:
         @param reason   Explanation of why a shutdown was requested
         """
 
-        cls.log(f"DuoLogSync: Shutting down due to [{reason}]", logging.WARNING)
+        cls.log(f"DuoLogSync: Shutting down due to [{reason}]", logging.ERROR)
         cls._running = False
 
     @classmethod
