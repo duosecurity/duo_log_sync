@@ -75,6 +75,26 @@ MSP customers gathering logs from linked accounts should create an **Accounts AP
 
 - See [`template_config.yml`](./template_config.yml) for an example and for extensive, in-depth config explanation.
 
+### Configurations explained
+- The `log_format` field is a `dls_settings` setting and it is for how Duo logs should be formatted before being sent to a server/siem. Valid options are CEF, JSON. The default will be JSON.
+- The `offset` field is a `api` setting and it is for days in the past from which record retrieval should begin. Maximum logs that can be fetched is `180 days` in past. The default is 180.
+- The `timeout` field is a `api` setting and it is for `seconds` to wait between API calls (for fetching Duo logs). If timeout is set to less than 120 seconds, it will be defaulted to 120.
+- The `enabled` field is a `checkpointing` setting and it is for whether checkpoint files should be created to save offset information about API calls which will be used to continue fetching of data if utility crashes or is restarted. Valid options are True or False.
+- The `directory` field is a `checkpointing` setting is to mention path where checkpoint files will be created. The default is `/tmp`.
+- The `proxy_server` is a `proxy` setting and it is a Host/IP for the Http Proxy.
+- The `proxy_port` is a `proxy` setting and it is a Port for the Http Proxy.
+- The `id` is a `servers` setting and it is a descriptive name for your server. It is a `REQUIRED` field.
+- The `hostname` is a `servers` setting and it is a address of TCP/UDP server to which Duo logs will be sent. It is a `REQUIRED` field.
+- The `port` is a `servers` setting and it is a Port of server to which logs will be sent. The valid port range is 1024-65535. It is a `REQUIRED` field.
+- The `protocol` is a `servers` setting and it is a transport protocol used to communicate with the server. The allowed options are `TCP`, `TCPSSL`, `UDP`. It is a `REQUIRED` field.
+- The `cert_filepath` is a `servers` setting and it is a location of the certificate file used for encrypting communication for TCPSSL. TCPSSL expects that there are .key and .cert files that store keys. For configuration, give path of .cert/.pem file that has keys. It is a `REQUIRED` field if protocol is TCPSSL.
+- The `ikey` is a `account` setting and it is a integration key of the `Admin API` integration. For MSP accoint, this should have integration key for `Accounts API`. It is a `REQUIRED` field.
+- The `skey` is a `account` setting and it is a private key of the `Admin API` integration. For MSP accoint, this should have private key for `Accounts API`. It is a `REQUIRED` field.
+- The `hostname` is a `account` setting and it is a api-hostname of the `Admin API` integration on which the server hosting this account's logs. For MSP accoint, this should have api-hostname for `Accounts API`. It is a `REQUIRED` field.
+- The `endpoints` field is a `endpoint_server_mappings` setting. It is for defining what endpoints the mapping is for as a list. The valid options are `adminaction`, `auth`, `telephony`, `trustmonitor`, `activity`. It is a `REQUIRED` field.
+- The `server` field is a `endpoint_server_mappings` setting. It is where you define to what servers the logs of certain endpoints should go.This is done by creating a mapping (start with dash -).It is a `REQUIRED` field.
+- The `is_msp` field is to define whether this account is a Duo MSP account with child accounts. If True, then all the child accounts will be accessed and logs will be pulled for each child account. It is a `NOT REQUIRED` field. The default is `False`
+
 ### Upgrading Your Config File
 - From time to time new features and fields will be added to the config file. Updating of the config file is mandatory when config changes are made. To make this easier, Duo has created a script called [`upgrade_config.py`](./upgrade_config.py) which will automatically update your old config for you.
 - To use the `upgrade_config.py` script, simply run the following command: `python3 upgrade_config.py <old_config> <new_config>` where `<old_config>` is the filepath or your old configuration file, and `<new_config>` is where you would like the new configuration file to be saved.
