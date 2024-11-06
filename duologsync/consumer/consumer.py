@@ -72,11 +72,10 @@ class Consumer:
                 # Specifically watch out for errno 32 - Broken pipe. This means
                 # that the connect established by writer was reset or shutdown.
                 except BrokenPipeError as broken_pipe_error:
-                    shutdown_reason = f"{broken_pipe_error}"
+                    error_code, error_message = getattr(broken_pipe_error, "args")
+                    shutdown_reason = f"{self.log_type} consumer: [{broken_pipe_error} error_code: {error_code}]"
+                    Program.log(f"{self.log_type} consumer: connection to the destination server was reset or shutdown", logging.ERROR)
                     Program.initiate_shutdown(shutdown_reason)
-                    Program.log(
-                        "DuoLogSync: connection to server was reset", logging.WARNING
-                    )
 
                 finally:
                     if successful_write:
@@ -132,26 +131,16 @@ class Consumer:
         @param log_offset   Information to save in the checkpoint file
         """
 
-        Program.log(
-            f"{log_type} consumer: saving latest log offset '{log_offset}' to a checkpointing file",
-            logging.INFO,
-        )
+        checkpoint_filename = f"{log_type}_checkpoint_data_" + child_account_id + ".txt" if child_account_id else f"{log_type}_checkpoint_data.txt"
+        checkpoint_file_path = os.path.join(Config.get_checkpoint_dir(), checkpoint_filename)
 
-        file_path = (
-            os.path.join(
-                Config.get_checkpoint_dir(),
-                f"{log_type}_checkpoint_data_" + child_account_id + ".txt",
-            )
-            if child_account_id
-            else os.path.join(
-                Config.get_checkpoint_dir(), f"{log_type}_checkpoint_data.txt"
-            )
-        )
-
-        checkpoint_filename = file_path
+        if os.path.exists(checkpoint_file_path):
+            Program.log(f"{log_type} consumer: saving latest log offset '{log_offset}' to a checkpoint file '{checkpoint_file_path}'", logging.INFO)
+        else:
+            Program.log(f"{log_type} consumer: checkpoint file '{checkpoint_file_path}' doesn't exist and it will be created to save the latest offset '{log_offset}'", logging.INFO)
 
         # Open file checkpoint_filename in writing mode only
-        checkpoint_file = open(checkpoint_filename, "w")
+        checkpoint_file = open(checkpoint_file_path, "w")
         checkpoint_file.write(json.dumps(log_offset) + "\n")
 
         # According to Python docs, closing a file also flushes the file

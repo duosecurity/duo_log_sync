@@ -146,6 +146,7 @@ class TestConfig(TestCase):
     def test_create_config_normal(self):
         config_filepath = 'tests/resources/config_files/standard.yml'
         correct_config = {
+            'config_file_path': config_filepath,
             'version': '1.0.0',
             'dls_settings': {
                 'log_filepath': '/tmp/duologsync.log',

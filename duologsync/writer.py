@@ -7,6 +7,8 @@ import ssl
 import logging
 import socket
 from socket import gaierror
+
+from duologsync.config import Config
 from duologsync.program import Program
 
 
@@ -113,9 +115,7 @@ class Writer:
                     logging.INFO)
 
         # Message to be logged if an error occurs in this function
-        help_message = (
-            f"DuoLogSync: check that host-{host} and port-{port} "
-            "are correct in the config file")
+        help_message = f"DuoLogSync: check that host-{host} and port-{port} are correct in the configuration file '{Config.get_config_file_path()}'"
         writer = None
 
         try:
@@ -132,20 +132,20 @@ class Writer:
                 writer = await Writer.create_tcp_writer(host, port)
 
         # Failed to open the certificate file
-        except FileNotFoundError:
-            shutdown_reason = f"{cert_filepath} could not be opened."
-            help_message = (
-                'DuoLogSync: Make sure the filepath for SSL cert file is '
-                'correct.')
+        except FileNotFoundError as fnf_error:
+            error_code, error_message = getattr(fnf_error, "args")
+            shutdown_reason = f"certificate file '{cert_filepath}' could not be opened due to error: {error_message} error_code: {error_code}"
+            help_message = f"make sure that certificate file '{cert_filepath}' to establish SSL connection is correct."
 
         # Couldn't establish a connection within 60 seconds
         except asyncio.TimeoutError:
-            shutdown_reason = 'connection to server timed-out after 60 seconds'
+            shutdown_reason = 'connection to the destination server timed-out after 60 seconds'
 
         # If an invalid hostname or port number is given or simply failed to
         # connect using the host and port given
         except (gaierror, OSError) as error:
-            shutdown_reason = f"{error}"
+            error_code, error_message = getattr(error, "args")
+            shutdown_reason = f"error while connecting to {host}:{port} error_message: {error_message} error_code: {error_code}"
 
         # An error did not occur and the writer was successfully created
         else:

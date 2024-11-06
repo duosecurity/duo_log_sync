@@ -101,7 +101,7 @@ def get_log_offset(
                 )
             )
             Program.log(
-                f"Recovering log offset from checkpoint file at {checkpoint_file_path}",
+                f"{log_type} producer: recovering log offset from checkpoint file at '{checkpoint_file_path}'",
                 logging.INFO,
             )
 
@@ -111,7 +111,9 @@ def get_log_offset(
                 log_offset = json.loads(checkpoint.read())
 
         # Most likely, the checkpoint file doesn't exist
-        except OSError:
+        except OSError as os_error:
+            error_code, error_message = getattr(os_error, "args")
+            file_name = getattr(os_error, "filename", None)
             display_offset = log_offset
             if log_type in MILLISECOND_BASED_LOG_TYPES:
                 display_offset /= milliseconds_per_second
@@ -119,7 +121,11 @@ def get_log_offset(
                 display_offset, tz=timezone.utc
             ).isoformat()
             Program.log(
-                f"Could not read checkpoint file for {log_type} logs, consuming logs from {iso_timestamp} (UTC)",
+                f"{log_type} producer: could not access checkpoint file '{file_name}' to read log offset due to error: {error_message} error_code: {error_code}",
+                logging.WARNING,
+            )
+            Program.log(
+                f"{log_type} producer: the logs will be consumed from offset: '{iso_timestamp} (UTC)'",
                 logging.INFO,
             )
 

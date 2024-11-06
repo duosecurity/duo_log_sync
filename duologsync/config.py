@@ -256,6 +256,11 @@ class Config:
         return curr_value
 
     @classmethod
+    def get_config_file_path(cls):
+        """@return the filepath of the config file"""
+        return cls.get_value(['config_file_path'])
+
+    @classmethod
     def get_log_filepath(cls):
         """@return the filepath where DLS program messages should be saved"""
         return cls.get_value(['dls_settings', 'log_filepath'])
@@ -354,6 +359,7 @@ class Config:
                 if config.get('dls_settings').get('api').get('timeout') < cls.API_TIMEOUT_DEFAULT:
                     config['dls_settings']['api']['timeout'] = cls.API_TIMEOUT_DEFAULT
                     Program.log(f'DuoLogSync: Setting default api timeout to {cls.API_TIMEOUT_DEFAULT} seconds.')
+                config['config_file_path'] = config_filepath
 
         # Will occur when given a bad filepath or a bad file
         except OSError as os_error:

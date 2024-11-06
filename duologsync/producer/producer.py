@@ -69,14 +69,11 @@ class Producer:
                         f"{self.log_type} producer: no new logs available", logging.INFO
                     )
 
-            # Incorrect api_hostname or proxy_server was provided
-            # duo_client throws the same error if either the api_hostname or proxy_server is incorrect
-            except (gaierror, OSError) as error:
-                shutdown_reason = f"{self.log_type} producer: [{error}]"
-                Program.log(
-                    "DuoLogSync: check that the duoclient host and/or proxy_server provided in the config "
-                    "file are correct"
-                )
+            except gaierror as gai_error:
+                shutdown_reason = self.handle_address_info_error(gai_error)
+
+            except OSError as os_error:
+                shutdown_reason = self.handle_os_error(os_error)
 
             # duo_client throws a RuntimeError if the ikey or skey is invalid
             except RuntimeError as runtime_error:
@@ -93,31 +90,48 @@ class Producer:
         await self.log_queue.put([])
         Program.log(f"{self.log_type} producer: shutting down", logging.INFO)
 
+    def handle_os_error(self, os_error: OSError):
+        """
+        Handle an OS error gracefully by logging the error and returning a string to indicate that the producer should shut down.
+        """
+        error_code, error_message = getattr(os_error, "args")
+        file_name = getattr(os_error, "filename", None)
+        return f"{self.log_type} producer: [{error_message} error_code: {error_code} file_name: {file_name}]"
+
+    def handle_address_info_error(self, gai_error: gaierror):
+        """
+        Handle an address info error gracefully by logging the error and returning a string to indicate that the producer should shut down.
+        """
+        error_code, error_message = getattr(gai_error, "args")
+        Program.log(f"{self.log_type} producer: make sure that the host information details provider in the configuration file {Config.get_config_file_path()} is correct", logging.ERROR)
+        return f"{self.log_type} producer: [{error_message} error_code: {error_code}]"
+
     def handle_runtime_error_gracefully(self, runtime_error: RuntimeError):
         """
         Handle a runtime error gracefully by checking if the error is eligible for a retry.
         If it is, log the error and return None to indicate that the producer should retry.
         If it is not, log the error and return a string to indicate that the producer should shut down.
         """
-        if self.eligible_for_retry(runtime_error):
-            error_data = getattr(runtime_error, "data", None)
-            error_code = error_data['code'] if error_data else None
+        http_error_code = getattr(runtime_error, "status", None)
+        error_data = getattr(runtime_error, "data", None)
+        error_code = error_data['code'] if error_data else None
+
+        if self.eligible_for_retry(http_error_code):
             Program.log(
-                f"{self.log_type} producer: retrying due to error: {runtime_error} error_code: {error_code}",
+                f"{self.log_type} producer: retrying due to error: {runtime_error} error_code: {error_code} http_status_code: {http_error_code}",
                 logging.WARNING,
             )
 
             return None
 
-        return f"{self.log_type} producer: [{runtime_error}]"
+        return f"{self.log_type} producer: [{runtime_error} error_code: {error_code} http_status_code: {http_error_code}]"
 
     @staticmethod
-    def eligible_for_retry(runtime_error: RuntimeError):
+    def eligible_for_retry(http_error_code):
         """
         Check if the runtime error is eligible for a retry based on the status code.
         See the Config.GRACEFUL_RETRY_STATUS_CODES for the list of status codes that is eligible for a retry.
         """
-        http_error_code = getattr(runtime_error, "status", None)
 
         if http_error_code:
             for http_status_code in Config.GRACEFUL_RETRY_STATUS_CODES:
