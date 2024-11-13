@@ -7,6 +7,7 @@ import ssl
 import logging
 import socket
 from socket import gaierror
+import sys
 
 from duologsync.config import Config
 from duologsync.program import Program
