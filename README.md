@@ -37,7 +37,7 @@ MSP customers gathering logs from linked accounts should create an **Accounts AP
 
 ### Compatibility
 
-- Duologsync is compatible with Python versions `3.6`, `3.7`, and `3.8`.
+- Duologsync is compatible with Python versions `3.6`, `3.7`, `3.8`, `3.9`, `3.10`, and `3.11`.
 - Duologsync is officially supported on Linux, MacOS, and Windows systems.
 
 ### Windows
