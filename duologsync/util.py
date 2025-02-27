@@ -10,7 +10,6 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 
 import duo_client # type: ignore
-import six
 
 from duologsync.__version__ import __version__
 from duologsync.config import Config
@@ -179,12 +178,12 @@ def normalize_params(params):
     # urllib cannot handle unicode strings properly. quote() excepts,
     # and urlencode() replaces them with '?'.
     def encode(value):
-        if isinstance(value, six.text_type):
+        if isinstance(value, str):
             return value.encode("utf-8")
         return value
 
     def to_list(value):
-        if value is None or isinstance(value, six.string_types):
+        if value is None or isinstance(value, str):
             return [value]
         return value
 

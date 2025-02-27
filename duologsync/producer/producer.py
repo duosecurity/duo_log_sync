@@ -7,7 +7,6 @@ import logging
 from datetime import datetime
 from socket import gaierror
 
-import six
 
 from duologsync.config import Config
 from duologsync.program import Program, ProgramShutdownError
@@ -191,8 +190,8 @@ class Producer:
         if Config.account_is_msp():
             # Make an API call to retrieve authlog logs for MSP accounts
             parameters = {
-                "mintime": six.ensure_str(str(self.log_offset)),
-                "account_id": six.ensure_str(self.account_id),
+                "mintime": str(self.log_offset),
+                "account_id": self.account_id,
             }
 
             api_result = await run_in_executor(
@@ -297,7 +296,7 @@ class Producer:
                 value = int(
                     (
                         datetime.strptime(
-                            six.ensure_str(log.get("isotimestamp", "")),
+                            log.get("isotimestamp", ""),
                             "%Y-%m-%dT%H:%M:%S.%f+00:00",
                         )
                         - datetime(1970, 1, 1)
@@ -305,7 +304,7 @@ class Producer:
                     * 1000
                 )
 
-                return [six.ensure_str(str(value)), log.get("txid")]
+                return [str(value), log.get("txid")]
 
             if log.get("timestamp"):
                 return log.get("timestamp", 0) + 1

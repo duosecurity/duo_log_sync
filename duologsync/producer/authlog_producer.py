@@ -3,7 +3,6 @@ Definition of the Authlog Producer class
 """
 
 import functools
-import six
 import time
 from duologsync.config import Config
 from duologsync.util import run_in_executor, normalize_params
@@ -46,9 +45,9 @@ class AuthlogProducer(Producer):
                 self.mintime = (int(time.time()) - 86400) * 1000
 
             # Make an API call to retrieve authlog logs for MSP accounts
-            parameters = normalize_params({"mintime": six.ensure_str(str(self.mintime)), "maxtime": six.ensure_str(str(int(time.time()) * 1000)),
-                                           "limit": six.ensure_str('1000'),
-                                           "account_id": six.ensure_str(self.account_id), "sort": six.ensure_str('ts:asc')})
+            parameters = normalize_params({"mintime": str(self.mintime), "maxtime": str(int(time.time()) * 1000),
+                                           "limit": '1000',
+                                           "account_id": self.account_id, "sort": 'ts:asc'})
 
             if self.log_offset is not None:
                 parameters["next_offset"] = self.log_offset
