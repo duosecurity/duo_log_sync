@@ -63,7 +63,7 @@ class Consumer:
                     for log in logs:
                         if self.child_account_id:
                             log["child_account_id"] = self.child_account_id
-                        await self.writer.write(self.format_log(log))
+                        await self.writer.write(self.format_log(log), self.log_type)
                         last_log_written = log
 
                     # All the logs were written successfully

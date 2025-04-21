@@ -63,6 +63,18 @@ async def run_in_executor(function_obj):
 
     return result
 
+def store_failed_udp_ingestion_logs(log_type, checkpoint_directory, log):
+    file_path = os.path.join(
+                    checkpoint_directory, f"{log_type}_udp_failed_ingestion_logs.txt"
+                )
+    
+    # Open the udp file, 'with' statement automatically closes it
+    with open(file_path, "a+") as udp_file:
+        udp_file.write(log.decode('utf-8'))
+        Program.log(
+            f"{log_type} producer: storing failed UDP logs in backlog file at '{file_path}'",
+            logging.INFO,
+        )
 
 def get_log_offset(
     log_type, recover_log_offset, checkpoint_directory, child_account_id=None

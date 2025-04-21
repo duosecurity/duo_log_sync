@@ -10,6 +10,7 @@ from socket import gaierror
 
 from duologsync.config import Config
 from duologsync.program import Program
+from duologsync import util
 
 
 class DatagramProtocol(asyncio.DatagramProtocol):
@@ -86,7 +87,7 @@ class Writer:
 
         return writers
 
-    async def write(self, data):
+    async def write(self, data, log_type):
         """
         Wrapper for writer functions. Makes it easy for parts of a program that
         uses a writer to forget what type of connection is being used (UDP vs
@@ -95,7 +96,20 @@ class Writer:
         @param data The information to be written over a network connection
         """
         if self.protocol == 'UDP':
-            self.writer.sendto(data, (self.hostname, self.port))
+            try:
+                self.writer.sendto(data, (self.hostname, self.port))
+            except OSError as error:
+                # If the message is too long, the UDP socket will throw an error
+                # and we need to handle it
+                # Store the failed UDP ingestion logs in a file and log the error
+                # message to the console
+                error_code, error_message = getattr(error, "args")
+                Program.log(f"{log_type} producer: error while sending data to {self.hostname}:{self.port} error_message: {error_message} error_code: {error_code}", logging.WARNING)
+                util.store_failed_udp_ingestion_logs(
+                    log_type,
+                    Config.get_checkpoint_dir(),
+                    data,
+                )
         else:
             self.writer.write(data)
             await self.writer.drain()
