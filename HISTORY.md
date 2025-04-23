@@ -1,5 +1,9 @@
 ## Change Log
 
+### 2.3.1
+
+Error Handling for UDP writer OSError
+
 ### 2.3.0
 
 Logging Improvements
