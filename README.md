@@ -25,11 +25,23 @@ To create the Admin API application:
 
 MSP customers gathering logs from linked accounts should create an **Accounts API** Duo application and use that application's information in the `config.yml` file.
 
+### Set Up a Receiving Server
+
+Before running DuoLogSync, you must have a server configured to receive the logs. DuoLogSync sends logs over TCP, TCPSSL (TCP with SSL encryption), or UDP to a specified hostname and port. If no server is listening, the logs will be lost.
+
+Common receiving systems include:
+- SIEM platforms
+- Syslog servers
+- Log aggregators
+
+Ensure the `hostname` and `port` in your `config.yml` match your receiving server's configuration. Refer to your SIEM or log server documentation for setup instructions.
+
 ## Installation
 
 - Make sure you are running Python 3+ with `python --version`.
 - Clone this GitHub repository and navigate to the `duo_log_sync` folder.
 - Ensure you have "setuptools" by running `pip3 install setuptools`.
+- Install dependencies by running `pip install -r requirements.txt`.
 - Install `duologsync` by running `python/python3 setup.py install`. 
 - Refer to the `Configuration` section below. You will need to create a `config.yml` file and fill out credentials for the adminapi in the duoclient section as well as other parameters if necessary.
 - Run the application using `duologsync <complete/path/to/config.yml>`.
@@ -52,12 +64,13 @@ MSP customers gathering logs from linked accounts should create an **Accounts AP
 
 ## Features
 
-- Current version supports fetching logs from auth, telephony, admin, and trust monitor endpoints and sending over TCP, TCP Encrypted over SSL, and UDP to consuming systems.
+- Current version supports fetching logs from auth, telephony, activity, and trust monitor endpoints and sending over TCP, TCP Encrypted over SSL, and UDP to consuming systems.
 - Ability to recover data by reading from last known offset through checkpointing files.
 - Enabling only certain endpoints through config file.
 - Choosing how logs are formatted (JSON, CEF).
 - Support for Linux, MacOS, Windows.
 - Support for pulling logs using Accounts API (only for MSP accounts).
+- Graceful shutdown support via SIGINT (Ctrl-C) and SIGTERM signals.
 
 ### Work in progress
 
@@ -112,3 +125,22 @@ MSP customers gathering logs from linked accounts should create an **Accounts AP
 
 ### Trust Monitor Support
 - Currently, the Trust Monitor endpoint only supports logging in JSON format, and does not support MSPs. Calling this endpoint (in combination with any other endpoints) using CEF format or MSPs will not allow the program to execute.
+
+## Troubleshooting
+
+### Common Issues
+
+- **API timeout errors**: Ensure the `timeout` setting is at least 120 seconds. DuoLogSync enforces this minimum to comply with Duo API rate limits.
+- **Checkpoint file errors**: Verify the checkpoint directory exists and has write permissions.
+- **SSL certificate errors**: For TCPSSL protocol, ensure the certificate file path is correct and the file contains valid certificates.
+- **Timezone issues**: DuoLogSync must run on a system set to UTC/GMT timezone.
+- **Logs not appearing**: Verify your receiving server is running and accessible at the configured hostname and port.
+
+---
+
+## Support
+
+For issues and questions:
+- Open an issue on [GitHub](https://github.com/duosecurity/duo_log_sync/issues)
+- Contact Duo Support at support@duosecurity.com
+- Visit the [Duo documentation](https://duo.com/docs) for additional resources
