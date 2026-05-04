@@ -5,10 +5,12 @@ Definition of the Consumer class
 import os
 import json
 import logging
+import traceback
 from duologsync.config import Config
 from duologsync.program import Program
 from duologsync.producer.producer import Producer
 from duologsync.consumer.cef import log_to_cef
+from duologsync.util import extract_error_info
 
 
 class Consumer:
@@ -71,10 +73,10 @@ class Consumer:
 
                 # Specifically watch out for errno 32 - Broken pipe. This means
                 # that the connect established by writer was reset or shutdown.
-                except BrokenPipeError as broken_pipe_error:
-                    error_code, error_message = getattr(broken_pipe_error, "args")
-                    shutdown_reason = f"{self.log_type} consumer: [{broken_pipe_error} error_code: {error_code}]"
-                    Program.log(f"{self.log_type} consumer: connection to the destination server was reset or shutdown", logging.ERROR)
+                except OSError as conn_error:
+                    err = extract_error_info(conn_error)
+                    shutdown_reason = (f"{self.log_type} consumer: connection error - [{conn_error} error_code: {err['error_code']}]")
+                    Program.log(f"{self.log_type} consumer: {type(conn_error).__name__} - connection to the destination server was reset or shutdown - error_message: {err['error_message']} error_code: {err['error_code']}\n{traceback.format_exc()}", logging.ERROR,)
                     Program.initiate_shutdown(shutdown_reason)
 
                 finally:

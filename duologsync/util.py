@@ -123,8 +123,7 @@ def get_log_offset(
 
         # Most likely, the checkpoint file doesn't exist
         except OSError as os_error:
-            error_code, error_message = getattr(os_error, "args")
-            file_name = getattr(os_error, "filename", None)
+            err = extract_error_info(os_error, "filename")
             display_offset = log_offset
             if log_type in MILLISECOND_BASED_LOG_TYPES:
                 display_offset /= milliseconds_per_second
@@ -132,7 +131,7 @@ def get_log_offset(
                 display_offset, tz=timezone.utc
             ).isoformat()
             Program.log(
-                f"{log_type} producer: could not access checkpoint file '{file_name}' to read log offset due to error: {error_message} error_code: {error_code}",
+                f"{log_type} producer: could not access checkpoint file '{err['filename']}' to read log offset due to error: {err['error_message']} error_code: {err['error_code']}",
                 logging.WARNING,
             )
             Program.log(
@@ -223,3 +222,62 @@ def check_for_specific_endpoint(endpoint, config):
             return True
 
     return False
+
+def extract_error_info(exc, *extra_attrs):
+    """
+    Safely extract error details from an exception and return them as a dict.
+
+    Always includes ``error_code`` (from ``args[0]``) and ``error_message``
+    (from ``args[1]``). Any additional exception attributes can be requested
+    via ``extra_attrs`` — they are read with ``getattr(exc, attr, None)``
+    and included in the returned dict.
+
+    Many OSError subclasses (e.g. ConnectionResetError, gaierror,
+    FileNotFoundError) pack errno and strerror into args as a 2-tuple.
+    This helper avoids unpacking crashes when args is missing, empty,
+    or contains only a single element.
+
+    Usage examples::
+
+        # Basic usage — just error_code and error_message
+        try:
+            await writer.drain()
+        except OSError as error:
+            info = extract_error_info(error)
+            # info == {"error_code": 32, "error_message": "Broken pipe"}
+
+        # With extra attributes
+        except FileNotFoundError as error:
+            info = extract_error_info(error, "filename")
+            # info == {"error_code": 2, "error_message": "No such file...", "filename": "/path/to/file"}
+
+    @param exc          The exception instance from which to extract error
+                        info. Expected to carry ``errno`` and ``strerror``
+                        attributes (all ``OSError`` subclasses do).
+    @param extra_attrs  Zero or more attribute names (strings) to read from
+                        the exception via ``getattr``. Each is included in
+                        the returned dict with its value or ``None``.
+
+    @return a dict with keys:
+            - ``error_code``:    ``exc.errno``, or ``None`` if unavailable.
+            - ``error_message``: ``exc.strerror``, or ``None`` if unavailable.
+            - One key per entry in ``extra_attrs``, valued via
+              ``getattr(exc, attr, None)``.
+    """
+    error_code = getattr(exc, "errno", None)
+    error_message = getattr(exc, "strerror", None)
+
+    # Fall back to args when errno/strerror are not set (e.g. socket.gaierror)
+    if error_code is None and error_message is None:
+        args = getattr(exc, "args", ())
+        if len(args) >= 2:
+            error_code, error_message = args[0], args[1]
+        elif len(args) == 1:
+            error_message = args[0]
+
+    info = {"error_code": error_code, "error_message": error_message}
+
+    for attr in extra_attrs:
+        info[attr] = getattr(exc, attr, None)
+
+    return info

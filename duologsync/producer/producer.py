@@ -10,7 +10,7 @@ from socket import gaierror
 
 from duologsync.config import Config
 from duologsync.program import Program, ProgramShutdownError
-from duologsync.util import get_log_offset, restless_sleep, run_in_executor
+from duologsync.util import get_log_offset, restless_sleep, run_in_executor, extract_error_info
 
 
 class Producer:
@@ -93,17 +93,16 @@ class Producer:
         """
         Handle an OS error gracefully by logging the error and returning a string to indicate that the producer should shut down.
         """
-        error_code, error_message = getattr(os_error, "args")
-        file_name = getattr(os_error, "filename", None)
-        return f"{self.log_type} producer: [{error_message} error_code: {error_code} file_name: {file_name}]"
+        err = extract_error_info(os_error, "filename")
+        return f"{self.log_type} producer: [{err['error_message']} error_code: {err['error_code']} file_name: {err['filename']}]"
 
     def handle_address_info_error(self, gai_error: gaierror):
         """
         Handle an address info error gracefully by logging the error and returning a string to indicate that the producer should shut down.
         """
-        error_code, error_message = getattr(gai_error, "args")
+        err = extract_error_info(gai_error)
         Program.log(f"{self.log_type} producer: make sure that the host information details provider in the configuration file {Config.get_config_file_path()} is correct", logging.ERROR)
-        return f"{self.log_type} producer: [{error_message} error_code: {error_code}]"
+        return f"{self.log_type} producer: [{err['error_message']} error_code: {err['error_code']}]"
 
     def handle_runtime_error_gracefully(self, runtime_error: RuntimeError):
         """
@@ -236,7 +235,7 @@ class Producer:
         # Elif loops are considered when offset is calculated for checkpointing. Here logs will be
         # of type dict. Authlog will have txid field in addition to timestamp field which can be
         # used for identification. Direct timestamp field cannot be used since it loses precision.
-        # Hence calculating timestamp from isotimestamp field.
+        # Hence, calculating timestamp from isotimestamp field.
         if isinstance(log, dict):
             if log_type is not None and log_type == Config.AUTH:
                 if (

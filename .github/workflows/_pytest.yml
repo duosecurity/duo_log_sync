@@ -27,7 +27,10 @@ jobs:
           python-version: ${{ inputs.python-version }}
           cache-dependency-path: requirements-dev-${{ inputs.python-version}}.txt
       - name: Install setuptools
-        run: pip install --force-reinstall setuptools
+        # Setuptools 82 removes pkg_resources, which the current (4/30/26)
+        # version of Cerberus relies on. Remove this pin if/when Cerberus is
+        # updated.
+        run: pip install --force-reinstall "setuptools<82"
       - name: Install dependencies
         run: pip install -r requirements-dev-${{ inputs.python-version }}.txt
       - name: Run test.sh

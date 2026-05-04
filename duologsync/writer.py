@@ -6,6 +6,7 @@ import asyncio
 import ssl
 import logging
 import socket
+import traceback
 from socket import gaierror
 
 from duologsync.config import Config
@@ -103,16 +104,21 @@ class Writer:
                 # and we need to handle it
                 # Store the failed UDP ingestion logs in a file and log the error
                 # message to the console
-                error_code, error_message = getattr(error, "args")
-                Program.log(f"{log_type} producer: error while sending data to {self.hostname}:{self.port} error_message: {error_message} error_code: {error_code}", logging.WARNING)
+                err = util.extract_error_info(error)
+                Program.log(f"{log_type} producer: error while sending data to {self.hostname}:{self.port} error_message: {err['error_message']} error_code: {err['error_code']}", logging.WARNING)
                 util.store_failed_udp_ingestion_logs(
                     log_type,
                     Config.get_checkpoint_dir(),
                     data,
                 )
         else:
-            self.writer.write(data)
-            await self.writer.drain()
+            try:
+                self.writer.write(data)
+                await self.writer.drain()
+            except OSError as error:
+                err = util.extract_error_info(error)
+                Program.log(f"{log_type} writer: {type(error).__name__} while sending data to {self.hostname}:{self.port} over {self.protocol} - error_message: {err['error_message']} error_code: {err['error_code']}\n{traceback.format_exc()}", logging.ERROR,)
+                raise
 
     async def create_writer(self, host, port, cert_filepath):
         """
@@ -147,8 +153,8 @@ class Writer:
 
         # Failed to open the certificate file
         except FileNotFoundError as fnf_error:
-            error_code, error_message = getattr(fnf_error, "args")
-            shutdown_reason = f"certificate file '{cert_filepath}' could not be opened due to error: {error_message} error_code: {error_code}"
+            err = util.extract_error_info(fnf_error)
+            shutdown_reason = f"certificate file '{cert_filepath}' could not be opened due to error: {err['error_message']} error_code: {err['error_code']}"
             help_message = f"make sure that certificate file '{cert_filepath}' to establish SSL connection is correct."
 
         # Couldn't establish a connection within 60 seconds
@@ -158,8 +164,8 @@ class Writer:
         # If an invalid hostname or port number is given or simply failed to
         # connect using the host and port given
         except (gaierror, OSError) as error:
-            error_code, error_message = getattr(error, "args")
-            shutdown_reason = f"error while connecting to {host}:{port} error_message: {error_message} error_code: {error_code}"
+            err = util.extract_error_info(error)
+            shutdown_reason = f"error while connecting to {host}:{port} error_message: {err['error_message']} error_code: {err['error_code']}"
 
         # An error did not occur and the writer was successfully created
         else:
