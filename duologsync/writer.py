@@ -8,6 +8,7 @@ import logging
 import socket
 import traceback
 from socket import gaierror
+import sys
 
 from duologsync.config import Config
 from duologsync.program import Program
@@ -60,13 +61,24 @@ class Writer:
         self.port = server['port']
 
         # Create the actual writer
-        self.writer = asyncio.get_event_loop().run_until_complete(
-            self.create_writer(
-                self.hostname,
-                self.port,
-                server.get('cert_filepath')
+        if sys.version_info >= (3, 12):
+            self.writer = asyncio.run(
+                    self.create_writer(
+                    self.hostname,
+                    self.port,
+                    server.get('cert_filepath')
+                )
             )
-        )
+
+        else:
+            self.writer = asyncio.get_event_loop().run_until_complete(
+                    self.create_writer(
+                    self.hostname,
+                    self.port,
+                    server.get('cert_filepath')
+                )
+            )
+
 
     @staticmethod
     def create_writers(servers):
