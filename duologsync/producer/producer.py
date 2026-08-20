@@ -4,13 +4,22 @@ Definition of the Producer class
 
 import functools
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from socket import gaierror
 
 
 from duologsync.config import Config
 from duologsync.program import Program, ProgramShutdownError
-from duologsync.util import get_log_offset, restless_sleep, run_in_executor, extract_error_info
+from duologsync.util import (
+    extract_error_info,
+    get_log_offset,
+    normalize_params,
+    restless_sleep,
+    run_in_executor,
+)
+
+
+ADMIN_API_LOG_AVAILABILITY_DELAY_MS = 120_000
 
 
 class Producer:
@@ -176,6 +185,28 @@ class Producer:
                 f"{self.log_type} producer: no new logs to add to the queue",
                 logging.INFO,
             )
+
+    def get_admin_api_log_parameters(self):
+        """Build parameters shared by the Admin API v2 log endpoints."""
+
+        maxtime = (
+            int(datetime.now(timezone.utc).timestamp() * 1000)
+            - ADMIN_API_LOG_AVAILABILITY_DELAY_MS
+        )
+        parameters = {
+            "mintime": f"{self.mintime}",
+            "maxtime": f"{maxtime}",
+            "limit": "1000",
+            "sort": "ts:asc",
+        }
+
+        if self.account_id is not None:
+            parameters["account_id"] = self.account_id
+
+        if self.log_offset is not None:
+            parameters["next_offset"] = self.log_offset
+
+        return normalize_params(parameters)
 
     async def call_log_api(self):
         """

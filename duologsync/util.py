@@ -142,7 +142,13 @@ def get_log_offset(
     return log_offset
 
 
-def create_admin(ikey, skey, host, is_msp=False, proxy_server=None, proxy_port=None):
+def create_admin(
+    ikey,
+    skey,
+    host,
+    proxy_server=None,
+    proxy_port=None,
+):
     """
     Create an Admin object (from the duo_client library) with the given values.
     The Admin object has many functions for using Duo APIs and retrieving logs.
@@ -150,27 +156,21 @@ def create_admin(ikey, skey, host, is_msp=False, proxy_server=None, proxy_port=N
     @param ikey Duo Client ID (Integration Key)
     @param skey Duo Client Secret for proving identity / access (Secret Key)
     @param host URI where data / logs will be fetched from
-    @param is_msp Indicates where we are using MSP account for logs retrieval
     @param proxy_server Host/IP of Http Proxy if in use or None
     @param proxy_port Port of Http Proxy if in use or None
     @return a newly created Admin object
     """
 
-    if is_msp:
-        admin = duo_client.Accounts(
-            ikey=ikey, skey=skey, host=host, user_agent=f"Duo Log Sync/{__version__}"
-        )
-        Program.log(
-            f"duo_client Account_Admin initialized for ikey: {ikey}, host: {host}",
-            logging.INFO,
-        )
-    else:
-        admin = duo_client.Admin(
-            ikey=ikey, skey=skey, host=host, user_agent=f"Duo Log Sync/{__version__}"
-        )
-        Program.log(
-            f"duo_client Admin initialized for ikey: {ikey}, host: {host}", logging.INFO
-        )
+    admin = duo_client.Admin(
+        ikey=ikey,
+        skey=skey,
+        host=host,
+        user_agent=f"Duo Log Sync/{__version__}",
+    )
+    Program.log(
+        f"duo_client Admin initialized for ikey: {ikey}, host: {host}",
+        logging.INFO,
+    )
 
     if proxy_server and proxy_port:
         admin.set_proxy(host=proxy_server, port=proxy_port)
@@ -179,6 +179,26 @@ def create_admin(ikey, skey, host, is_msp=False, proxy_server=None, proxy_port=N
         )
 
     return admin
+
+
+def get_subaccounts(admin):
+    """Retrieve all MSP subaccounts using the parent Admin API client."""
+
+    subaccounts = admin.json_api_call("POST", "/accounts/v1/account/list", {})
+    if not isinstance(subaccounts, list):
+        raise ValueError("Admin API returned an invalid subaccount list")
+
+    for index, subaccount in enumerate(subaccounts):
+        if (
+            not isinstance(subaccount, dict)
+            or not subaccount.get("account_id")
+            or not subaccount.get("api_hostname")
+        ):
+            raise ValueError(
+                f"Admin API returned invalid data for subaccount at index {index}"
+            )
+
+    return subaccounts
 
 
 def normalize_params(params):

@@ -97,8 +97,9 @@ servers:
 #   cert_filepath:
 
 # Account which is used to access Duo logs and tell DLS which logs to fetch.
-# For MSP accounts, this should have details for the Accounts API integration.
-# All child account logs will be fetched
+# For MSP accounts, use a parent Admin API integration with "Grant accounts -
+# Read" and "Grant read log" enabled under Subaccount permissions. All child
+# logs will be fetched using their API hostnames discovered at startup.
 account:
   
   # Integration key
@@ -126,7 +127,7 @@ account:
     #- endpoints: ['telephony']
     #  server: 'Server_1'
 
-  # Whether this account is a Duo MSP account with child accounts. If True,
-  # then all the child accounts will be accessed and logs will be pulled for
+  # Whether this Admin API application belongs to a parent Duo MSP account.
+  # If True, all child accounts will be discovered and logs will be pulled for
   # each child account. Not required.
   is_msp: False

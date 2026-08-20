@@ -1,5 +1,10 @@
 ## Change Log
 
+### Unreleased
+
+- Migrated MSP subaccount discovery and log access from the deprecated Accounts
+  API integration to parent and child-scoped Admin API clients.
+
 ### 2.4.1
 
 Common Event Format (CEF) Support added for Activity Logs Consumer

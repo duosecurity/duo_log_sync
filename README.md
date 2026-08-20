@@ -12,18 +12,19 @@ Duo Log Sync (v2.4.1)
 ---
 ## Prerequisite
 
-`duologsync` requires credentials for an Admin API application with the "Grant read log" API permission. Create this application before installation and configuration.
+`duologsync` requires credentials for an Admin API application. Create this application before installation and configuration.
 
 To create the Admin API application:
 
-1. Log into the Duo Admin Panel as an administrator with the "Owner" role and navigate to **Applications**.
-2. Click **Protect an Application** and locate the entry for **Admin API** in the applications list.
-3. Click **Protect** to the far-right to configure the application and get your integration key, secret key, and API hostname. You'll need this information to update the `config.yml` file later.
-4. Scroll down to the "Permissions" section of the page and deselect all permission options other than **Grant read log**.
-5. Optionally specify which IP addresses or ranges are allowed to use this Admin API application in **Networks for API Access**. If you do not specify any IP addresses or ranges, this Admin API application may be accessed from any network.
-6. Click **Save**.
+1. Log into the Duo Admin Panel as an administrator with the **Owner** role.
+2. Navigate to **Applications** → **Application Catalog**, locate **Admin API**, and add the application.
+3. Copy the integration key, secret key, and API hostname. You'll need this information to update the `config.yml` file later.
+4. For a standard Duo account, grant **Grant read log**.
+5. For an MSP account, also grant **Grant accounts - Read** and **Grant read log** under **Subaccount permissions**. Separate Admin API applications are not required in child accounts.
+6. Optionally specify which IP addresses or ranges are allowed to use this Admin API application in **Networks for API Access**. If you do not specify any IP addresses or ranges, this Admin API application may be accessed from any network.
+7. Click **Save**.
 
-MSP customers gathering logs from linked accounts should create an **Accounts API** Duo application and use that application's information in the `config.yml` file.
+For MSP log collection, use the parent account's Admin API credentials and set `account.is_msp` to `True`. DuoLogSync discovers subaccounts with the Admin API and sends each child request to the API hostname returned for that subaccount. The legacy Accounts API integration is no longer used. See Duo's [Admin API subaccount documentation](https://duo.com/docs/adminapi#subaccounts) for current setup details.
 
 ### Set Up a Receiving Server
 
@@ -69,7 +70,7 @@ Ensure the `hostname` and `port` in your `config.yml` match your receiving serve
 - Enabling only certain endpoints through config file.
 - Choosing how logs are formatted (JSON, CEF).
 - Support for Linux, MacOS, Windows.
-- Support for pulling logs using Accounts API (only for MSP accounts).
+- Support for pulling logs from MSP subaccounts using a parent Admin API integration.
 - Graceful shutdown support via SIGINT (Ctrl-C) and SIGTERM signals.
 
 ### Work in progress
@@ -101,9 +102,9 @@ Ensure the `hostname` and `port` in your `config.yml` match your receiving serve
 - The `port` is a `servers` setting and it is a Port of server to which logs will be sent. The valid port range is 1024-65535. It is a `REQUIRED` field.
 - The `protocol` is a `servers` setting and it is a transport protocol used to communicate with the server. The allowed options are `TCP`, `TCPSSL`, `UDP`. It is a `REQUIRED` field.
 - The `cert_filepath` is a `servers` setting and it is a location of the certificate file used for encrypting communication for TCPSSL. TCPSSL expects that there are .key and .cert files that store keys. For configuration, give path of .cert/.pem file that has keys. It is a `REQUIRED` field if protocol is TCPSSL.
-- The `ikey` is a `account` setting and it is a integration key of the `Admin API` integration. For MSP accoint, this should have integration key for `Accounts API`. It is a `REQUIRED` field.
-- The `skey` is a `account` setting and it is a private key of the `Admin API` integration. For MSP accoint, this should have private key for `Accounts API`. It is a `REQUIRED` field.
-- The `hostname` is a `account` setting and it is a api-hostname of the `Admin API` integration on which the server hosting this account's logs. For MSP accoint, this should have api-hostname for `Accounts API`. It is a `REQUIRED` field.
+- The `ikey` is an `account` setting containing the integration key of the Admin API application. For MSP collection, use the parent account's Admin API integration key. It is a `REQUIRED` field.
+- The `skey` is an `account` setting containing the secret key of the Admin API application. For MSP collection, use the parent account's Admin API secret key. It is a `REQUIRED` field.
+- The `hostname` is an `account` setting containing the API hostname of the Admin API application. For MSP collection, use the parent account's Admin API hostname; child API hostnames are discovered automatically. It is a `REQUIRED` field.
 - The `endpoints` field is a `endpoint_server_mappings` setting. It is for defining what endpoints the mapping is for as a list. The valid options are `auth`, `telephony`, `trustmonitor`, `activity`. It is a `REQUIRED` field.
 - The `server` field is a `endpoint_server_mappings` setting. It is where you define to what servers the logs of certain endpoints should go.This is done by creating a mapping (start with dash -).It is a `REQUIRED` field.
 - The `is_msp` field is to define whether this account is a Duo MSP account with child accounts. If True, then all the child accounts will be accessed and logs will be pulled for each child account. It is a `NOT REQUIRED` field. The default is `False`
@@ -113,7 +114,7 @@ Ensure the `hostname` and `port` in your `config.yml` match your receiving serve
 - To use the `upgrade_config.py` script, simply run the following command: `python3 upgrade_config.py <old_config> <new_config>` where `<old_config>` is the filepath or your old configuration file, and `<new_config>` is where you would like the new configuration file to be saved.
 - The `upgrade_config.py` script will not delete your old config file, it will be preserved.
 - This script is a new feature and has to extrapolate some information, some unexpected issues may occur. For most old configs the script will work just fine. You can check if the new config file works by running it with DLS.
-- The `is_msp` field under accounts section is required only when using DLS with the Accounts API. For this reason, the upgrade script won't create that field in new config by default.
+- Set `is_msp` to `True` when the configured Admin API application belongs to a parent MSP account and logs should be collected from its subaccounts. The upgrade script does not enable this field automatically.
 
 ---
 
@@ -121,7 +122,26 @@ Ensure the `hostname` and `port` in your `config.yml` match your receiving serve
 
 ### MSP customers
 
-- Calling Admin API handlers with Accounts API is mutually exclusive with cross-deployment sub-accounts. Many customers with sub-accounts (especially MSPs) must use cross-deployment sub-accounts and therefore can't use the Accounts API. 
+- Duo deprecated the Accounts API integration type on June 11, 2026 and converted existing Accounts API integrations to Admin API integrations. DuoLogSync now uses only a parent Admin API integration for MSP collection.
+- DuoLogSync uses each subaccount's own API hostname as returned by the Admin API, which supports subaccounts hosted in different Duo deployments.
+
+#### Offline MSP contract testing
+
+The offline MSP tests encode Duo's documented [Admin API subaccount contract](https://duo.com/docs/adminapi#subaccounts):
+
+- Discover subaccounts with `POST /accounts/v1/account/list` using the parent Admin API integration.
+- Send child requests to the returned `api_hostname`.
+- Include the returned `account_id` in every child Admin API request.
+- Keep event attribution and checkpoint state isolated by `account_id`.
+- Query authentication, activity, and telephony logs no more recently than Duo's two-minute availability delay.
+
+Run only these tests with:
+
+```shell
+pytest tests/test_msp_admin_api_contract.py tests/test_app.py tests/test_util.py
+```
+
+These tests use fake credentials and intercept the Duo client's transport before any network connection is attempted. They verify the final child request URI and authentication header in addition to producer-level request parameters.
 
 ### Trust Monitor Support
 - Currently, the Trust Monitor endpoint only supports logging in JSON format, and does not support MSPs. Calling this endpoint (in combination with any other endpoints) using CEF format or MSPs will not allow the program to execute.
