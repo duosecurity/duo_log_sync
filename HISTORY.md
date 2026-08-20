@@ -1,5 +1,12 @@
 ## Change Log
 
+### Unreleased
+
+- Migrated MSP subaccount discovery and log access from the deprecated Accounts
+  API integration to parent and child-scoped Admin API clients.
+- Added a finite Admin API request timeout and retry handling for timeouts,
+  rate limits, and HTTP 5xx responses.
+
 ### 2.4.1
 
 Common Event Format (CEF) Support added for Activity Logs Consumer

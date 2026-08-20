@@ -9,7 +9,7 @@ import os
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 
-import duo_client # type: ignore
+import duo_client  # type: ignore
 
 from duologsync.__version__ import __version__
 from duologsync.config import Config
@@ -63,6 +63,7 @@ async def run_in_executor(function_obj):
 
     return result
 
+
 def store_failed_udp_ingestion_logs(log_type, checkpoint_directory, log):
     file_path = os.path.join(
         checkpoint_directory, f"{log_type}_udp_failed_ingestion_logs.txt"
@@ -75,6 +76,7 @@ def store_failed_udp_ingestion_logs(log_type, checkpoint_directory, log):
             f"{log_type} producer: storing failed UDP logs in backlog file at '{file_path}'",
             logging.INFO,
         )
+
 
 def get_log_offset(
     log_type, recover_log_offset, checkpoint_directory, child_account_id=None
@@ -142,7 +144,14 @@ def get_log_offset(
     return log_offset
 
 
-def create_admin(ikey, skey, host, is_msp=False, proxy_server=None, proxy_port=None):
+def create_admin(
+    ikey,
+    skey,
+    host,
+    proxy_server=None,
+    proxy_port=None,
+    request_timeout=Config.API_REQUEST_TIMEOUT_DEFAULT,
+):
     """
     Create an Admin object (from the duo_client library) with the given values.
     The Admin object has many functions for using Duo APIs and retrieving logs.
@@ -150,27 +159,23 @@ def create_admin(ikey, skey, host, is_msp=False, proxy_server=None, proxy_port=N
     @param ikey Duo Client ID (Integration Key)
     @param skey Duo Client Secret for proving identity / access (Secret Key)
     @param host URI where data / logs will be fetched from
-    @param is_msp Indicates where we are using MSP account for logs retrieval
     @param proxy_server Host/IP of Http Proxy if in use or None
     @param proxy_port Port of Http Proxy if in use or None
+    @param request_timeout Maximum seconds to wait for an Admin API response
     @return a newly created Admin object
     """
 
-    if is_msp:
-        admin = duo_client.Accounts(
-            ikey=ikey, skey=skey, host=host, user_agent=f"Duo Log Sync/{__version__}"
-        )
-        Program.log(
-            f"duo_client Account_Admin initialized for ikey: {ikey}, host: {host}",
-            logging.INFO,
-        )
-    else:
-        admin = duo_client.Admin(
-            ikey=ikey, skey=skey, host=host, user_agent=f"Duo Log Sync/{__version__}"
-        )
-        Program.log(
-            f"duo_client Admin initialized for ikey: {ikey}, host: {host}", logging.INFO
-        )
+    admin = duo_client.Admin(
+        ikey=ikey,
+        skey=skey,
+        host=host,
+        user_agent=f"Duo Log Sync/{__version__}",
+        timeout=request_timeout,
+    )
+    Program.log(
+        f"duo_client Admin initialized for ikey: {ikey}, host: {host}",
+        logging.INFO,
+    )
 
     if proxy_server and proxy_port:
         admin.set_proxy(host=proxy_server, port=proxy_port)
@@ -179,6 +184,26 @@ def create_admin(ikey, skey, host, is_msp=False, proxy_server=None, proxy_port=N
         )
 
     return admin
+
+
+def get_subaccounts(admin):
+    """Retrieve all MSP subaccounts using the parent Admin API client."""
+
+    subaccounts = admin.json_api_call("POST", "/accounts/v1/account/list", {})
+    if not isinstance(subaccounts, list):
+        raise ValueError("Admin API returned an invalid subaccount list")
+
+    for index, subaccount in enumerate(subaccounts):
+        if (
+            not isinstance(subaccount, dict)
+            or not subaccount.get("account_id")
+            or not subaccount.get("api_hostname")
+        ):
+            raise ValueError(
+                f"Admin API returned invalid data for subaccount at index {index}"
+            )
+
+    return subaccounts
 
 
 def normalize_params(params):

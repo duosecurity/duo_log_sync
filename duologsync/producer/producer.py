@@ -4,13 +4,22 @@ Definition of the Producer class
 
 import functools
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from socket import gaierror
 
 
 from duologsync.config import Config
 from duologsync.program import Program, ProgramShutdownError
-from duologsync.util import get_log_offset, restless_sleep, run_in_executor, extract_error_info
+from duologsync.util import (
+    extract_error_info,
+    get_log_offset,
+    normalize_params,
+    restless_sleep,
+    run_in_executor,
+)
+
+
+ADMIN_API_LOG_AVAILABILITY_DELAY_MS = 120_000
 
 
 class Producer:
@@ -21,7 +30,9 @@ class Producer:
     recorded to allow checkpointing and recovery from a crash.
     """
 
-    def __init__(self, api_call, log_queue, log_type, account_id=None, url_path=None):
+    def __init__(
+        self, api_call, log_queue, log_type, account_id=None, url_path=None
+    ):
         self.api_call = api_call
         self.log_queue = log_queue
         self.log_type = log_type
@@ -71,6 +82,9 @@ class Producer:
             except gaierror as gai_error:
                 shutdown_reason = self.handle_address_info_error(gai_error)
 
+            except TimeoutError as timeout_error:
+                self.handle_timeout_error_gracefully(timeout_error)
+
             except OSError as os_error:
                 shutdown_reason = self.handle_os_error(os_error)
 
@@ -91,52 +105,73 @@ class Producer:
 
     def handle_os_error(self, os_error: OSError):
         """
-        Handle an OS error gracefully by logging the error and returning a string to indicate that the producer should shut down.
+        Return a shutdown reason containing safe details from an OS error.
         """
         err = extract_error_info(os_error, "filename")
-        return f"{self.log_type} producer: [{err['error_message']} error_code: {err['error_code']} file_name: {err['filename']}]"
+        return (
+            f"{self.log_type} producer: [{err['error_message']} "
+            f"error_code: {err['error_code']} file_name: {err['filename']}]"
+        )
 
     def handle_address_info_error(self, gai_error: gaierror):
         """
-        Handle an address info error gracefully by logging the error and returning a string to indicate that the producer should shut down.
+        Log configuration guidance and return an address-error shutdown reason.
         """
         err = extract_error_info(gai_error)
-        Program.log(f"{self.log_type} producer: make sure that the host information details provider in the configuration file {Config.get_config_file_path()} is correct", logging.ERROR)
-        return f"{self.log_type} producer: [{err['error_message']} error_code: {err['error_code']}]"
+        Program.log(
+            f"{self.log_type} producer: make sure that the host information "
+            f"details provided in the configuration file "
+            f"{Config.get_config_file_path()} are correct",
+            logging.ERROR,
+        )
+        return (
+            f"{self.log_type} producer: [{err['error_message']} "
+            f"error_code: {err['error_code']}]"
+        )
+
+    def handle_timeout_error_gracefully(self, timeout_error: TimeoutError):
+        """Log an Admin API timeout and allow the producer to retry."""
+        err = extract_error_info(timeout_error)
+        Program.log(
+            f"{self.log_type} producer: retrying after Admin API request "
+            f"timeout: {err['error_message']}",
+            logging.WARNING,
+        )
 
     def handle_runtime_error_gracefully(self, runtime_error: RuntimeError):
         """
-        Handle a runtime error gracefully by checking if the error is eligible for a retry.
-        If it is, log the error and return None to indicate that the producer should retry.
-        If it is not, log the error and return a string to indicate that the producer should shut down.
+        Retry eligible runtime errors or return a shutdown reason.
         """
         http_error_code = getattr(runtime_error, "status", None)
         error_data = getattr(runtime_error, "data", None)
-        error_code = error_data['code'] if error_data else None
+        error_code = error_data.get("code") if isinstance(error_data, dict) else None
 
         if self.eligible_for_retry(http_error_code):
             Program.log(
-                f"{self.log_type} producer: retrying due to error: {runtime_error} error_code: {error_code} http_status_code: {http_error_code}",
+                f"{self.log_type} producer: retrying due to error: "
+                f"{runtime_error} error_code: {error_code} "
+                f"http_status_code: {http_error_code}",
                 logging.WARNING,
             )
 
             return None
 
-        return f"{self.log_type} producer: [{runtime_error} error_code: {error_code} http_status_code: {http_error_code}]"
+        return (
+            f"{self.log_type} producer: [{runtime_error} "
+            f"error_code: {error_code} http_status_code: {http_error_code}]"
+        )
 
     @staticmethod
     def eligible_for_retry(http_error_code):
         """
-        Check if the runtime error is eligible for a retry based on the status code.
-        See the Config.GRACEFUL_RETRY_STATUS_CODES for the list of status codes that is eligible for a retry.
+        Check if the runtime error is eligible for a retry based on the status
+        code. Rate-limit responses and all server errors are retryable.
         """
 
-        if http_error_code:
-            for http_status_code in Config.GRACEFUL_RETRY_STATUS_CODES:
-                if http_error_code == http_status_code:
-                    return True
+        if http_error_code in Config.GRACEFUL_RETRY_STATUS_CODES:
+            return True
 
-        return False
+        return isinstance(http_error_code, int) and 500 <= http_error_code <= 599
 
     async def add_logs_to_queue(self, logs):
         """
@@ -176,6 +211,28 @@ class Producer:
                 f"{self.log_type} producer: no new logs to add to the queue",
                 logging.INFO,
             )
+
+    def get_admin_api_log_parameters(self):
+        """Build parameters shared by the Admin API v2 log endpoints."""
+
+        maxtime = (
+            int(datetime.now(timezone.utc).timestamp() * 1000)
+            - ADMIN_API_LOG_AVAILABILITY_DELAY_MS
+        )
+        parameters = {
+            "mintime": f"{self.mintime}",
+            "maxtime": f"{maxtime}",
+            "limit": "1000",
+            "sort": "ts:asc",
+        }
+
+        if self.account_id is not None:
+            parameters["account_id"] = self.account_id
+
+        if self.log_offset is not None:
+            parameters["next_offset"] = self.log_offset
+
+        return normalize_params(parameters)
 
     async def call_log_api(self):
         """

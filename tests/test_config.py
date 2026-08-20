@@ -1,13 +1,13 @@
 from unittest import TestCase
 from unittest.mock import patch
-import os
-import sys
-from yaml import YAMLError
+
 from duologsync.config import Config
 from duologsync.program import Program
 
+
 def running_is_false(msg):
     Program._running = False
+
 
 class TestConfig(TestCase):
     def tearDown(self):
@@ -20,8 +20,8 @@ class TestConfig(TestCase):
 
         Config.set_config(config)
 
-        self.assertEqual(Config._config['field_one']['nested_field'], True)
-        self.assertEqual(Config._config['field_two'], 100)
+        self.assertEqual(Config.get_value(['field_one', 'nested_field']), True)
+        self.assertEqual(Config.get_value(['field_two']), 100)
 
     def test_set_config_twice(self):
         config = {'field_one': {'nested_field': True}, 'field_two': 100}
@@ -70,6 +70,13 @@ class TestConfig(TestCase):
         log_format = Config.get_log_format()
 
         self.assertEqual(log_format, 'JSON')
+
+    def test_get_api_request_timeout(self):
+        config = {'dls_settings': {'api': {'request_timeout': 45}}}
+
+        Config.set_config(config)
+
+        self.assertEqual(Config.get_api_request_timeout(), 45)
 
     def test_get_checkpointing_enabled(self):
         config = {'dls_settings': {'checkpointing': {'enabled': False}}}
@@ -153,7 +160,8 @@ class TestConfig(TestCase):
                 'log_format': 'JSON',
                 'api': {
                     'offset': 180,
-                    'timeout': 120
+                    'timeout': 120,
+                    'request_timeout': 60
                 },  
                 'checkpointing': {
                     'enabled': False,
@@ -246,6 +254,8 @@ class TestConfig(TestCase):
         self.assertNotEqual(config['dls_settings']['log_format'], None)
         self.assertNotEqual(config['dls_settings']['api']['offset'], None)
         self.assertNotEqual(config['dls_settings']['api']['timeout'], None)
+        self.assertNotEqual(
+            config['dls_settings']['api']['request_timeout'], None)
         self.assertNotEqual(
             config['dls_settings']['checkpointing']['enabled'], None)
         self.assertNotEqual(
