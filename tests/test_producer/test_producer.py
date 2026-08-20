@@ -19,7 +19,9 @@ class TestProducerErrorHandling(TestCase):
 
     @patch("duologsync.producer.producer.Program.log")
     def test_timeout_is_logged_and_retried(self, mock_log):
-        self.producer.handle_timeout_error_gracefully(TimeoutError("request timed out"))
+        self.producer.handle_timeout_error_gracefully(
+            TimeoutError("request timed out")
+        )
 
         mock_log.assert_called_once()
 

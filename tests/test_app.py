@@ -1,11 +1,8 @@
 from unittest import TestCase
-from unittest.mock import patch, call
+from unittest.mock import call, patch
+
 from duologsync.app import Program, create_tasks
 from duologsync.config import Config
-
-
-def running_is_false(msg):
-    Program._running = False
 
 
 class TestApp(TestCase):

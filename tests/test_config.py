@@ -1,13 +1,13 @@
 from unittest import TestCase
 from unittest.mock import patch
-import os
-import sys
-from yaml import YAMLError
+
 from duologsync.config import Config
 from duologsync.program import Program
 
+
 def running_is_false(msg):
     Program._running = False
+
 
 class TestConfig(TestCase):
     def tearDown(self):
@@ -20,8 +20,8 @@ class TestConfig(TestCase):
 
         Config.set_config(config)
 
-        self.assertEqual(Config._config['field_one']['nested_field'], True)
-        self.assertEqual(Config._config['field_two'], 100)
+        self.assertEqual(Config.get_value(['field_one', 'nested_field']), True)
+        self.assertEqual(Config.get_value(['field_two']), 100)
 
     def test_set_config_twice(self):
         config = {'field_one': {'nested_field': True}, 'field_two': 100}

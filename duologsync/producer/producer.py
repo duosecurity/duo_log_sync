@@ -30,7 +30,9 @@ class Producer:
     recorded to allow checkpointing and recovery from a crash.
     """
 
-    def __init__(self, api_call, log_queue, log_type, account_id=None, url_path=None):
+    def __init__(
+        self, api_call, log_queue, log_type, account_id=None, url_path=None
+    ):
         self.api_call = api_call
         self.log_queue = log_queue
         self.log_type = log_type
@@ -103,18 +105,29 @@ class Producer:
 
     def handle_os_error(self, os_error: OSError):
         """
-        Handle an OS error gracefully by logging the error and returning a string to indicate that the producer should shut down.
+        Return a shutdown reason containing safe details from an OS error.
         """
         err = extract_error_info(os_error, "filename")
-        return f"{self.log_type} producer: [{err['error_message']} error_code: {err['error_code']} file_name: {err['filename']}]"
+        return (
+            f"{self.log_type} producer: [{err['error_message']} "
+            f"error_code: {err['error_code']} file_name: {err['filename']}]"
+        )
 
     def handle_address_info_error(self, gai_error: gaierror):
         """
-        Handle an address info error gracefully by logging the error and returning a string to indicate that the producer should shut down.
+        Log configuration guidance and return an address-error shutdown reason.
         """
         err = extract_error_info(gai_error)
-        Program.log(f"{self.log_type} producer: make sure that the host information details provider in the configuration file {Config.get_config_file_path()} is correct", logging.ERROR)
-        return f"{self.log_type} producer: [{err['error_message']} error_code: {err['error_code']}]"
+        Program.log(
+            f"{self.log_type} producer: make sure that the host information "
+            f"details provided in the configuration file "
+            f"{Config.get_config_file_path()} are correct",
+            logging.ERROR,
+        )
+        return (
+            f"{self.log_type} producer: [{err['error_message']} "
+            f"error_code: {err['error_code']}]"
+        )
 
     def handle_timeout_error_gracefully(self, timeout_error: TimeoutError):
         """Log an Admin API timeout and allow the producer to retry."""
@@ -127,9 +140,7 @@ class Producer:
 
     def handle_runtime_error_gracefully(self, runtime_error: RuntimeError):
         """
-        Handle a runtime error gracefully by checking if the error is eligible for a retry.
-        If it is, log the error and return None to indicate that the producer should retry.
-        If it is not, log the error and return a string to indicate that the producer should shut down.
+        Retry eligible runtime errors or return a shutdown reason.
         """
         http_error_code = getattr(runtime_error, "status", None)
         error_data = getattr(runtime_error, "data", None)
@@ -137,13 +148,18 @@ class Producer:
 
         if self.eligible_for_retry(http_error_code):
             Program.log(
-                f"{self.log_type} producer: retrying due to error: {runtime_error} error_code: {error_code} http_status_code: {http_error_code}",
+                f"{self.log_type} producer: retrying due to error: "
+                f"{runtime_error} error_code: {error_code} "
+                f"http_status_code: {http_error_code}",
                 logging.WARNING,
             )
 
             return None
 
-        return f"{self.log_type} producer: [{runtime_error} error_code: {error_code} http_status_code: {http_error_code}]"
+        return (
+            f"{self.log_type} producer: [{runtime_error} "
+            f"error_code: {error_code} http_status_code: {http_error_code}]"
+        )
 
     @staticmethod
     def eligible_for_retry(http_error_code):

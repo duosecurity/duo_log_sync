@@ -9,7 +9,7 @@ import os
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 
-import duo_client # type: ignore
+import duo_client  # type: ignore
 
 from duologsync.__version__ import __version__
 from duologsync.config import Config
@@ -63,6 +63,7 @@ async def run_in_executor(function_obj):
 
     return result
 
+
 def store_failed_udp_ingestion_logs(log_type, checkpoint_directory, log):
     file_path = os.path.join(
         checkpoint_directory, f"{log_type}_udp_failed_ingestion_logs.txt"
@@ -75,6 +76,7 @@ def store_failed_udp_ingestion_logs(log_type, checkpoint_directory, log):
             f"{log_type} producer: storing failed UDP logs in backlog file at '{file_path}'",
             logging.INFO,
         )
+
 
 def get_log_offset(
     log_type, recover_log_offset, checkpoint_directory, child_account_id=None
