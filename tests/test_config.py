@@ -71,6 +71,13 @@ class TestConfig(TestCase):
 
         self.assertEqual(log_format, 'JSON')
 
+    def test_get_api_request_timeout(self):
+        config = {'dls_settings': {'api': {'request_timeout': 45}}}
+
+        Config.set_config(config)
+
+        self.assertEqual(Config.get_api_request_timeout(), 45)
+
     def test_get_checkpointing_enabled(self):
         config = {'dls_settings': {'checkpointing': {'enabled': False}}}
 
@@ -153,7 +160,8 @@ class TestConfig(TestCase):
                 'log_format': 'JSON',
                 'api': {
                     'offset': 180,
-                    'timeout': 120
+                    'timeout': 120,
+                    'request_timeout': 60
                 },  
                 'checkpointing': {
                     'enabled': False,
@@ -246,6 +254,8 @@ class TestConfig(TestCase):
         self.assertNotEqual(config['dls_settings']['log_format'], None)
         self.assertNotEqual(config['dls_settings']['api']['offset'], None)
         self.assertNotEqual(config['dls_settings']['api']['timeout'], None)
+        self.assertNotEqual(
+            config['dls_settings']['api']['request_timeout'], None)
         self.assertNotEqual(
             config['dls_settings']['checkpointing']['enabled'], None)
         self.assertNotEqual(

@@ -132,6 +132,7 @@ def create_tasks(server_to_writer):
     account_skey = Config.get_account_skey()
     proxy_server = Config.get_proxy_server()
     proxy_port = Config.get_proxy_port()
+    request_timeout = Config.get_api_request_timeout()
 
     # Parent Admin API client. For MSP accounts it is used to discover
     # subaccounts; log calls use a child-scoped Admin client created below.
@@ -141,6 +142,7 @@ def create_tasks(server_to_writer):
         Config.get_account_hostname(),
         proxy_server=proxy_server,
         proxy_port=proxy_port,
+        request_timeout=request_timeout,
     )
 
     # TODO: Ignore configured subaccounts when blocklist support is implemented.
@@ -162,6 +164,7 @@ def create_tasks(server_to_writer):
                 subaccount["api_hostname"],
                 proxy_server=proxy_server,
                 proxy_port=proxy_port,
+                request_timeout=request_timeout,
             )
             # TODO: This can be made into a separate function
             for mapping in Config.get_account_endpoint_server_mappings():

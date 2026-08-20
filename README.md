@@ -93,6 +93,7 @@ Ensure the `hostname` and `port` in your `config.yml` match your receiving serve
 - The `log_format` field is a `dls_settings` setting and it is for how Duo logs should be formatted before being sent to a server/siem. Valid options are CEF, JSON. The default will be JSON.
 - The `offset` field is a `api` setting and it is for days in the past from which record retrieval should begin. Maximum logs that can be fetched is `180 days` in past. The default is 180.
 - The `timeout` field is a `api` setting and it is for `seconds` to wait between API calls (for fetching Duo logs). If timeout is set to less than 120 seconds, it will be defaulted to 120.
+- The `request_timeout` field is an `api` setting that limits how many seconds an individual Duo Admin API request may wait for a response. Timed-out requests are retried on the next polling cycle. The default is 60 seconds.
 - The `enabled` field is a `checkpointing` setting and it is for whether checkpoint files should be created to save offset information about API calls which will be used to continue fetching of data if utility crashes or is restarted. Valid options are True or False.
 - The `directory` field is a `checkpointing` setting is to mention path where checkpoint files will be created. The default is `/tmp`.
 - The `proxy_server` is a `proxy` setting and it is a Host/IP for the Http Proxy.

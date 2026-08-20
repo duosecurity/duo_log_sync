@@ -17,6 +17,7 @@ class TestAdminApiClients(TestCase):
             skey="skey",
             host="api.example.com",
             user_agent="Duo Log Sync/2.4.1",
+            timeout=60,
         )
         admin.set_proxy.assert_not_called()
         self.assertIs(result, admin)
@@ -32,6 +33,7 @@ class TestAdminApiClients(TestCase):
             "api-child.example.com",
             proxy_server="proxy.example.com",
             proxy_port=8080,
+            request_timeout=45,
         )
 
         mock_admin_class.assert_called_once_with(
@@ -39,6 +41,7 @@ class TestAdminApiClients(TestCase):
             skey="skey",
             host="api-child.example.com",
             user_agent="Duo Log Sync/2.4.1",
+            timeout=45,
         )
         admin.set_proxy.assert_called_once_with(host="proxy.example.com", port=8080)
         self.assertIs(result, admin)

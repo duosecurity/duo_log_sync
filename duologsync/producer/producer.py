@@ -80,6 +80,9 @@ class Producer:
             except gaierror as gai_error:
                 shutdown_reason = self.handle_address_info_error(gai_error)
 
+            except TimeoutError as timeout_error:
+                self.handle_timeout_error_gracefully(timeout_error)
+
             except OSError as os_error:
                 shutdown_reason = self.handle_os_error(os_error)
 
@@ -113,6 +116,15 @@ class Producer:
         Program.log(f"{self.log_type} producer: make sure that the host information details provider in the configuration file {Config.get_config_file_path()} is correct", logging.ERROR)
         return f"{self.log_type} producer: [{err['error_message']} error_code: {err['error_code']}]"
 
+    def handle_timeout_error_gracefully(self, timeout_error: TimeoutError):
+        """Log an Admin API timeout and allow the producer to retry."""
+        err = extract_error_info(timeout_error)
+        Program.log(
+            f"{self.log_type} producer: retrying after Admin API request "
+            f"timeout: {err['error_message']}",
+            logging.WARNING,
+        )
+
     def handle_runtime_error_gracefully(self, runtime_error: RuntimeError):
         """
         Handle a runtime error gracefully by checking if the error is eligible for a retry.
@@ -121,7 +133,7 @@ class Producer:
         """
         http_error_code = getattr(runtime_error, "status", None)
         error_data = getattr(runtime_error, "data", None)
-        error_code = error_data['code'] if error_data else None
+        error_code = error_data.get("code") if isinstance(error_data, dict) else None
 
         if self.eligible_for_retry(http_error_code):
             Program.log(
@@ -136,16 +148,14 @@ class Producer:
     @staticmethod
     def eligible_for_retry(http_error_code):
         """
-        Check if the runtime error is eligible for a retry based on the status code.
-        See the Config.GRACEFUL_RETRY_STATUS_CODES for the list of status codes that is eligible for a retry.
+        Check if the runtime error is eligible for a retry based on the status
+        code. Rate-limit responses and all server errors are retryable.
         """
 
-        if http_error_code:
-            for http_status_code in Config.GRACEFUL_RETRY_STATUS_CODES:
-                if http_error_code == http_status_code:
-                    return True
+        if http_error_code in Config.GRACEFUL_RETRY_STATUS_CODES:
+            return True
 
-        return False
+        return isinstance(http_error_code, int) and 500 <= http_error_code <= 599
 
     async def add_logs_to_queue(self, logs):
         """

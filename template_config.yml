@@ -33,6 +33,10 @@ version: '1.0.0'
     # with Duo API rate limits
     #timeout: 120
 
+    # Maximum seconds to wait for a response from Duo before retrying.
+    # Must be at least 1 second. The default is 60 seconds.
+    #request_timeout: 60
+
   # Settings related to saving API call offset information into files for use
   # when DLS crashes so that DLS can pickup where it left off.
   # By default, entire section is commented out. DLS will still create checkpoint files in the

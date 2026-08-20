@@ -148,6 +148,7 @@ def create_admin(
     host,
     proxy_server=None,
     proxy_port=None,
+    request_timeout=Config.API_REQUEST_TIMEOUT_DEFAULT,
 ):
     """
     Create an Admin object (from the duo_client library) with the given values.
@@ -158,6 +159,7 @@ def create_admin(
     @param host URI where data / logs will be fetched from
     @param proxy_server Host/IP of Http Proxy if in use or None
     @param proxy_port Port of Http Proxy if in use or None
+    @param request_timeout Maximum seconds to wait for an Admin API response
     @return a newly created Admin object
     """
 
@@ -166,6 +168,7 @@ def create_admin(
         skey=skey,
         host=host,
         user_agent=f"Duo Log Sync/{__version__}",
+        timeout=request_timeout,
     )
     Program.log(
         f"duo_client Admin initialized for ikey: {ikey}, host: {host}",

@@ -24,6 +24,7 @@ class TestApp(TestCase):
         server_to_writer = {"Main": "writer_1"}
         config = {
             "dls_settings": {
+                "api": {"request_timeout": 60},
                 "proxy": {"proxy_server": "test.com", "proxy_port": 1234},
             },
             "account": {
@@ -62,6 +63,7 @@ class TestApp(TestCase):
             "a",
             proxy_server="test.com",
             proxy_port=1234,
+            request_timeout=60,
         )
         self.assertEqual(mock_pair.call_count, 4)
         mock_pair.assert_has_calls(calls, any_order=True)
@@ -88,6 +90,7 @@ class TestApp(TestCase):
         server_to_writer = {"Main": "writer_1"}
         config = {
             "dls_settings": {
+                "api": {"request_timeout": 60},
                 "proxy": {"proxy_server": "test.com", "proxy_port": 1234},
             },
             "account": {
@@ -152,6 +155,7 @@ class TestApp(TestCase):
                 "a",
                 proxy_server="test.com",
                 proxy_port=1234,
+                request_timeout=60,
             ),
             call(
                 "a",
@@ -159,6 +163,7 @@ class TestApp(TestCase):
                 "api-abcd1234.duosecurity.com",
                 proxy_server="test.com",
                 proxy_port=1234,
+                request_timeout=60,
             ),
             call(
                 "a",
@@ -166,6 +171,7 @@ class TestApp(TestCase):
                 "api-efgh5678.duosecurity.com",
                 proxy_server="test.com",
                 proxy_port=1234,
+                request_timeout=60,
             ),
         ]
 
@@ -180,6 +186,7 @@ class TestApp(TestCase):
         server_to_writer = {"Main": "writer_1", "Backup": "writer_2"}
         config = {
             "dls_settings": {
+                "api": {"request_timeout": 60},
                 "proxy": {"proxy_server": "test.com", "proxy_port": 1234},
             },
             "account": {
@@ -221,6 +228,7 @@ class TestApp(TestCase):
         }
         config = {
             "dls_settings": {
+                "api": {"request_timeout": 60},
                 "proxy": {"proxy_server": "test.com", "proxy_port": 1234},
             },
             "account": {
