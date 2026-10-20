@@ -7,6 +7,7 @@ dls_settings:
   api:
     offset: 180
     timeout: 120
+    request_timeout: 60
 
   checkpointing:
     enabled: True
