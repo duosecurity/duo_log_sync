@@ -784,29 +784,6 @@ python -m pytest -q \
   tests/test_msp_admin_api_contract.py tests/test_app.py tests/test_util.py
 ```
 
-### 15. Preserve local test evidence safely
-
-The capture may contain usernames, email addresses, phone numbers, IP
-addresses, account IDs, and authentication details. The runtime log may contain
-integration and account metadata. Preserve exact local evidence without adding
-it to Git:
-
-```shell
-mkdir -p .local-test-evidence/YYYY-MM-DD
-chmod 700 .local-test-evidence .local-test-evidence/YYYY-MM-DD
-cp /tmp/duo-msp-events.ndjson \
-  .local-test-evidence/YYYY-MM-DD/duo-msp-events.ndjson
-cp /tmp/duologsync-msp.log \
-  .local-test-evidence/YYYY-MM-DD/duologsync-msp.log
-chmod 600 .local-test-evidence/YYYY-MM-DD/*
-shasum -a 256 .local-test-evidence/YYYY-MM-DD/*
-git check-ignore .local-test-evidence/YYYY-MM-DD/duo-msp-events.ndjson
-```
-
-`.local-test-evidence/` is intentionally ignored. Do not commit raw evidence or
-attach it to a public pull request. Create a redacted summary when evidence
-must be shared.
-
 ### Troubleshooting the MSP test
 
 - **No children are discovered:** verify **Grant accounts - Read** under the
