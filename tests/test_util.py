@@ -16,7 +16,7 @@ class TestAdminApiClients(TestCase):
             ikey="ikey",
             skey="skey",
             host="api.example.com",
-            user_agent="Duo Log Sync/2.4.1",
+            user_agent="Duo Log Sync/2.5.0",
             timeout=60,
         )
         admin.set_proxy.assert_not_called()
@@ -40,7 +40,7 @@ class TestAdminApiClients(TestCase):
             ikey="ikey",
             skey="skey",
             host="api-child.example.com",
-            user_agent="Duo Log Sync/2.4.1",
+            user_agent="Duo Log Sync/2.5.0",
             timeout=45,
         )
         admin.set_proxy.assert_called_once_with(host="proxy.example.com", port=8080)

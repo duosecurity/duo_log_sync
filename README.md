@@ -1,4 +1,4 @@
-Duo Log Sync (v2.4.1)
+Duo Log Sync (v2.5.0)
 ===================
 
 [![Issues](https://img.shields.io/github/issues/duosecurity/duo_log_sync)](https://github.com/duosecurity/duo_log_sync/issues)
@@ -163,13 +163,14 @@ Do not create an Accounts API integration. A regular-account test does not need
 
 ```shell
 cd /path/to/duo_log_sync
-git switch codex/admin-api-migration
-git pull --ff-only
 git status
+git branch --show-current
+git log -1 --oneline
 ```
 
-The working tree should be clean before testing. Local `config.yml` is ignored
-by Git and should not appear in `git status`.
+Check out the release branch or tag being tested before continuing. The working
+tree should be clean. Local `config.yml` is ignored by Git and should not
+appear in `git status`.
 
 ### 4. Create the Python environment
 
@@ -512,13 +513,14 @@ hostname, which starts with `api-`.
 
 ```shell
 cd /path/to/duo_log_sync
-git switch codex/admin-api-migration
-git pull --ff-only
 git status
+git branch --show-current
+git log -1 --oneline
 ```
 
-The tracked `config_msp.yml` file is a credential-free template. Real
-credentials belong only in the ignored local copy created in the next step.
+Check out the release branch or tag being tested before continuing. The tracked
+`config_msp.yml` file is a credential-free template. Real credentials belong
+only in the ignored local copy created in the next step.
 
 ### 5. Create the Python environment
 
@@ -803,9 +805,7 @@ git check-ignore .local-test-evidence/YYYY-MM-DD/duo-msp-events.ndjson
 
 `.local-test-evidence/` is intentionally ignored. Do not commit raw evidence or
 attach it to a public pull request. Create a redacted summary when evidence
-must be shared. A sanitized report from the two-subaccount live test is
-available in
-[`docs/testing/msp-live-test-2026-10-20.md`](./docs/testing/msp-live-test-2026-10-20.md).
+must be shared.
 
 ### Troubleshooting the MSP test
 

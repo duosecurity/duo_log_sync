@@ -1,11 +1,19 @@
 ## Change Log
 
-### Unreleased
+### 2.5.0
 
-- Migrated MSP subaccount discovery and log access from the deprecated Accounts
-  API integration to parent and child-scoped Admin API clients.
+- Replaced the deprecated Accounts API integration with a parent Admin API
+  integration for MSP subaccount discovery and log collection.
+- Restored MSP authentication, telephony, and activity log collection by
+  routing requests through each discovered child's API hostname and account ID.
+- Added `child_account_id` to MSP output events and isolated checkpoints by
+  child account.
 - Added a finite Admin API request timeout and retry handling for timeouts,
-  rate limits, and HTTP 5xx responses.
+  rate limits, and all HTTP 5xx responses.
+- Added credential-free MSP test configuration and local test instructions.
+
+MSP mode collects logs from discovered subaccounts only; it does not collect
+the parent account's own logs. Trust Monitor remains unsupported in MSP mode.
 
 ### 2.4.1
 
