@@ -141,3 +141,5 @@ dmypy.json
 
 .DS_Store
 config.yml
+config_msp.local.yml
+.local-test-evidence/
