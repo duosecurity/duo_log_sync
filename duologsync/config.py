@@ -39,6 +39,7 @@ class Config:
     LOG_FORMAT_DEFAULT = 'JSON'
     API_OFFSET_DEFAULT = 180
     API_TIMEOUT_DEFAULT = 120
+    API_REQUEST_TIMEOUT_DEFAULT = 60
     CHECKPOINTING_ENABLED_DEFAULT = True
     CHECKPOINTING_DIRECTORY_DEFAULT = DIRECTORY_DEFAULT
     PROXY_SERVER_DEFAULT = ''
@@ -85,6 +86,11 @@ class Config:
                     'timeout': {
                         'type': 'number',
                         'default': API_TIMEOUT_DEFAULT
+                    },
+                    'request_timeout': {
+                        'type': 'number',
+                        'min': 1,
+                        'default': API_REQUEST_TIMEOUT_DEFAULT
                     }
                 }
             },
@@ -278,6 +284,11 @@ class Config:
     def get_api_timeout(cls):
         """@return the seconds to wait between API calls"""
         return cls.get_value(['dls_settings', 'api', 'timeout'])
+
+    @classmethod
+    def get_api_request_timeout(cls):
+        """@return the maximum seconds to wait for an Admin API response"""
+        return cls.get_value(['dls_settings', 'api', 'request_timeout'])
 
     @classmethod
     def get_checkpointing_enabled(cls):

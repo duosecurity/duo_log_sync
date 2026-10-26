@@ -1,0 +1,39 @@
+version: '1.0.0'
+
+dls_settings:
+  log_filepath: '/tmp/duologsync-msp.log'
+  log_format: 'JSON'
+
+  api:
+    # Fetch approximately the previous 2.4 hours during the initial test.
+    offset: 0.1
+    # Wait two minutes between polling cycles.
+    timeout: 120
+    # Bound each Admin API request so a stalled request can be retried.
+    request_timeout: 60
+
+  checkpointing:
+    # Start without old offsets for a clean end-to-end test.
+    enabled: False
+    directory: '/tmp/duologsync-msp-checkpoints'
+
+servers:
+  - id: 'local-msp-test'
+    hostname: '127.0.0.1'
+    port: 8888
+    protocol: 'TCP'
+
+account:
+  # Use credentials from an Admin API application in the parent MSP account.
+  # Never commit real credentials to this file. Copy it to
+  # config_msp.local.yml and put credentials in that ignored local file.
+  ikey: 'DIXXXXXXXXXXXXXXXXXX'
+  skey: 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX'
+  hostname: 'api-xxxxxxxx.duosecurity.com'
+
+  endpoint_server_mappings:
+    # Trust Monitor is not supported for MSP collection.
+    - endpoints: ['auth', 'telephony', 'activity']
+      server: 'local-msp-test'
+
+  is_msp: True

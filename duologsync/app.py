@@ -28,7 +28,7 @@ from duologsync.consumer.trustmonitor_consumer import TrustMonitorConsumer
 from duologsync.producer.trustmonitor_producer import TrustMonitorProducer
 from duologsync.consumer.activity_consumer import ActivityConsumer
 from duologsync.producer.activity_producer import ActivityProducer
-from duologsync.util import create_admin, check_for_specific_endpoint
+from duologsync.util import create_admin, get_subaccounts, check_for_specific_endpoint
 from duologsync.writer import Writer
 from duologsync.config import Config
 from duologsync.program import Program
@@ -128,25 +128,44 @@ def create_tasks(server_to_writer):
     """
     tasks = []
 
-    # Object with functions needed to utilize log API calls
+    account_ikey = Config.get_account_ikey()
+    account_skey = Config.get_account_skey()
+    proxy_server = Config.get_proxy_server()
+    proxy_port = Config.get_proxy_port()
+    request_timeout = Config.get_api_request_timeout()
+
+    # Parent Admin API client. For MSP accounts it is used to discover
+    # subaccounts; log calls use a child-scoped Admin client created below.
     admin = create_admin(
-        Config.get_account_ikey(),
-        Config.get_account_skey(),
+        account_ikey,
+        account_skey,
         Config.get_account_hostname(),
-        is_msp=Config.account_is_msp(),
-        proxy_server=Config.get_proxy_server(),
-        proxy_port=Config.get_proxy_port(),
+        proxy_server=proxy_server,
+        proxy_port=proxy_port,
+        request_timeout=request_timeout,
     )
 
-    # This is where functionality would be added to check if an account is MSP
-    # (Config.account_is_msp), and then retrieve child accounts (ignoring those
-    # in a blocklist) if the account is indeed MSP
-    # TODO: Implement blocklist
+    # TODO: Ignore configured subaccounts when blocklist support is implemented.
     if Config.account_is_msp():
-        child_account = admin.get_child_accounts()
-        child_accounts_id = [account["account_id"] for account in child_account]
+        subaccounts = get_subaccounts(admin)
 
-        for account in child_accounts_id:
+        if not subaccounts:
+            Program.log(
+                "DuoLogSync: no MSP subaccounts were returned by the Admin API",
+                logging.WARNING,
+            )
+            return tasks
+
+        for subaccount in subaccounts:
+            account_id = subaccount["account_id"]
+            child_admin = create_admin(
+                account_ikey,
+                account_skey,
+                subaccount["api_hostname"],
+                proxy_server=proxy_server,
+                proxy_port=proxy_port,
+                request_timeout=request_timeout,
+            )
             # TODO: This can be made into a separate function
             for mapping in Config.get_account_endpoint_server_mappings():
                 # Get the writer to be used for this set of endpoints
@@ -154,7 +173,7 @@ def create_tasks(server_to_writer):
 
                 for endpoint in mapping.get("endpoints"):
                     new_tasks = create_consumer_producer_pair(
-                        endpoint, writer, admin, account
+                        endpoint, writer, child_admin, account_id
                     )
                     tasks.extend(new_tasks)
     else:
@@ -189,7 +208,7 @@ def create_consumer_producer_pair(endpoint, writer, admin, child_account=None):
 
     # Create the right pair of Producer-Consumer objects based on endpoint
     if endpoint == Config.AUTH:
-        if Config.account_is_msp():
+        if child_account is not None:
             producer = AuthlogProducer(
                 admin.json_api_call,
                 log_queue,
@@ -203,9 +222,10 @@ def create_consumer_producer_pair(endpoint, writer, admin, child_account=None):
         producer = TelephonyProducer(
             admin.json_api_call,
             log_queue,
+            child_account_id=child_account,
             url_path="/admin/v2/logs/telephony",
         )
-        consumer = TelephonyConsumer(log_format, log_queue, writer)
+        consumer = TelephonyConsumer(log_format, log_queue, writer, child_account)
     elif endpoint == Config.TRUST_MONITOR:
         producer = TrustMonitorProducer(
             admin.get_trust_monitor_events_by_offset, log_queue
@@ -215,6 +235,7 @@ def create_consumer_producer_pair(endpoint, writer, admin, child_account=None):
         producer = ActivityProducer(
             admin.json_api_call,
             log_queue,
+            child_account_id=child_account,
             url_path="/admin/v2/logs/activity",
         )
         consumer = ActivityConsumer(log_format, log_queue, writer, child_account)

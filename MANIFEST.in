@@ -1,2 +1,5 @@
-include LICENSE README.md requirements.txt requirements-dev.txt
+include LICENSE README.md HISTORY.md
+include requirements*.txt
+include example_config.yml template_config.yml config_msp.yml
+include upgrade_config.py pytest.ini
 recursive-include tests *.py

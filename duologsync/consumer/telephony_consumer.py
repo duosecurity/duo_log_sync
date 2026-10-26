@@ -20,7 +20,12 @@ class TelephonyConsumer(Consumer):
     An implementation of the Consumer class for telephony logs
     """
 
-    def __init__(self, log_format, log_queue, writer):
-        super().__init__(log_format, log_queue, writer)
+    def __init__(self, log_format, log_queue, writer, child_account_id=None):
+        super().__init__(
+            log_format,
+            log_queue,
+            writer,
+            child_account_id=child_account_id,
+        )
         self.keys_to_labels = TELEPHONY_KEYS_TO_LABELS
         self.log_type = Config.TELEPHONY

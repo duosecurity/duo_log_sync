@@ -1,13 +1,11 @@
 """
 Definition of the ActivityProducer class
 """
-import datetime
 import functools
-import math
 
 from duologsync.config import Config
 from duologsync.producer.producer import Producer
-from duologsync.util import normalize_params, run_in_executor
+from duologsync.util import run_in_executor
 
 
 class ActivityProducer(Producer):
@@ -16,11 +14,12 @@ class ActivityProducer(Producer):
     and placement into a queue of Activity logs
     """
 
-    def __init__(self, api_call, log_queue, url_path=None):
+    def __init__(self, api_call, log_queue, child_account_id=None, url_path=None):
         super().__init__(
             api_call,
             log_queue,
             Config.ACTIVITY,
+            account_id=child_account_id,
             url_path=url_path,
         )
         self.first_pass = True
@@ -43,24 +42,12 @@ class ActivityProducer(Producer):
 
         @return the result of a call to the Activity Log API endpoint
         """
-        today = datetime.datetime.now(tz=datetime.timezone.utc)
-        maxtime = math.floor(today.timestamp() * 1000) - 120
-
-        parameters = normalize_params(
-            {
-                "mintime": f"{self.mintime}",
-                "maxtime": f"{maxtime}",
-                "limit": "1000",
-                "sort": "ts:asc",
-            }
-        )
-
-        if self.log_offset is not None:
-            parameters["next_offset"] = [f"{self.log_offset}"]
-
         api_result = await run_in_executor(
             functools.partial(
-                self.api_call, method="GET", path=self.url_path, params=parameters
+                self.api_call,
+                method="GET",
+                path=self.url_path,
+                params=self.get_admin_api_log_parameters(),
             )
         )
 
