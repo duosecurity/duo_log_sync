@@ -1,15 +1,60 @@
+import os
+from tempfile import TemporaryDirectory
 from unittest import TestCase
 from unittest.mock import call, patch
 
-from duologsync.app import Program, create_tasks
+from duologsync.app import Program, create_tasks, ensure_checkpoint_directory
 from duologsync.config import Config
 
 
 class TestApp(TestCase):
+    @staticmethod
+    def _set_checkpoint_directory(directory):
+        Config.set_config(
+            {"dls_settings": {"checkpointing": {"directory": directory}}}
+        )
+
     def tearDown(self):
         Config._config = None
         Config._config_is_set = False
         Program._running = True
+
+    def test_ensure_checkpoint_directory_creates_missing_directory(self):
+        with TemporaryDirectory() as parent_directory:
+            checkpoint_directory = os.path.join(parent_directory, "checkpoints")
+            self._set_checkpoint_directory(checkpoint_directory)
+
+            result = ensure_checkpoint_directory()
+
+            self.assertTrue(result)
+            self.assertTrue(os.path.isdir(checkpoint_directory))
+
+    @patch("duologsync.app.Program.initiate_shutdown")
+    @patch("duologsync.app.os.makedirs", side_effect=PermissionError("denied"))
+    def test_ensure_checkpoint_directory_reports_creation_failure(
+        self, _, mock_initiate_shutdown
+    ):
+        self._set_checkpoint_directory("/not-writable/checkpoints")
+
+        result = ensure_checkpoint_directory()
+
+        self.assertFalse(result)
+        mock_initiate_shutdown.assert_called_once()
+
+    @patch("duologsync.app.Program.initiate_shutdown")
+    @patch("duologsync.app.os.access", return_value=False)
+    @patch("duologsync.app.os.makedirs")
+    def test_ensure_checkpoint_directory_reports_unwritable_directory(
+        self, _, __, mock_initiate_shutdown
+    ):
+        self._set_checkpoint_directory("/unwritable/checkpoints")
+
+        result = ensure_checkpoint_directory()
+
+        self.assertFalse(result)
+        mock_initiate_shutdown.assert_called_once_with(
+            "checkpoint directory '/unwritable/checkpoints' is not writable"
+        )
 
     @patch("duologsync.app.get_subaccounts")
     @patch("duologsync.app.create_admin", return_value="duo_admin")

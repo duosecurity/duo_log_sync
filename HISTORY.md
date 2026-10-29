@@ -11,6 +11,9 @@
 - Added a finite Admin API request timeout and retry handling for timeouts,
   rate limits, and all HTTP 5xx responses.
 - Added credential-free MSP test configuration and local test instructions.
+- Corrected the customer installation flow and constrained setuptools for
+  Cerberus runtime compatibility.
+- DLS now creates a missing checkpoint directory at startup.
 
 MSP mode collects logs from discovered subaccounts only; it does not collect
 the parent account's own logs. Trust Monitor remains unsupported in MSP mode.
