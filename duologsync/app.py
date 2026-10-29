@@ -18,6 +18,7 @@ create_consumer_producer_tasks():
 import argparse
 import asyncio
 import logging
+import os
 import signal
 
 from duologsync.consumer.authlog_consumer import AuthlogConsumer
@@ -79,6 +80,8 @@ def main():
         return
 
     Program.setup_logging(Config.get_log_filepath())
+    if not Program.is_running() or not ensure_checkpoint_directory():
+        return
 
     # Dict of writers (server id: writer) to be used for consumer tasks
     server_to_writer = Writer.create_writers(Config.get_servers())
@@ -95,6 +98,29 @@ def main():
             f"DuoLogSync: shutdown successfully. Check "
             f"{Config.get_log_filepath()} for program logs"
         )
+
+
+def ensure_checkpoint_directory():
+    """Create the configured checkpoint directory before collection starts."""
+
+    checkpoint_directory = Config.get_checkpoint_dir()
+
+    try:
+        os.makedirs(checkpoint_directory, mode=0o700, exist_ok=True)
+    except OSError as os_error:
+        Program.initiate_shutdown(
+            "checkpoint directory "
+            f"'{checkpoint_directory}' could not be created: {os_error}"
+        )
+        return False
+
+    if not os.access(checkpoint_directory, os.W_OK):
+        Program.initiate_shutdown(
+            f"checkpoint directory '{checkpoint_directory}' is not writable"
+        )
+        return False
+
+    return True
 
 
 def signal_handler(signal_number, stack_frame):

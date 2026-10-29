@@ -39,23 +39,77 @@ Ensure the `hostname` and `port` in your `config.yml` match your receiving serve
 
 ## Installation
 
-- Make sure you are running Python 3+ with `python --version`.
-- Clone this GitHub repository and navigate to the `duo_log_sync` folder.
-- Ensure you have "setuptools" by running `pip3 install setuptools`.
-- Install dependencies by running `pip install -r requirements.txt`.
-- Install `duologsync` by running `python/python3 setup.py install`. 
-- Refer to the `Configuration` section below. You will need to create a `config.yml` file and fill out credentials for the adminapi in the duoclient section as well as other parameters if necessary.
-- Run the application using `duologsync <complete/path/to/config.yml>`.
-- If a new version of DLS is downloaded from GitHub, run the setup command again to reinstall `duologsync` for changes to take effect.
+Run all commands from the repository root. A virtual environment is
+recommended but optional.
+
+1. Verify Python 3:
+
+   ```shell
+   python --version
+   ```
+
+2. Optional but recommended: create and activate a virtual environment using
+   the standard commands for your Python installation and shell.
+
+   ```shell
+   python -m venv .venv
+   ```
+
+   Skip this step to install into an existing Python environment.
+
+3. Install DLS:
+
+   ```shell
+   python -m pip install .
+   ```
+
+   Without a virtual environment, this installs into the selected Python
+   environment. Its scripts directory must be on `PATH`.
+
+   Pip reads `setup.py` to install DLS, its dependencies, and the `duologsync`
+   command. Do not run `python setup.py install` directly.
+
+4. Verify the installed command:
+
+   ```shell
+   duologsync --help
+   ```
+
+5. Create one local configuration:
+
+   - Regular account: copy `example_config.yml` to `config.yml`.
+   - MSP parent account: copy `config_msp.yml` to `config_msp.local.yml`.
+
+   For a regular account, set `account.is_msp: False` and use that account's
+   Admin API credentials. For MSP, set `account.is_msp: True` and use the
+   parent Admin API credentials. Never add credentials to tracked
+   `config_msp.yml`.
+
+   Replace all placeholders, configure the destination server and endpoints,
+   protect the credential-bearing file, and start the destination before DLS.
+
+6. Run DLS with the complete path to the selected configuration:
+
+   ```shell
+   duologsync CONFIG_PATH
+   ```
+
+   Replace `CONFIG_PATH` with the complete path to `config.yml` for a regular
+   account or `config_msp.local.yml` for MSP.
+
+   DLS must run in UTC. If the host or service is not already in UTC, configure
+   the process or service to use UTC.
+
+For a complete end-to-end verification, follow **Test DLS with no
+subaccounts** or **Test DLS with MSP subaccounts** below.
 
 ### Compatibility
 
-- Duologsync is compatible with Python versions `3.6`, `3.7`, `3.8`, `3.9`, `3.10`, `3.11`, `3.12`, and `3.13`.
-- Duologsync is officially supported on Linux, MacOS, and Windows systems.
-
-### Windows
-- On Windows operating systems, `duologsync` is installed in the `\scripts\` folder under the Python installation in most cases.
----
+- DuoLogSync is compatible with Python versions `3.6`, `3.7`, `3.8`, `3.9`,
+  `3.10`, `3.11`, `3.12`, and `3.13`.
+- DuoLogSync is supported on Linux, macOS, and Windows. The end-to-end local
+  receiver examples below use POSIX shell commands; Windows users must use the
+  equivalent PowerShell commands and writable Windows paths.
 
 ## Logging
 - A logging filepath can be specified in `config.yml`. By default, logs will be stored under the `/tmp` folder with name `duologsync.log`.
@@ -83,7 +137,10 @@ Ensure the `hostname` and `port` in your `config.yml` match your receiving serve
 
 ## System Requirements
 
-- Duo Log Sync must be run a system set to the UTC/GMT Timezone
+- Run DuoLogSync with the UTC/GMT timezone so API and checkpoint timestamps
+  remain correct. If the host or service already runs in UTC, no `TZ` prefix
+  is needed. Otherwise, using `TZ=UTC` is recommended on macOS and Linux, as
+  shown in the test procedures.
 
 ## Configuration
 
@@ -94,8 +151,13 @@ Ensure the `hostname` and `port` in your `config.yml` match your receiving serve
 - The `offset` field is a `api` setting and it is for days in the past from which record retrieval should begin. Maximum logs that can be fetched is `180 days` in past. The default is 180.
 - The `timeout` field is a `api` setting and it is for `seconds` to wait between API calls (for fetching Duo logs). If timeout is set to less than 120 seconds, it will be defaulted to 120.
 - The `request_timeout` field is an `api` setting that limits how many seconds an individual Duo Admin API request may wait for a response. Timed-out requests are retried on the next polling cycle. The default is 60 seconds.
-- The `enabled` field is a `checkpointing` setting and it is for whether checkpoint files should be created to save offset information about API calls which will be used to continue fetching of data if utility crashes or is restarted. Valid options are True or False.
-- The `directory` field is a `checkpointing` setting is to mention path where checkpoint files will be created. The default is `/tmp`.
+- The `enabled` checkpoint setting controls whether DLS recovers offsets from
+  existing checkpoint files at startup. DLS writes checkpoint files after
+  successful delivery regardless of this setting. Valid values are `True` and
+  `False`.
+- The `directory` checkpoint setting specifies where checkpoint files are
+  stored. DLS creates the directory at startup when it does not exist, but the
+  parent location must be writable. The default is `/tmp`.
 - The `proxy_server` is a `proxy` setting and it is a Host/IP for the Http Proxy.
 - The `proxy_port` is a `proxy` setting and it is a Port for the Http Proxy.
 - The `id` is a `servers` setting and it is a descriptive name for your server. It is a `REQUIRED` field.
@@ -151,7 +213,8 @@ examines the captured JSON.
 2. Open **Applications** → **Application Catalog**.
 3. Locate **Admin API** and add the application.
 4. Enable **Grant read log**.
-5. Copy the integration key, secret key, and API hostname into `config.yml`.
+5. Record the integration key, secret key, and API hostname securely. Enter
+   them in the local configuration under **Verify `config.yml`** below.
 6. If **Networks for API Access** is configured, allow the public IP address of
    the computer that will run DLS.
 7. Save the application.
@@ -180,14 +243,9 @@ Create a virtual environment and install the application and test dependencies:
 python3.13 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
-python -m pip install 'setuptools==80.9.0'
-python -m pip install -r requirements-dev-3.13.txt
 python -m pip install -e .
+python -m pip install -r requirements-dev-3.13.txt
 ```
-
-The setuptools pin provides `pkg_resources`, which is still imported by the
-currently pinned Cerberus version. The editable installation ensures the
-`duologsync` command runs the code in the current checkout.
 
 Verify the installation:
 
@@ -385,15 +443,15 @@ jq -r '
 ' /tmp/duo-events.ndjson | sort | uniq -c
 ```
 
-Confirm that regular-account events do not have the MSP-only
-`child_account_id` field:
+Confirm that the capture is non-empty and regular-account events do not have
+the MSP-only `child_account_id` field:
 
 ```shell
-jq -s 'map(select(has("child_account_id"))) | length' \
+jq -s -e 'length > 0 and all(.[]; has("child_account_id") | not)' \
   /tmp/duo-events.ndjson
 ```
 
-The expected result is `0`.
+The expected result is `true` and exit status `0`.
 
 ### 12. Test checkpoint recovery
 
@@ -419,8 +477,8 @@ python -m pylint duologsync tests
 python -m compileall -q duologsync tests
 ```
 
-The expected result for this branch is 68 passing tests and 19 passing
-subtests. Pylint and `compileall` should exit successfully.
+All tests and subtests must pass. Pylint and `compileall` should exit
+successfully.
 
 ### Troubleshooting the local test
 
@@ -530,14 +588,9 @@ Create a virtual environment and install the application and test dependencies:
 python3.13 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
-python -m pip install 'setuptools==80.9.0'
-python -m pip install -r requirements-dev-3.13.txt
 python -m pip install -e .
+python -m pip install -r requirements-dev-3.13.txt
 ```
-
-The setuptools pin provides `pkg_resources`, which is still imported by the
-currently pinned Cerberus version. The editable installation ensures the
-`duologsync` command runs the code in the current checkout.
 
 Verify the installation:
 
@@ -590,9 +643,14 @@ account:
   is_msp: True
 ```
 
+This tracked file is a short-window smoke-test template, not a production
+configuration. Review the offset and checkpoint-recovery settings before using
+it for a long-running deployment.
+
 `offset: 0.1` starts the initial request approximately 2.4 hours in the past.
 `timeout: 120` polls every two minutes, and `request_timeout: 60` bounds each
-Admin API request.
+Admin API request. DLS creates the checkpoint directory on startup; its parent
+directory must be writable by the DLS process.
 
 Verify that the template is tracked and the credential-bearing copy is ignored:
 
@@ -730,7 +788,7 @@ Verify that every emitted event has a non-empty child account ID:
 
 ```shell
 jq -s -e '
-  all(.[]; has("child_account_id") and
+  length > 0 and all(.[]; has("child_account_id") and
     (.child_account_id | type == "string" and length > 0))
 ' /tmp/duo-msp-events.ndjson
 ```
@@ -843,9 +901,10 @@ These tests use fake credentials and intercept the Duo client's transport before
 ### Common Issues
 
 - **API timeout errors**: Ensure the `timeout` setting is at least 120 seconds. DuoLogSync enforces this minimum to comply with Duo API rate limits.
-- **Checkpoint file errors**: Verify the checkpoint directory exists and has write permissions.
+- **Checkpoint file errors**: Verify the configured checkpoint directory's
+  parent exists and is writable. DLS creates the final checkpoint directory.
 - **SSL certificate errors**: For TCPSSL protocol, ensure the certificate file path is correct and the file contains valid certificates.
-- **Timezone issues**: DuoLogSync must run on a system set to UTC/GMT timezone.
+- **Timezone issues**: Run the DuoLogSync process in the UTC/GMT timezone.
 - **Logs not appearing**: Verify your receiving server is running and accessible at the configured hostname and port.
 
 ---

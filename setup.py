@@ -18,7 +18,13 @@ setup(
     license=__version__.__license__,
     packages=find_packages(exclude=['tests']),
     python_requires=">=3.6.2",
-    install_requires=["duo_client==5.5.0", "PyYAML==6.0.1", "Cerberus==1.3.2"],
+    install_requires=[
+        "duo_client==5.5.0",
+        "PyYAML==6.0.1",
+        "Cerberus==1.3.2",
+        # Cerberus imports pkg_resources, which setuptools 82 removes.
+        "setuptools<82",
+    ],
     entry_points={
         "console_scripts": ["duologsync = duologsync.app:main"],
     },

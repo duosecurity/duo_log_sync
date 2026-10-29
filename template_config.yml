@@ -43,10 +43,9 @@ version: '1.0.0'
   # default directory which is /tmp/. Uncomment sections to give custom path
   #checkpointing:
 
-    # Whether checkpoint files should be created to save offset information
-    # about API calls. If true, the value set for directory (or the default of
-    # '/tmp') is where DLS will look for checkpoint files to recover offset
-    # information from.
+    # Whether DLS should recover offsets from existing checkpoint files at
+    # startup. DLS writes checkpoints after successful delivery regardless of
+    # this setting. If true, DLS looks in directory (or the default '/tmp').
     # Valid options are False, True
     #enabled: True
 
@@ -89,7 +88,7 @@ servers:
     # TCPSSL. TCPSSL expects that there are .key and .cert files that store keys. For configuration,
     # give path of .cert/.pem file that has keys
     # REQUIRED only if protocol is TCPSSL
-    cert_filepath: ''
+    #cert_filepath: ''
 
 # To add another server, copy and paste the above, change the server name to
 # something unique and descriptive, and fill out the 3 (or 4) fields required
